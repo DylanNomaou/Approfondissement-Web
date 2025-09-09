@@ -23,5 +23,5 @@ def home(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accueil/', home, name='home'),
+    path('', home, name='home'),
 ]
