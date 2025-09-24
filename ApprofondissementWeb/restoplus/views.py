@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 def accueil(request):
     """Vue pour la page d'accueil."""
-    return render(request,"accueil.html")
+    return render(request,"restoplus/accueil.html")
 #commentaire pour tester git
 
 
