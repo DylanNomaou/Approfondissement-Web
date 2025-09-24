@@ -17,9 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include,path
 from django.conf.urls.static import static
-from RestoPlus import views
+from restoplus import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',include('RestoPlus.urls'))
+    path('',include('restoplus.urls'))
 ]
