@@ -7,13 +7,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestoPLus - Système de Gestion de Restaurant</title>
-    <link rel="stylesheet" href="{% static 'restoplus/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'restoplus/styles/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'restoplus/styles/bootstrap.min.css' %}">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     </style>
 </head>
 
 <body>
-    {% block content %}
-    {% endblock %}
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1><a href="/">RestoPlus</a></h1>
+        </div>
+
+        <div class="flex-column mb-auto">
+            <!-- Menu du haut -->
+            <ul class="sidebar-menu flex-column">
+                <li>
+                    <a href="/admin">
+                        <i class="bi bi-person-fill-gear"></i>
+                        Admin
+                    </a>
+                </li>
+                <li>
+                    <a href="/">
+                        <i class="bi bi-person-circle"></i>
+                        Compte
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Menu du bas -->
+            <ul class="sidebar-menu flex-column">
+                {% if user.is_authenticated %}
+                <li>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-light btn-sm ms-3">Déconnexion</button>
+                    </form>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{% url 'login' %}">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Connexion
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div>
+        {% block content %}
+        {% endblock %}
+    </div>
+
 </body>
 
 </html>
