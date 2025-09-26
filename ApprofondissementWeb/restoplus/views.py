@@ -1,9 +1,11 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.shortcuts import render
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib import messages
 from .forms import UserRegisterForm
+from django.contrib.auth import get_user_model
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
@@ -16,9 +18,9 @@ def signup_view(request):
     if request.method=='POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            user=form.save()
+            form.save()
             messages.success(request, "Inscription réussie !")
-            return redirect('login')
+            return redirect('accueil')
     else:
         form=UserRegisterForm()
     return render(request, 'registration/signup.html',{'form':form})
@@ -30,7 +32,7 @@ def login_view(request):
         if form.is_valid():
             user=form.get_user()
             login(request,user)
-            return redirect("accueil")
+            return redirect('accueil')
     else:
         form=AuthenticationForm()
     return render(request, 'registration/login.html',{'form':form})

@@ -26,13 +26,13 @@ class UserRegisterForm(forms.ModelForm):
                 "placeholder": "Identifiant"
             }),
         }
-    def clean(self):
-        cleaned_data = super().clean()
-        p1 = cleaned_data.get("password")
-        p2 = cleaned_data.get("password_confirmation")
+    def clean_password_confirmation(self):
+        p1 = self.cleaned_data.get("password")
+        p2 = self.cleaned_data.get("password_confirmation")
         if p1 and p2 and p1 != p2:
-            self.add_error("password_confirmation", "Les mots de passe ne correspondent pas.")
-        return cleaned_data
+            raise ValidationError("Les mots de passe ne correspondent pas.")
+        return p2
+
 
     def save(self, commit=True):
         user = super().save(commit=False)

@@ -1,0 +1,37 @@
+{% extends "restoplus/base.html" %}
+{% block content %}
+
+<div class="main-content d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card shadow p-4" style="width: 350px;">
+        <div class="card-header text-center bg-light">
+            <h4 class="mb-0">Connexion</h4>
+        </div>
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {{ form.errors }}
+        </div>
+        {% endif %}
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <div>{{ form.username.label_tag }}</div>
+                <div>{{ form.username }}</div>
+                <div>{{ form.username.errors }}</div>
+            </div>
+            <div class="mb-3">
+                <div>{{ form.password.label_tag }}</div>
+                <div>{{ form.password }}</div>
+                <div>{{ form.password.errors }}</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="{% url 'signup' %}">Créer un nouveau compte</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
