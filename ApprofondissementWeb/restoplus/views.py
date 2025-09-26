@@ -1,9 +1,9 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
+
 from django.shortcuts import render
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm
+from django.contrib.auth import login
+from .forms import UserRegisterForm, UserLoginForm
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -25,17 +25,16 @@ def signup_view(request):
         form=UserRegisterForm()
     return render(request, 'registration/signup.html',{'form':form})
 
+
 def login_view(request):
-    """Affiche le formulaire pour la connexion"""
-    if request.method=='POST':
-        form = AuthenticationForm(request,data=request.POST)
+    if request.method == 'POST':
+        form = UserLoginForm(request.POST)
         if form.is_valid():
-            user=form.get_user()
-            login(request,user)
-            return redirect('accueil')
+            login(request, form.get_user())
+            return redirect("accueil")
     else:
-        form=AuthenticationForm()
-    return render(request, 'registration/login.html',{'form':form})
+        form = UserLoginForm()
+    return render(request, 'registration/login.html', {'form': form})
 
 @login_required
 def admin_dashboard(request):
