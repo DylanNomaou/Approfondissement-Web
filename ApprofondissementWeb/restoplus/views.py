@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
-
+from .models import User
 from django.shortcuts import render
 from django.contrib.auth import login
 from .forms import UserRegisterForm, UserLoginForm
@@ -39,7 +39,9 @@ def login_view(request):
 
 @login_required
 def user_management(request):
-    return render(request,'user_management.html')
+    users= User.objets.all()
+    return render(request,'restoplus/user_management.html',{"users": users})
+
 
 
 @login_required
