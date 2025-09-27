@@ -6,5 +6,5 @@ urlpatterns=[
     path('',views.accueil, name='accueil'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
-    
+    path('user_management/',views.user_management,name='management')
 ]

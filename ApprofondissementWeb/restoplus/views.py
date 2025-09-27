@@ -36,6 +36,12 @@ def login_view(request):
         form = UserLoginForm()
     return render(request, 'registration/login.html', {'form': form})
 
+
+@login_required
+def user_management(request):
+    return render(request,'user_management.html')
+
+
 @login_required
 def admin_dashboard(request):
     """Vue pour le tableau de bord administrateur."""

@@ -1,28 +1,31 @@
-{% extends "restoplus/base.html" %}
-{% block content %}
-
+{% extends "restoplus/base.html" %} {% block content %}
 
 <div class="main-content">
-    <div class="welcome-header">
-        <h1>RestoPLus</h1>
-        <p class="subtitle">Système de Gestion de Restaurant</p>
-    </div>
+  <div class="welcome-header">
+    <h1>RestoPLus</h1>
+    <p class="subtitle">Système de Gestion de Restaurant</p>
+  </div>
 
-    <div class="intro-text">
-        <p>
-            Bienvenue sur RestoPLus, votre solution complète pour la gestion de restaurant.
-            Notre système vous aide à gérer efficacement vos employés, vos comptes et vos inventaires.
-        </p>
+  <div class="intro-text">
+    <p>
+      Bienvenue sur RestoPLus, votre solution complète pour la gestion de
+      restaurant. Notre système vous aide à gérer efficacement vos employés, vos
+      comptes et vos inventaires.
+    </p>
+  </div>
+  <div class="modules">
+    <div class="module">
+      <h3>Comptes</h3>
+      {% if user.is_manager %}
+      <p>Gérez les utilisateurs et les permissions</p>
+      <a href="{% url 'management' %}">Accéder</a>
+      {% else %}
+      <p>Vous n'avez pas la permission d'accéder à cette ressource</p>
+      {% endif %}
     </div>
-    <div class="modules">
-        <div class="module">
-            <h3>Comptes</h3>
-            <p>Gérez les utilisateurs et les permissions</p>
-            <a href="/">Accéder</a>
-        </div>
-
-        <div class="footer">
-            <p>© 2025 RestoPLus - Tous droits réservés</p>
-        </div>
+    <div class="footer">
+      <p>© 2025 RestoPLus - Tous droits réservés</p>
     </div>
-    {% endblock %}
+  </div>
+  {% endblock %}
+</div>
