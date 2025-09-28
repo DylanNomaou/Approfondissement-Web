@@ -36,7 +36,6 @@ def login_view(request):
         form = UserLoginForm()
     return render(request, 'registration/login.html', {'form': form})
 
-@login_required
 def admin_dashboard(request):
     """Vue pour le tableau de bord administrateur."""
 
@@ -44,3 +43,11 @@ def admin_dashboard(request):
     'title': 'Tableau de bord administrateur',
     }
     return render(request, "resto/admin_dashboard.html", context)
+
+def donner_acces(request):
+    """Vue pour la page de gestion des accès."""
+    context = {
+        'title': 'Gestion des Accès',
+        'page_description': 'Cette page permet de gérer les accès et permissions des utilisateurs du système RestoPLus.',
+    }
+    return render(request, "restoplus/donner_acces.html", context)
