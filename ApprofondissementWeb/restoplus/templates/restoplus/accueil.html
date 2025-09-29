@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 {% extends "restoplus/base.html" %} {% block content %}
-=======
-{% extends "restoplus/base.html" %}
-{% block content %}
-
->>>>>>> origin/main
 
 <div class="main-content">
   <div class="welcome-header">
@@ -23,12 +17,12 @@
     <div class="module">
       <h3>Comptes</h3>
       <p>Gérez les utilisateurs et les permissions</p>
-      <a href="/">Accéder</a>
+      <a href="{% url 'admin_dashboard' %}">Accéder</a>
     </div>
 
     <div class="footer">
       <p>© 2025 RestoPLus - Tous droits réservés</p>
     </div>
   </div>
-  {% endblock %}
 </div>
+{% endblock %}

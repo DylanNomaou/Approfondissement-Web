@@ -183,4 +183,10 @@ body {
   color: #95a5a6;
   font-size: 0.9em;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.main-wrapper {
+  margin-left: 280px;
+  padding: 20px;
+  min-height: 100vh;
 }/*# sourceMappingURL=styles.css.map */
