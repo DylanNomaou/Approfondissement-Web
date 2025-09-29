@@ -38,3 +38,5 @@ def login_view(request):
     else:
         form = UserLoginForm()
     return render(request, 'registration/login.html', {'form': form})
+
+
