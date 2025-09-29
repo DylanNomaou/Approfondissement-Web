@@ -481,3 +481,147 @@ body {
         }
     }
 }
+
+// ===========================
+// TASK MODAL STYLES
+// ===========================
+.modal {
+    &.fade .modal-dialog {
+        transition: transform 0.4s ease-out;
+        transform: translate(0, -50px);
+    }
+    
+    &.show .modal-dialog {
+        transform: none;
+    }
+}
+
+.modal-content {
+    border: none;
+    border-radius: $border-radius;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    
+    .modal-header {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: $border-radius $border-radius 0 0;
+        
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+    }
+    
+    .modal-body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        
+        .form-label {
+            color: $dark-color;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            
+            i {
+                font-size: 1rem;
+            }
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: $transition;
+            
+            &:focus {
+                border-color: $primary-color;
+                box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+                transform: translateY(-1px);
+            }
+            
+            &.is-valid {
+                border-color: $success-color;
+                background-image: none;
+            }
+            
+            &.is-invalid {
+                border-color: $danger-color;
+                background-image: none;
+            }
+        }
+        
+        .form-check-container {
+            background: rgba(13, 110, 253, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid $primary-color;
+            
+            .form-check {
+                .form-check-input {
+                    border: 2px solid #dee2e6;
+                    border-radius: 4px;
+                    
+                    &:checked {
+                        background-color: $primary-color;
+                        border-color: $primary-color;
+                    }
+                    
+                    &:focus {
+                        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+                    }
+                }
+                
+                .form-check-label {
+                    color: $dark-color;
+                    cursor: pointer;
+                    
+                    &:hover {
+                        color: $primary-color;
+                    }
+                }
+            }
+        }
+        
+        .invalid-feedback {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .form-text small {
+            font-size: 0.8rem;
+        }
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+        border-radius: 0 0 $border-radius $border-radius;
+        
+        .btn {
+            @include button-animation;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            
+            &.btn-primary {
+                background: linear-gradient(135deg, $primary-color 0%, #0056b3 100%);
+                border: none;
+                
+                &:hover {
+                    background: linear-gradient(135deg, #0056b3 0%, $primary-color 100%);
+                }
+            }
+        }
+    }
+}
+
+// Animation pour les toasts
+.toast {
+    border-radius: 8px;
+    border: none;
+    
+    &.bg-success {
+        background: linear-gradient(135deg, $success-color 0%, #146c43 100%) !important;
+    }
+}
+
+.toast-container {
+    z-index: 9999;
+}

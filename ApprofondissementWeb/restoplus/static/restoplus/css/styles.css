@@ -436,4 +436,137 @@ body {
             box-shadow: none;
     border: 1px solid #212529;
   }
+}
+.modal.fade .modal-dialog {
+  -webkit-transition: -webkit-transform 0.4s ease-out;
+  transition: -webkit-transform 0.4s ease-out;
+  transition: transform 0.4s ease-out;
+  transition: transform 0.4s ease-out, -webkit-transform 0.4s ease-out;
+  -webkit-transform: translate(0, -50px);
+          transform: translate(0, -50px);
+}
+.modal.show .modal-dialog {
+  -webkit-transform: none;
+          transform: none;
+}
+
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  -webkit-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+.modal-content .modal-header {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px 12px 0 0;
+}
+.modal-content .modal-header .modal-title {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+.modal-content .modal-body {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+.modal-content .modal-body .form-label {
+  color: #212529;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+.modal-content .modal-body .form-label i {
+  font-size: 1rem;
+}
+.modal-content .modal-body .form-control, .modal-content .modal-body .form-select {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+.modal-content .modal-body .form-control:focus, .modal-content .modal-body .form-select:focus {
+  border-color: #0d6efd;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+          box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+  -webkit-transform: translateY(-1px);
+          transform: translateY(-1px);
+}
+.modal-content .modal-body .form-control.is-valid, .modal-content .modal-body .form-select.is-valid {
+  border-color: #198754;
+  background-image: none;
+}
+.modal-content .modal-body .form-control.is-invalid, .modal-content .modal-body .form-select.is-invalid {
+  border-color: #dc3545;
+  background-image: none;
+}
+.modal-content .modal-body .form-check-container {
+  background: rgba(13, 110, 253, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid #0d6efd;
+}
+.modal-content .modal-body .form-check-container .form-check .form-check-input {
+  border: 2px solid #dee2e6;
+  border-radius: 4px;
+}
+.modal-content .modal-body .form-check-container .form-check .form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+.modal-content .modal-body .form-check-container .form-check .form-check-input:focus {
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+          box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+.modal-content .modal-body .form-check-container .form-check .form-check-label {
+  color: #212529;
+  cursor: pointer;
+}
+.modal-content .modal-body .form-check-container .form-check .form-check-label:hover {
+  color: #0d6efd;
+}
+.modal-content .modal-body .invalid-feedback {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.modal-content .modal-body .form-text small {
+  font-size: 0.8rem;
+}
+.modal-content .modal-footer {
+  border-top: 1px solid #dee2e6;
+  border-radius: 0 0 12px 12px;
+}
+.modal-content .modal-footer .btn {
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+}
+.modal-content .modal-footer .btn:hover {
+  -webkit-transform: translateY(-2px);
+          transform: translateY(-2px);
+  -webkit-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.modal-content .modal-footer .btn:active {
+  -webkit-transform: translateY(0);
+          transform: translateY(0);
+}
+.modal-content .modal-footer .btn.btn-primary {
+  background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+  border: none;
+}
+.modal-content .modal-footer .btn.btn-primary:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #0d6efd 100%);
+}
+
+.toast {
+  border-radius: 8px;
+  border: none;
+}
+.toast.bg-success {
+  background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
+}
+
+.toast-container {
+  z-index: 9999;
 }/*# sourceMappingURL=styles.css.map */

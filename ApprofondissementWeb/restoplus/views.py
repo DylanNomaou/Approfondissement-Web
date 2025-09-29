@@ -11,6 +11,9 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 def accueil(request):
     """Vue pour la page d'accueil."""
+    if not request.user.is_authenticated:
+        messages.info(request, "Vous devez être connecté pour accéder à cette page.")
+        return redirect('login')
     return render(request,"restoplus/accueil.html")
 
 def signup_view(request):
@@ -35,19 +38,3 @@ def login_view(request):
     else:
         form = UserLoginForm()
     return render(request, 'registration/login.html', {'form': form})
-
-def admin_dashboard(request):
-    """Vue pour le tableau de bord administrateur."""
-
-    context = {
-    'title': 'Tableau de bord administrateur',
-    }
-    return render(request, "resto/admin_dashboard.html", context)
-
-def donner_acces(request):
-    """Vue pour la page de gestion des accès."""
-    context = {
-        'title': 'Gestion des Accès',
-        'page_description': 'Cette page permet de gérer les accès et permissions des utilisateurs du système RestoPLus.',
-    }
-    return render(request, "restoplus/donner_acces.html", context)

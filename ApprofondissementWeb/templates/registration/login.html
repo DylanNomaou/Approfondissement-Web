@@ -6,6 +6,13 @@
         <div class="card-header text-center bg-light">
             <h4 class="mb-0">Connexion</h4>
         </div>
+        {% if messages.info %}
+        <div class="alert alert-info">
+            {% for message in messages.info %}
+                <div>{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         {# erreurs globales du formulaire (ex: mauvais identifiants) #}
         {% if form.non_field_errors %}
