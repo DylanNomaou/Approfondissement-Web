@@ -1,8 +1,9 @@
-from datetime import timezone
 from django import forms
 from .models import User, Task
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
+from django.utils import timezone
+from datetime import date
 
 class UserRegisterForm(forms.ModelForm):
     password = forms.CharField(
@@ -79,70 +80,186 @@ class UserLoginForm(forms.Form):
 
 
 class TaskForm(forms.ModelForm):
+    DURATION_CHOICES = [
+        ('', 'Estimer la durée'),
+        (15, '15 minutes'),
+        (30, '30 minutes'),
+        (60, '1 heure'),
+        (120, '2 heures'),
+        (240, '4 heures'),
+        (480, '8 heures (journée complète)'),
+    ]
+    
+    estimated_duration = forms.ChoiceField(
+        choices=DURATION_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg',
+            'id': 'taskDuration'
+        })
+    )
+    
+    def clean_estimated_duration(self):
+        """Convertir la durée estimée en entier ou None"""
+        duration = self.cleaned_data.get('estimated_duration')
+        if duration == '' or duration is None:
+            return None
+        try:
+            return int(duration)
+        except (ValueError, TypeError):
+            return None
+    
+    assigned_to = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select form-select-lg',
+            'id': 'taskAssignee',
+            'size': '5'
+        }),
+        label="Assigné à"
+    )
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configurer le queryset selon les permissions de l'utilisateur
+        if user:
+            if user.can_distribute_tasks_to_all():
+                # L'utilisateur peut assigner des tâches à tout le monde
+                self.fields['assigned_to'].queryset = User.objects.all()
+            else:
+                # L'utilisateur ne peut assigner des tâches qu'à lui-même
+                self.fields['assigned_to'].queryset = User.objects.filter(id=user.id)
+        else:
+            # Par défaut, si aucun utilisateur n'est fourni
+            self.fields['assigned_to'].queryset = User.objects.all()
+        
+        # Marquer tous les champs comme obligatoires sauf estimated_duration
+        required_fields = ['title', 'priority', 'category', 'description', 'due_date', 'assigned_to']
+        for field_name in required_fields:
+            if field_name in self.fields:
+                self.fields[field_name].required = True
+                # Ajouter une classe CSS pour les champs obligatoires
+                current_classes = self.fields[field_name].widget.attrs.get('class', '')
+                self.fields[field_name].widget.attrs['class'] = current_classes + ' required-field'
+        
+        # Marquer estimated_duration comme optionnel
+        self.fields['estimated_duration'].required = False
+    
     class Meta:
         model = Task
-        fields = ['title', 'priority', 'category', 'description', 'due_date', 'assigned_to']
+        fields = ['title', 'priority', 'category', 'description', 'due_date', 'assigned_to', 'estimated_duration']
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Titre de la tâche'}),
-            'priority': forms.Select(attrs={'class': 'form-select'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Description'}),
-            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'assigned_to': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg', 
+                'placeholder': 'Ex: Vérifier les stocks frigo...',
+                'id': 'taskTitle',
+                'maxlength': '100'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select form-select-lg',
+                'id': 'taskPriority'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select form-select-lg',
+                'id': 'taskCategory'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 4, 
+                'placeholder': 'Décrivez la tâche en détail, les étapes à suivre, les ressources nécessaires...',
+                'id': 'taskDescription',
+                'maxlength': '500'
+            }),
+            'due_date': forms.DateInput(attrs={
+                'class': 'form-control form-control-lg', 
+                'type': 'date',
+                'id': 'taskDueDate'
+            }),
         }
         labels = {
-            'title': "Titre",
+            'title': "Titre de la tâche",
             'priority': "Priorité",
             'category': "Catégorie",
-            'description': "Description",
+            'description': "Description détaillée",
             'due_date': "Date d'échéance",
             'assigned_to': "Assigné à",
+            'estimated_duration': "Durée estimée",
         }
         help_texts = {
             'assigned_to': "Sélectionnez un ou plusieurs utilisateurs.",
         }
         error_messages = {
             'title': {
-                'required': "Le titre est obligatoire.",
-                'max_length': "Le titre ne peut pas dépasser 255 caractères.",
+                'required': "Le titre de la tâche est obligatoire.",
+                'max_length': "Le titre ne peut pas dépasser 100 caractères.",
+            },
+            'priority': {
+                'required': "Veuillez sélectionner une priorité.",
+                'invalid_choice': "Priorité invalide."
+            },
+            'category': {
+                'required': "Veuillez sélectionner une catégorie.",
+                'invalid_choice': "Catégorie invalide."
+            },
+            'description': {
+                'required': "La description est obligatoire.",
+                'max_length': "La description ne peut pas dépasser 500 caractères."
             },
             'due_date': {
-                'invalid': "Entrez une date valide.",
+                'required': "La date d'échéance est obligatoire.",
+                'invalid': "Veuillez entrer une date valide."
             },
+            'assigned_to': {
+                'required': "Veuillez assigner la tâche à au moins un utilisateur.",
+                'invalid_choice': "Utilisateur sélectionné invalide."
+            }
         }
 
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        if not title or title.strip() == '':
+            raise ValidationError("Le titre de la tâche est obligatoire.")
+        if title.isdigit():
+            raise ValidationError("Le titre ne peut pas être composé uniquement de chiffres.")
+        return title.strip()
 
-        def clean(self):
-            cleaned_data = super().clean()
-            title = cleaned_data.get("title")
-            due_date = cleaned_data.get("due_date")
-            assigned_to = cleaned_data.get("assigned_to")
-            category = cleaned_data.get("category")
-            
-            # Vérification du titre
-            if not title:
-                raise ValidationError("Le titre est obligatoire.")
-            if title.isdigit():
-                raise ValidationError("Le titre ne peut pas être composé uniquement de chiffres.")
-            
-            # Vérification de la date d'échéance
-            if not due_date:
-                raise ValidationError("La date d'échéance est obligatoire.")
-            if due_date and due_date < timezone.now().date():
-                raise ValidationError("La date d'échéance ne peut pas être dans le passé.")
-            
-            # Vérification de l'assignation
-            if not assigned_to:
-                raise ValidationError("La tâche doit être assignée à au moins un employé.")
-            
-            # Vérification de la catégorie
-            if not category:
-                raise ValidationError("La catégorie est obligatoire.")
-            
-            return cleaned_data
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if not description or description.strip() == '':
+            raise ValidationError("La description est obligatoire.")
+        return description.strip()
 
-        def save(self, commit=True):
-            task = super().save(commit=False)
-            if commit:
-                task.save()
-            return task
+    def clean_due_date(self):
+        due_date = self.cleaned_data.get('due_date')
+        if not due_date:
+            raise ValidationError("La date d'échéance est obligatoire.")
+        if due_date < date.today():
+            raise ValidationError("La date d'échéance ne peut pas être dans le passé.")
+        return due_date
+
+    def clean_assigned_to(self):
+        assigned_to = self.cleaned_data.get('assigned_to')
+        if not assigned_to or assigned_to.count() == 0:
+            raise ValidationError("La tâche doit être assignée à au moins un utilisateur.")
+        return assigned_to
+
+    def clean_priority(self):
+        priority = self.cleaned_data.get('priority')
+        if not priority:
+            raise ValidationError("Veuillez sélectionner une priorité.")
+        return priority
+
+    def clean_category(self):
+        category = self.cleaned_data.get('category')
+        if not category:
+            raise ValidationError("Veuillez sélectionner une catégorie.")
+        return category
+
+    def save(self, commit=True):
+        task = super().save(commit=False)
+        if commit:
+            task.save()
+        return task

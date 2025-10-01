@@ -1,34 +1,30 @@
-{% extends "restoplus/base.html" %} {% block content %}
+{% extends "restoplus/base.html" %} 
+{% load static %} 
+{% block title %}Dashboard Principal - RestoPLus{% endblock %} 
+{% block content %}
 
-<div class="main-content">
-  <div class="welcome-header">
-    <h1>RestoPLus</h1>
-    <p class="subtitle">Système de Gestion de Restaurant</p>
-  </div>
-
-  <div class="intro-text">
-    <p>
-      Bienvenue sur RestoPLus, votre solution complète pour la gestion de
-      restaurant. Notre système vous aide à gérer efficacement vos employés, vos
-      comptes et vos inventaires.
-    </p>
-  </div>
-  <div class="modules">
-    <div class="module">
-      <h3>Comptes</h3>
-      <p>Gérez les utilisateurs et les permissions</p>
-      <a href="{% url 'admin_dashboard' %}">Accéder</a>
-    </div>
-
-    <div class="footer">
-      <p>© 2025 RestoPLus - Tous droits réservés</p>
-    </div>
-  </div>
-</div>
-{% endblock %} {% extends "restoplus/base.html" %} {% load static %} {% block
-title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
 <section class="dashboard-section">
   <div class="dashboard-container">
+    
+    <!-- Messages Section -->
+    {% if messages %}
+      <div class="container-fluid mb-4">
+        <div class="row">
+          <div class="col-12">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-dismiss-alert" role="alert">
+                <div class="d-flex align-items-center">
+                  <span class="alert-icon me-2"></span>
+                  <span>{{ message }}</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Date et Service Info -->
     <div class="container-fluid mb-4">
       <div class="row">
@@ -39,7 +35,7 @@ title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <h2 class="h4 mb-2 text-primary">
-                  <i class="bi bi-calendar-event me-2"></i>
+                  <span class="calendar-icon me-2"></span>
                   lundi 8 septembre 2025
                 </h2>
                 <p class="text-muted mb-0">
@@ -51,7 +47,7 @@ title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
               </div>
               <div class="text-end">
                 <div class="badge bg-success fs-6 mb-2">
-                  <i class="bi bi-clock me-1"></i>
+                  <span class="clock-icon me-1"></span>
                   Service: 11h30 - 22h00
                 </div>
                 <div class="text-muted small">Ouvert dans 1h06</div>
@@ -71,86 +67,78 @@ title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
             <div class="card-header bg-transparent border-0 p-4 pb-0">
               <div class="d-flex justify-content-between align-items-center">
                 <h3 class="h5 mb-0">
-                  <i class="bi bi-check-circle text-success me-2"></i>
-                  Tâches d'Aujourd'hui
+                  <span class="check-icon text-success me-2"></span>
+                  Mes Tâches
                 </h3>
               </div>
             </div>
             <div class="card-body p-4">
-              <div class="task-list">
-                <!-- Tâche Complétée -->
-                <div
-                  class="task-item d-flex align-items-center mb-3 p-3 bg-light rounded-2"
-                >
-                  <div class="task-checkbox me-3">
-                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                  </div>
-                  <div class="task-content flex-grow-1">
-                    <span class="text-decoration-line-through text-muted"
-                      >Vérifier les stocks frigo</span
-                    >
-                  </div>
+              <div class="task-list-container">
+                <div class="task-list horizontal-scroll {% if user_tasks_today|length > 2 %}scrollable-horizontal{% endif %}">
+                  <!-- Tâches assignées à l'utilisateur connecté -->
+                  {% if user_tasks_today %}
+                    {% for task in user_tasks_today %}
+                      <div class="task-item-horizontal d-flex flex-column justify-content-between p-3 {% if task.is_completed %}task-completed{% else %}task-pending{% endif %} rounded-3 task-clickable" 
+                           data-task-id="{{ task.id }}"
+                           data-task-title="{{ task.title }}"
+                           data-task-description="{{ task.description|default:'' }}"
+                           data-task-category="{{ task.category }}"
+                           data-task-priority="{{ task.priority }}"
+                           data-task-due-date="{% if task.due_date %}{{ task.due_date|date:'d/m/Y' }}{% endif %}"
+                           data-task-duration="{{ task.duration|default:'' }}"
+                           data-task-completed="{{ task.is_completed|yesno:'true,false' }}"
+                           data-task-assigned-users="{% for user in task.assigned_to.all %}{{ user.get_full_name|default:user.username }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                           style="cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div class="task-content-horizontal flex-grow-1 mb-2">
+                          <div class="d-flex align-items-center justify-content-between mb-2">
+                            {% if task.is_completed %}
+                              <span class="task-completed-icon text-success fs-5"></span>
+                            {% else %}
+                              <div class="priority-indicator priority-{{ task.priority|lower }}"></div>
+                            {% endif %}
+                            <div class="task-actions-horizontal">
+                              <span class="view-icon text-muted"></span>
+                            </div>
+                          </div>
+                          <h6 class="task-title-horizontal mb-2 {% if task.is_completed %}text-decoration-line-through text-muted{% else %}text-dark{% endif %}">
+                            {{ task.title|truncatechars:30 }}
+                          </h6>
+                          {% if task.is_completed %}
+                            <span class="badge bg-success small">
+                              <span class="check-small me-1"></span>Terminé
+                            </span>
+                          {% else %}
+                            <small class="text-muted">{{ task.category }}</small>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    <!-- Aucune tâche - affichage par défaut -->
+                    <div class="task-item-horizontal d-flex flex-column justify-content-center align-items-center p-4 bg-light rounded-3">
+                      <span class="no-task-icon text-success fs-1 mb-2"></span>
+                      <span class="text-muted text-center">Aucune tâche assignée</span>
+                    </div>
+                  {% endif %}
                 </div>
-
-                <!-- Tâches En Cours -->
-                <div
-                  class="task-item d-flex align-items-center mb-3 p-3 border border-warning rounded-2 bg-warning-subtle"
-                >
-                  <div class="task-checkbox me-3">
-                    <i class="bi bi-circle text-warning fs-5"></i>
+                
+                <!-- Indicateur de scroll si plus de 2 tâches -->
+                {% if user_tasks_today|length > 2 %}
+                  <div class="scroll-indicator-horizontal mt-3 text-center">
+                    <small class="text-muted">
+                      <span class="arrow-icon"></span>
+                      {{ user_tasks_today|length }} tâches - Glissez pour naviguer
+                      <span class="arrow-icon"></span>
+                    </small>
                   </div>
-                  <div class="task-content flex-grow-1">
-                    <span class="text-warning-emphasis"
-                      >Préparer la commande légumes</span
-                    >
-                  </div>
-                </div>
-
-                <div
-                  class="task-item d-flex align-items-center mb-3 p-3 border border-warning rounded-2 bg-warning-subtle"
-                >
-                  <div class="task-checkbox me-3">
-                    <i class="bi bi-circle text-warning fs-5"></i>
-                  </div>
-                  <div class="task-content flex-grow-1">
-                    <span class="text-warning-emphasis"
-                      >Confirmer réservation 19h</span
-                    >
-                  </div>
-                </div>
-
-                <div
-                  class="task-item d-flex align-items-center mb-3 p-3 border border-warning rounded-2 bg-warning-subtle"
-                >
-                  <div class="task-checkbox me-3">
-                    <i class="bi bi-circle text-warning fs-5"></i>
-                  </div>
-                  <div class="task-content flex-grow-1">
-                    <span class="text-warning-emphasis"
-                      >Formation nouveau serveur</span
-                    >
-                  </div>
-                </div>
-
-                <!-- Tâche Complétée -->
-                <div
-                  class="task-item d-flex align-items-center mb-3 p-3 bg-light rounded-2"
-                >
-                  <div class="task-checkbox me-3">
-                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                  </div>
-                  <div class="task-content flex-grow-1">
-                    <span class="text-decoration-line-through text-muted"
-                      >Nettoyer équipement cuisine</span
-                    >
-                  </div>
-                </div>
+                {% endif %}
               </div>
 
               <!-- Bouton Ajouter Tâche -->
               <div class="text-center mt-4">
-                <button class="btn btn-dark btn-lg px-4">
-                  <i class="bi bi-plus-circle me-2"></i>
+                <button class="btn btn-dark btn-lg px-4" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                  <span class="plus-icon me-2"></span>
                   Ajouter une tâche
                 </button>
               </div>
@@ -163,7 +151,7 @@ title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
           <div class="dashboard-card bg-white rounded-3 shadow-sm h-100">
             <div class="card-header bg-transparent border-0 p-4 pb-0">
               <h3 class="h5 mb-0">
-                <i class="bi bi-bell text-primary me-2"></i>
+                <span class="bell-icon text-primary me-2"></span>
                 Notifications
               </h3>
             </div>
@@ -173,9 +161,7 @@ title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
                 class="notification-item border-start border-warning border-4 ps-3 mb-4"
               >
                 <div class="d-flex align-items-start">
-                  <i
-                    class="bi bi-exclamation-triangle text-warning me-2 mt-1"
-                  ></i>
+                  <span class="warning-icon text-warning me-2 mt-1"></span>
                   <div>
                     <h6 class="mb-1 text-warning">Stock faible</h6>
                     <p class="small text-muted mb-0">Tomates (3 kg restants)</p>
@@ -263,5 +249,26 @@ title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
 
 <!-- Modal pour Ajouter une Tâche -->
 {% include "restoplus/partials/task_modal.html" %}
+
+<!-- Modal pour Détails de Tâche -->
+{% include "restoplus/partials/task_details_modal.html" %}
+
+<!-- Bouton de test temporaire -->
+<button id="testModalBtn" class="btn btn-warning position-fixed" style="bottom: 20px; right: 20px; z-index: 1000;">
+    Test Modal
+</button>
+
+<!-- Inclusion du fichier JavaScript principal -->
+<script src="{% static 'restoplus/js/script.js' %}"></script>
+
+<script>
+// Test simple pour le modal
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('testModalBtn').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+        modal.show();
+    });
+});
+</script>
 
 {% endblock %}

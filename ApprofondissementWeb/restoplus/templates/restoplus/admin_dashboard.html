@@ -1,147 +1,410 @@
-{%extends "restoplus/base.html" %} {%block content%}
-<div class="container-fluid">
-  <h1>Gestions des Rôles</h1>
-  <p>Gérez les permissions de l'équipes</p>
-</div>
+{% extends "restoplus/base.html" %}
+{% load static %}
+{% block title %}Gestion des Rôles - RestoPlus{% endblock %}
+{% block content %}
 
-
-<div class="card mb-4">
-  <div class="card-header">
-    <h5>Listes des utilisateurs</h5>
+<div class="admin-dashboard">
+  <!-- Header Section -->
+  <div class="admin-dashboard__header">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h1><i class="bi bi-shield-check me-3"></i>Gestion des Rôles</h1>
+          <p>Gérez les permissions et les accès de votre équipe</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{% url 'accueil' %}">Accueil</a></li>
+              <li class="breadcrumb-item">Administration</li>
+              <li class="breadcrumb-item active">Gestion des Rôles</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th>Utilisateur</th>
-          <th>Courriel</th>
-          <th>Rôle actuel</th>
-          <th>Statut</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {%for user in users%}
-        <tr>
-          <td>{{user.get_full_name|default:user.username}}</td>
-          <td>{{user.email|default:"non défini"}}</td>
-          <td>
-            {%if user.role%}
-            <span class="badge bg-primary">{{user.role.get_name_display}}</span>
-            {%else%}
-            <span class="badge bg-secondary">Aucun rôle</span>
-            {%endif%}
-          </td>
-          <td>
-            {% if user.is_active %}
-            <span class="badge bg-success">Actif</span>
-            {%else%}
-            <span class="badge bg-danger">Inactif</span>
-            {%endif%}
-          </td>
-          <td>
-            <form
-              method="POST"
-              action="{% url 'manage_user_role' user.id %}"
-              class="d-inline"
-            >
-              {% csrf_token %}
-              <select
-                name="role_id"
-                class="form-select form-select-sm"
-                onchange="this.form.submit()"
-              >
-                <option value="">Aucun rôle</option>
-                {% for role in roles%}
-                    <option value="{{role.id}}"
-                        {%if user.role and user.role.id == role.id%}selected{% endif %}>
-                        {{role.get_name_display}}
-                    </option>
-                {%endfor%}
-              </select>
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td class="text-center"> Aucun utilisateur</td>
-        </tr>
 
-        {%endfor%}
-      </tbody>
-    </table>
-  </div>
-</div>
+  <div class="container-fluid">
+    <!-- Messages Section -->
+    {% if messages %}
+      <div class="row mb-4">
+        <div class="col-12">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-dismiss-alert" role="alert">
+              <div class="d-flex align-items-center">
+                {% if message.tags == 'success' %}
+                  <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                {% elif message.tags == 'error' %}
+                  <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                {% elif message.tags == 'warning' %}
+                  <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                {% else %}
+                  <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                {% endif %}
+                <span>{{ message }}</span>
+              </div>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
 
-<div class="card">
-    <div class="card-header">
-        <h5>Créer un Nouveau Rôle</h5>
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Utilisateurs</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users_count }}</div>
+              </div>
+              <div class="col-auto">
+                <i class="bi bi-people fs-2 text-primary"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Utilisateurs Actifs</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_users_count }}</div>
+              </div>
+              <div class="col-auto">
+                <i class="bi bi-person-check fs-2 text-success"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Rôles Disponibles</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ roles|length }}</div>
+              </div>
+              <div class="col-auto">
+                <i class="bi bi-gear fs-2 text-info"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Sans Rôle</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ users_without_role_count }}</div>
+              </div>
+              <div class="col-auto">
+                <i class="bi bi-person-x fs-2 text-warning"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="card-body">
-        <form method="post" action="{% url 'create_role'%}">
-            {% csrf_token %}
+    <!-- Role Management Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-dashboard__card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="bi bi-gear me-2"></i>Gestion des Rôles</h5>
+            <div class="card-tools">
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoleModal">
+                <i class="bi bi-plus-circle me-2"></i>Créer un Nouveau Rôle
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
             <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Type de rôle:</label>
-                        <select name="name" class="form-select">
-                            <option value="">Choisir un rôle</option>
-                            <option value="proprietaire">Propriétaire</option>
-                            <option value="gerant">Gérant</option>
-                            <option value="employe">Employé</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description:</label>
-                        <textarea name="description" class="form-control" rows="3"></textarea>
-                    </div>
-                </div>
+              <div class="col-md-12">
+                <p class="text-muted mb-0">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Créez et gérez les rôles personnalisés pour votre équipe. Chaque rôle peut avoir des permissions spécifiques.
+                </p>
+              </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Permissions:</label>
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="can_manage_users" id="manage_users">
-                            <label class="form-check-label" for="manage_users">
-                                Gérer les utilisateurs
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="can_view_reports" id="view_reports">
-                            <label class="form-check-label" for="view_reports">
-                                Voirs les rapports
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="can_manage_inventory" id="manage_inventory">
-                            <label class="form-check-label" for="manage_inventory">
-                                Gérer l'inventaire
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="can_manage_orders" id="manage_orders">
-                            <label class="form-check-label" for="manage_orders">
-                                Gérer les commandes
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary">
-                Créer le Rôle
-            </button>
-        </form>
-        <button class="text-end mb-3"> <a href="/" class="btn btn-primary"> Retour</a></button>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Users Management Card -->
+    <div class="admin-dashboard__card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="bi bi-people me-2"></i>Liste des Utilisateurs</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if users %}
+        <div class="table-responsive">
+          <table class="table admin-dashboard__table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Rôle Actuel</th>
+                <th>Statut</th>
+                <th>Dernière Connexion</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users %}
+              <tr>
+                <td>
+                  <div class="user-info">
+                    <div class="user-avatar">
+                      {{ user.first_name|first|default:user.username|first }}{{ user.last_name|first|default:"" }}
+                    </div>
+                    <div class="user-details">
+                      <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                      <div class="user-email">{{ user.email|default:"Email non défini" }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {% if user.role %}
+                    <span class="badge admin-dashboard__badge--{{ user.role.name|lower|slugify }}">
+                      {{ user.role.name }}
+                    </span>
+                  {% else %}
+                    <span class="badge admin-dashboard__badge--no-role">Aucun rôle</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if user.is_active %}
+                    <span class="badge admin-dashboard__badge--active">
+                      <i class="bi bi-check-circle me-1"></i>Actif
+                    </span>
+                  {% else %}
+                    <span class="badge admin-dashboard__badge--inactive">
+                      <i class="bi bi-x-circle me-1"></i>Inactif
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <small class="text-muted">
+                    {% if user.last_login %}
+                      {{ user.last_login|date:"d/m/Y H:i" }}
+                    {% else %}
+                      Jamais connecté
+                    {% endif %}
+                  </small>
+                </td>
+                <td>
+                  <div class="admin-dashboard__role-selector">
+                    <form method="POST" action="{% url 'manage_user_role' user.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <select name="role_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Aucun rôle</option>
+                        {% for role in roles %}
+                          <option value="{{ role.id }}" {% if user.role and user.role.id == role.id %}selected{% endif %}>
+                            {{ role.name }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="admin-dashboard__empty-state">
+          <div class="empty-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h5>Aucun utilisateur trouvé</h5>
+          <p>Il n'y a actuellement aucun utilisateur dans le système.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
-{%endblock%}
+
+<!-- Modal for Creating Role -->
+<div class="modal fade" id="createRoleModal" tabindex="-1" aria-labelledby="createRoleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="createRoleModalLabel">
+          <i class="bi bi-plus-circle me-2"></i>Créer un Nouveau Rôle
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'create_role' %}" class="admin-dashboard__form">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-section">
+            <h6><i class="bi bi-info-circle me-2"></i>Informations du Rôle</h6>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="name" class="form-label">Titre du rôle *</label>
+                  <input type="text" name="name" id="name" class="form-control" required placeholder="Ex: Manager, Chef de cuisine, Serveur...">
+                  <div class="form-text">Saisissez un nom personnalisé pour ce rôle</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="description" class="form-label">Description</label>
+                  <textarea name="description" id="description" class="form-control" rows="3" placeholder="Décrivez les responsabilités de ce rôle..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h6><i class="bi bi-shield-check me-2"></i>Permissions</h6>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="can_manage_users" id="manage_users">
+                  <label class="form-check-label" for="manage_users">
+                    <i class="bi bi-people me-2"></i>Gérer les utilisateurs
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="can_view_reports" id="view_reports">
+                  <label class="form-check-label" for="view_reports">
+                    <i class="bi bi-graph-up me-2"></i>Voir les rapports
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="can_manage_inventory" id="manage_inventory">
+                  <label class="form-check-label" for="manage_inventory">
+                    <i class="bi bi-boxes me-2"></i>Gérer l'inventaire
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="can_manage_orders" id="manage_orders">
+                  <label class="form-check-label" for="manage_orders">
+                    <i class="bi bi-cart me-2"></i>Gérer les commandes
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="can_distribute_tasks" id="distribute_tasks">
+                  <label class="form-check-label" for="distribute_tasks">
+                    <i class="bi bi-share me-2"></i>Peut distribuer des tâches à tous
+                  </label>
+                  <div class="form-text">Permet d'assigner des tâches à n'importe quel utilisateur, sinon l'utilisateur ne peut s'assigner des tâches qu'à lui-même</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="admin-dashboard__actions">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-1"></i>Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i>Créer le Rôle
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript pour auto-fermeture des messages -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sélectionner tous les messages avec la classe auto-dismiss-alert
+    const alerts = document.querySelectorAll('.auto-dismiss-alert');
+    
+    alerts.forEach(function(alert) {
+        // Ajouter une barre de progression visuelle
+        const progressBar = document.createElement('div');
+        progressBar.className = 'alert-progress-bar';
+        progressBar.style.cssText = `
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background-color: rgba(255, 255, 255, 0.8);
+            width: 100%;
+            transform-origin: left;
+            animation: progressBarShrink 3s linear forwards;
+        `;
+        
+        // Positionner l'alerte en relatif pour la barre de progression
+        alert.style.position = 'relative';
+        alert.style.overflow = 'hidden';
+        alert.appendChild(progressBar);
+        
+        // Auto-fermeture après 3 secondes
+        setTimeout(function() {
+            // Utiliser Bootstrap pour fermer l'alerte avec animation
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 3000);
+    });
+});
+</script>
+
+<!-- CSS pour l'animation de la barre de progression -->
+<style>
+@keyframes progressBarShrink {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+.auto-dismiss-alert {
+    animation: slideInDown 0.5s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Amélioration de l'apparence des messages */
+.auto-dismiss-alert {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 0.75rem;
+    border: none;
+}
+
+.auto-dismiss-alert:hover .alert-progress-bar {
+    animation-play-state: paused;
+}
+</style>
+
+{% endblock %}
