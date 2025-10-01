@@ -1,61 +1,263 @@
-{% extends "restoplus/base.html" %}
-{% block content %}
-<div class="sidebar">
-    <div class="sidebar-header">
-        <h1> <a href="/">RestoPlus</a></h1>
-    </div>
-    <ul class="sidebar-menu">
-        <li>
-            <a href="/admin" class="active">
-                <div class="menu-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                        class="bi bi-person-fill-gear" viewBox="0 0 16 16">
-                        <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-9 8c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6
-                             4m9.886-3.54c.18-.613 1.048-.613 1.229 0l.043.148a.64.64 0 0 0 .921.382l.136-.074c.561-.306 1.175.308.87.869l-.075.136a.64.64 0 0 0
-                             .382.92l.149.045c.612.18.612 1.048 0 1.229l-.15.043a.64.64 0 0 0-.38.921l.074.136c.305.561-.309 1.175-.87.87l-.136-.075a.64.64 0 0
-                              0-.92.382l-.045.149c-.18.612-1.048.612-1.229 0l-.043-.15a.64.64 0 0 0-.921-.38l-.136.074c-.561.305-1.175-.309-.87-.87l.075-.136a.64.64
-                              0 0 0-.382-.92l-.148-.045c-.613-.18-.613-1.048 0-1.229l.148-.043a.64.64 0 0 0 .382-.921l-.074-.136c-.306-.561.308-1.175.869-.87l.136.075a.64.64
-                              0 0 0 .92-.382zM14 12.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0" />
-                    </svg>
-                </div>
-                Admin
-            </a>
-        </li>
-        <li>
-            <a href="/">
-                <div class="menu-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                    </svg>
-                </div>
-                Compte
-            </a>
-        </li>
-    </ul>
-</div>
+{% extends "restoplus/base.html" %} {% block content %}
 
 <div class="main-content">
-    <div class="welcome-header">
-        <h1>RestoPLus</h1>
-        <p class="subtitle">Système de Gestion de Restaurant</p>
+  <div class="welcome-header">
+    <h1>RestoPLus</h1>
+    <p class="subtitle">Système de Gestion de Restaurant</p>
+  </div>
+
+  <div class="intro-text">
+    <p>
+      Bienvenue sur RestoPLus, votre solution complète pour la gestion de
+      restaurant. Notre système vous aide à gérer efficacement vos employés, vos
+      comptes et vos inventaires.
+    </p>
+  </div>
+  <div class="modules">
+    <div class="module">
+      <h3>Comptes</h3>
+      <p>Gérez les utilisateurs et les permissions</p>
+      <a href="{% url 'admin_dashboard' %}">Accéder</a>
     </div>
 
-    <div class="intro-text">
-        <p>
-            Bienvenue sur RestoPLus, votre solution complète pour la gestion de restaurant.
-            Notre système vous aide à gérer efficacement vos employés, vos comptes et vos inventaires.
-        </p>
+    <div class="footer">
+      <p>© 2025 RestoPLus - Tous droits réservés</p>
     </div>
-    <div class="modules">
-        <div class="module">
-            <h3>Comptes</h3>
-            <p>Gérez les utilisateurs et les permissions</p>
-            <a href="/">Accéder</a>
+  </div>
+</div>
+{% endblock %} {% extends "restoplus/base.html" %} {% load static %} {% block
+title %}Dashboard Principal - RestoPLus{% endblock %} {% block content %}
+<section class="dashboard-section">
+  <div class="dashboard-container">
+    <!-- Date et Service Info -->
+    <div class="container-fluid mb-4">
+      <div class="row">
+        <div class="col-12">
+          <div
+            class="date-service-card bg-white rounded-3 shadow-sm p-4 border-start border-primary border-4"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h2 class="h4 mb-2 text-primary">
+                  <i class="bi bi-calendar-event me-2"></i>
+                  lundi 8 septembre 2025
+                </h2>
+                <p class="text-muted mb-0">
+                  Il est actuellement
+                  <span id="current-detailed-time" class="fw-semibold text-dark"
+                    >10:24</span
+                  >
+                </p>
+              </div>
+              <div class="text-end">
+                <div class="badge bg-success fs-6 mb-2">
+                  <i class="bi bi-clock me-1"></i>
+                  Service: 11h30 - 22h00
+                </div>
+                <div class="text-muted small">Ouvert dans 1h06</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="container-fluid">
+      <div class="row">
+        <!-- Tâches d'Aujourd'hui -->
+        <div class="col-lg-8 mb-4">
+          <div class="dashboard-card bg-white rounded-3 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 p-4 pb-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">
+                  <i class="bi bi-check-circle text-success me-2"></i>
+                  Tâches d'Aujourd'hui
+                </h3>
+              </div>
+            </div>
+            <div class="card-body p-4">
+              <div class="task-list">
+                <!-- Tâche Complétée -->
+                <div
+                  class="task-item d-flex align-items-center mb-3 p-3 bg-light rounded-2"
+                >
+                  <div class="task-checkbox me-3">
+                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  </div>
+                  <div class="task-content flex-grow-1">
+                    <span class="text-decoration-line-through text-muted"
+                      >Vérifier les stocks frigo</span
+                    >
+                  </div>
+                </div>
+
+                <!-- Tâches En Cours -->
+                <div
+                  class="task-item d-flex align-items-center mb-3 p-3 border border-warning rounded-2 bg-warning-subtle"
+                >
+                  <div class="task-checkbox me-3">
+                    <i class="bi bi-circle text-warning fs-5"></i>
+                  </div>
+                  <div class="task-content flex-grow-1">
+                    <span class="text-warning-emphasis"
+                      >Préparer la commande légumes</span
+                    >
+                  </div>
+                </div>
+
+                <div
+                  class="task-item d-flex align-items-center mb-3 p-3 border border-warning rounded-2 bg-warning-subtle"
+                >
+                  <div class="task-checkbox me-3">
+                    <i class="bi bi-circle text-warning fs-5"></i>
+                  </div>
+                  <div class="task-content flex-grow-1">
+                    <span class="text-warning-emphasis"
+                      >Confirmer réservation 19h</span
+                    >
+                  </div>
+                </div>
+
+                <div
+                  class="task-item d-flex align-items-center mb-3 p-3 border border-warning rounded-2 bg-warning-subtle"
+                >
+                  <div class="task-checkbox me-3">
+                    <i class="bi bi-circle text-warning fs-5"></i>
+                  </div>
+                  <div class="task-content flex-grow-1">
+                    <span class="text-warning-emphasis"
+                      >Formation nouveau serveur</span
+                    >
+                  </div>
+                </div>
+
+                <!-- Tâche Complétée -->
+                <div
+                  class="task-item d-flex align-items-center mb-3 p-3 bg-light rounded-2"
+                >
+                  <div class="task-checkbox me-3">
+                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  </div>
+                  <div class="task-content flex-grow-1">
+                    <span class="text-decoration-line-through text-muted"
+                      >Nettoyer équipement cuisine</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bouton Ajouter Tâche -->
+              <div class="text-center mt-4">
+                <button class="btn btn-dark btn-lg px-4">
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Ajouter une tâche
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="footer">
-            <p>© 2025 RestoPLus - Tous droits réservés</p>
+        <!-- Notifications -->
+        <div class="col-lg-4 mb-4">
+          <div class="dashboard-card bg-white rounded-3 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 p-4 pb-0">
+              <h3 class="h5 mb-0">
+                <i class="bi bi-bell text-primary me-2"></i>
+                Notifications
+              </h3>
+            </div>
+            <div class="card-body p-4">
+              <!-- Stock faible -->
+              <div
+                class="notification-item border-start border-warning border-4 ps-3 mb-4"
+              >
+                <div class="d-flex align-items-start">
+                  <i
+                    class="bi bi-exclamation-triangle text-warning me-2 mt-1"
+                  ></i>
+                  <div>
+                    <h6 class="mb-1 text-warning">Stock faible</h6>
+                    <p class="small text-muted mb-0">Tomates (3 kg restants)</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Réservation -->
+              <div
+                class="notification-item border-start border-info border-4 ps-3 mb-4"
+              >
+                <div class="d-flex align-items-start">
+                  <i class="bi bi-calendar-check text-info me-2 mt-1"></i>
+                  <div>
+                    <h6 class="mb-1 text-info">Réservation</h6>
+                    <p class="small text-muted mb-0">
+                      Table 6 - 19h30 (4 pers.)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Livraison -->
+              <div
+                class="notification-item border-start border-success border-4 ps-3 mb-0"
+              >
+                <div class="d-flex align-items-start">
+                  <i class="bi bi-truck text-success me-2 mt-1"></i>
+                  <div>
+                    <h6 class="mb-1 text-success">Livraison reçue</h6>
+                    <p class="small text-muted mb-0">Produits frais - 14h30</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Actions Rapides -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="dashboard-card bg-white rounded-3 shadow-sm">
+            <div class="card-header bg-transparent border-0 p-4 pb-0">
+              <h3 class="h5 mb-0">Actions Rapides</h3>
+            </div>
+            <div class="card-body p-4">
+              <div class="row g-3">
+                <div class="col-md-3 col-6">
+                  <button class="btn btn-outline-primary w-100 py-3 action-btn">
+                    <i class="bi bi-cart-plus d-block fs-4 mb-2"></i>
+                    <span class="small">Nouvelle Vente</span>
+                  </button>
+                </div>
+                <div class="col-md-3 col-6">
+                  <button
+                    class="btn btn-outline-secondary w-100 py-3 action-btn"
+                  >
+                    <i class="bi bi-people d-block fs-4 mb-2"></i>
+                    <span class="small">Gérer Équipe</span>
+                  </button>
+                </div>
+                <div class="col-md-3 col-6">
+                  <button class="btn btn-outline-info w-100 py-3 action-btn">
+                    <i class="bi bi-box-seam d-block fs-4 mb-2"></i>
+                    <span class="small">Vérifier Stock</span>
+                  </button>
+                </div>
+                <div class="col-md-3 col-6">
+                  <button class="btn btn-outline-success w-100 py-3 action-btn">
+                    <i
+                      class="bi bi-file-earmark-bar-graph d-block fs-4 mb-2"
+                    ></i>
+                    <span class="small">Voir Rapport</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    {% endblock %}
+  </div>
+</section>
+{% endblock %}

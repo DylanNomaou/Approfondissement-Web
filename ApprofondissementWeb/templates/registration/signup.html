@@ -1,0 +1,36 @@
+{% extends "restoplus/base.html" %}
+{% block content %}
+
+<div class="main-content d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="card shadow p-4" style="width: 350px;">
+        <div class="card-header text-center bg-light">
+            <h4 class="mb-0">Création d'un utilisateur'</h4>
+        </div>
+        <form method="post" action="{% url 'signup' %}" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <div>{{ form.username.label_tag }}</div>
+                <div>{{ form.username }}</div>
+                <div class="text-danger small">{{ form.username.errors }}</div>
+            </div>
+            <div class="mb-3">
+                <div>{{ form.password.label_tag }}</div>
+                <div>{{ form.password }}</div>
+                <div class="text-danger small">{{ form.password.errors }}</div>
+            </div>
+            <div class="mb-3">
+                {{ form.password_confirmation.label_tag }}
+                {{ form.password_confirmation }}
+                <div class="text-danger small">{{ form.password_confirmation.errors }}</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Créer le compte</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="{% url 'login' %}">Déjà un compte?</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

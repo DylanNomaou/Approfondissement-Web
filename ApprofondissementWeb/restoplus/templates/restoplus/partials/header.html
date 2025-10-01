@@ -1,0 +1,41 @@
+{% load static %}
+
+<header class="main-header bg-white shadow-sm sticky-top">
+    <div class="container-fluid">
+        <div class="row align-items-center py-3">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-secondary d-md-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="h4 mb-0 text-primary fw-bold">Système de Gestion Restaurant</h1>
+                    <span class="badge bg-primary ms-3 animate__animated animate__pulse animate__infinite">Dashboard Principal</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end align-items-center">
+                    <div class="me-4">
+                        <i class="bi bi-clock text-muted me-2"></i>
+                        <span class="text-muted" id="current-time"></span>
+                        <div class="small text-success">
+                            <i class="bi bi-circle-fill me-1"></i>
+                            Service: 11h30 - 22h00
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Marc Leblanc
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profil</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Paramètres</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Déconnexion</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
