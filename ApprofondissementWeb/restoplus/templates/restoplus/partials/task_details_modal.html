@@ -1,0 +1,175 @@
+{% load static %}
+
+<!-- Modal de Détails de Tâche -->
+<div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <!-- En-tête -->
+            <div class="modal-header bg-primary text-white">
+                <h4 class="modal-title" id="taskDetailsModalLabel">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Détails de la tâche
+                </h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Corps du modal -->
+            <div class="modal-body p-4">
+                <!-- Titre de la tâche -->
+                <div class="mb-4 text-center">
+                    <h2 id="taskDetailTitle" class="text-primary mb-2 display-6">
+                        Titre de la tâche
+                    </h2>
+                    <hr class="w-50 mx-auto">
+                </div>
+                
+                <!-- Informations principales -->
+                <div class="row mb-4">
+                    <!-- Statut -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body text-center">
+                                <label class="form-label fw-bold text-muted mb-2">STATUT</label>
+                                <div>
+                                    <span id="taskDetailStatus" class="badge bg-primary fs-6 px-3 py-2">En cours</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Priorité -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body text-center">
+                                <label class="form-label fw-bold text-muted mb-2">PRIORITÉ</label>
+                                <div>
+                                    <span id="taskDetailPriority" class="fs-5 fw-bold">Non définie</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Catégorie -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body text-center">
+                                <label class="form-label fw-bold text-muted mb-2">CATÉGORIE</label>
+                                <div>
+                                    <span id="taskDetailCategory" class="badge bg-secondary fs-6 px-3 py-2">Non définie</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dates et durée -->
+                <div class="row mb-4">
+                    <!-- Date d'échéance -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body">
+                                <label class="form-label fw-bold text-muted mb-2">
+                                    <i class="bi bi-calendar-event me-1"></i>DATE D'ÉCHÉANCE
+                                </label>
+                                <div>
+                                    <span id="taskDetailDueDate" class="fs-5">Non définie</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Durée estimée -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body">
+                                <label class="form-label fw-bold text-muted mb-2">
+                                    <i class="bi bi-clock me-1"></i>DURÉE ESTIMÉE
+                                </label>
+                                <div>
+                                    <span id="taskDetailDuration" class="fs-5">Non définie</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="mb-4">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <label class="form-label fw-bold text-muted mb-3">
+                                <i class="bi bi-file-text me-1"></i>DESCRIPTION
+                            </label>
+                            <p id="taskDetailDescription" class="fs-5 mb-0 text-dark">
+                                Aucune description
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Utilisateurs assignés -->
+                <div class="mb-4">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <label class="form-label fw-bold text-muted mb-3">
+                                <i class="bi bi-people me-1"></i>ASSIGNÉ À
+                            </label>
+                            <div id="taskDetailAssignedUsers">
+                                <!-- Les badges des utilisateurs seront ajoutés ici -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informations de création -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body">
+                                <small class="text-muted fw-bold">
+                                    <i class="bi bi-calendar-plus me-1"></i>CRÉÉ LE
+                                </small>
+                                <div class="mt-1">
+                                    <span id="taskDetailCreatedAt" class="fs-6 text-dark">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light h-100">
+                            <div class="card-body">
+                                <small class="text-muted fw-bold">
+                                    <i class="bi bi-person me-1"></i>CRÉÉ PAR
+                                </small>
+                                <div class="mt-1">
+                                    <span id="taskDetailCreatedBy" class="fs-6 text-dark">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pied du modal avec actions -->
+            <div class="modal-footer bg-light p-4">
+                <!-- Formulaire pour changer le statut -->
+                <form id="taskStatusForm" action="{% url 'toggle_task_status' %}" method="post" class="d-flex gap-3 w-100">
+                    {% csrf_token %}
+                    <input type="hidden" name="task_id" id="taskDetailId" value="">
+                    <input type="hidden" name="current_status" id="taskDetailCurrentStatus" value="">
+                    
+                    <!-- Bouton Fermer -->
+                    <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Fermer
+                    </button>
+                    
+                    <!-- Bouton Toggle Statut -->
+                    <button type="submit" id="toggleStatusBtn" class="btn btn-success btn-lg flex-fill">
+                        <i class="bi bi-check-circle me-2"></i>Marquer comme terminé
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

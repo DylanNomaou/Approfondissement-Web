@@ -217,3 +217,35 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('mousedown', function() {
     document.body.classList.remove('keyboard-navigation');
 });
+
+// ===========================
+// TASK DETAILS MODAL FUNCTION
+// ===========================
+
+// Fonction pour ouvrir le modal de détails d'une tâche
+function openTaskDetailsModal(taskData) {
+    console.log('Opening task details:', taskData);
+    
+    // Remplir les données dans le modal
+    document.getElementById('taskDetailTitle').textContent = taskData.title || 'Sans titre';
+    document.getElementById('taskDetailDescription').textContent = taskData.description || 'Aucune description';
+    document.getElementById('taskDetailCategory').textContent = taskData.category || 'Non définie';
+    document.getElementById('taskDetailPriority').textContent = taskData.priority || 'Non définie';
+    document.getElementById('taskDetailDueDate').textContent = taskData.due_date || 'Aucune';
+    document.getElementById('taskDetailDuration').textContent = taskData.duration || 'Non estimée';
+    document.getElementById('taskDetailAssignedUsers').textContent = taskData.assigned_users.join(', ') || 'Aucun';
+    
+    // Gérer le statut
+    const statusElement = document.getElementById('taskDetailStatus');
+    if (taskData.is_completed) {
+        statusElement.textContent = 'Terminée';
+        statusElement.className = 'badge bg-success';
+    } else {
+        statusElement.textContent = 'En cours';
+        statusElement.className = 'badge bg-warning';
+    }
+    
+    // Ouvrir le modal
+    const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+    modal.show();
+}

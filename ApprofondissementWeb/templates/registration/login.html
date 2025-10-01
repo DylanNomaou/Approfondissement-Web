@@ -1,41 +1,80 @@
-{% extends "restoplus/base.html" %}
+{% extends "registration/base_auth.html" %}
+
+{% block title %}Connexion - RestoPLus{% endblock %}
+
 {% block content %}
 
-<div class="main-content d-flex justify-content-center align-items-center" style="min-height: 100vh;">
-    <div class="card shadow p-4" style="width: 350px;">
-        <div class="card-header text-center bg-light">
-            <h4 class="mb-0">Connexion</h4>
-        </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-circle me-2"></i>
+                        RestoPLus
+                    </h3>
+                    <p class="mb-0 mt-2 opacity-75">Système de Gestion de Restaurant</p>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages.info %}
+                    <div class="alert alert-info">
+                        {% for message in messages.info %}
+                            <div>{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
-        {# erreurs globales du formulaire (ex: mauvais identifiants) #}
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-            {% for error in form.non_field_errors %}
-                <div>{{ error }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
+                    {# erreurs globales du formulaire (ex: mauvais identifiants) #}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
-        <form method="post" action="{% url 'login' %}" novalidate>
-            {% csrf_token %}
+                    <form method="post" action="{% url 'login' %}" novalidate>
+                        {% csrf_token %}
 
-            <div class="mb-3">
-                <div>{{ form.username.label_tag }}</div>
-                <div>{{ form.username }}</div>
-                <div class="text-danger small">{{ form.username.errors }}</div>
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-person me-1"></i>
+                                {{ form.username.label }}
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1"></i>
+                                {{ form.password.label }}
+                            </label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                <div class="text-danger small mt-1">{{ form.password.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Se connecter
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-0">Pas encore de compte ?</p>
+                        <a href="{% url 'signup' %}" class="btn btn-outline-primary mt-2">
+                            <i class="bi bi-person-plus me-2"></i>
+                            Créer un compte
+                        </a>
+                    </div>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <div>{{ form.password.label_tag }}</div>
-                <div>{{ form.password }}</div>
-                <div class="text-danger small">{{ form.password.errors }}</div>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">Se connecter</button>
-        </form>
-
-        <div class="text-center mt-3">
-            <a href="{% url 'signup' %}">Créer un nouveau compte</a>
         </div>
     </div>
 </div>
