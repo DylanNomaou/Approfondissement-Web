@@ -11,8 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
-from django.conf.urls.static import static
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,11 +22,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-dy3$n2w_on5961#j2&!5l2qgu9zl=sk31c)a8!%zg5$vm&=ha!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# En développement local, DEBUG sera True
+# En production (PythonAnywhere), DEBUG sera False
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '127.0.0.1', 
+    'localhost',
+    'www.hasanaldulaimi.com',
+    'hasanaldulaimi.com',
+    'hasansyria15.pythonanywhere.com',
+]
 
-
+# Configuration CSRF pour les domaines autorisés
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.hasanaldulaimi.com',
+    'https://hasanaldulaimi.com',
+    'https://hasansyria15.pythonanywhere.com',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -51,13 +64,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Ajouter WhiteNoise seulement en production
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+ 
 ROOT_URLCONF = 'ApprofondissementWeb.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR/'templates',
+            BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -69,7 +86,7 @@ TEMPLATES = [
         },
     },
 ]
-
+ 
 WSGI_APPLICATION = 'ApprofondissementWeb.wsgi.application'
 
 
@@ -101,8 +118,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -119,17 +134,43 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'restoplus' / 'static']
+STATIC_ROOT = BASE_DIR.parent / 'staticfiles'
 
 AUTH_USER_MODEL = 'restoplus.User'
 
-STATICFILES_DIRS = [
-    BASE_DIR / 'restoplus' / 'static',
-]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_REDIRECT_URL='/accueil/'
-LOGOUT_REDIRECT_URL='/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 LOGIN_URL = '/accounts/login/'
+
+# Configuration pour la production
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Paramètres de sécurité pour la production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+
+# Configuration des fichiers statiques pour la production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Configuration WhiteNoise pour servir les fichiers statiques (seulement en production)
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Configuration pour la production sur PythonAnywhere
+    # Désactiver le service automatique des fichiers statiques par Django
+    STATICFILES_FINDERS = [
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    ]
