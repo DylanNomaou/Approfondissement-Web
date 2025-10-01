@@ -23,6 +23,11 @@ def accueil(request):
         task_form = TaskForm(request.POST, user=request.user)
         if task_form.is_valid():
             task = task_form.save()
+            
+            # S'assurer qu'au moins l'utilisateur actuel est assigné à la tâche
+            if not task.assigned_to.exists():
+                task.assigned_to.add(request.user)
+            
             # Message de succès détaillé
             assigned_users = ", ".join([str(user) for user in task.assigned_to.all()])
             if assigned_users:

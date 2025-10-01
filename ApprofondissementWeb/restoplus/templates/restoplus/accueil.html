@@ -248,27 +248,12 @@
 </section>
 
 <!-- Modal pour Ajouter une Tâche -->
-{% include "restoplus/partials/task_modal.html" %}
+{% include "restoplus/partials/task_modal_django.html" %}
 
 <!-- Modal pour Détails de Tâche -->
 {% include "restoplus/partials/task_details_modal.html" %}
 
-<!-- Bouton de test temporaire -->
-<button id="testModalBtn" class="btn btn-warning position-fixed" style="bottom: 20px; right: 20px; z-index: 1000;">
-    Test Modal
-</button>
-
 <!-- Inclusion du fichier JavaScript principal -->
 <script src="{% static 'restoplus/js/script.js' %}"></script>
-
-<script>
-// Test simple pour le modal
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('testModalBtn').addEventListener('click', function() {
-        const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
-        modal.show();
-    });
-});
-</script>
 
 {% endblock %}

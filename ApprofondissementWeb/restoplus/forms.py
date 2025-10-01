@@ -132,6 +132,9 @@ class TaskForm(forms.ModelForm):
             else:
                 # L'utilisateur ne peut assigner des tâches qu'à lui-même
                 self.fields['assigned_to'].queryset = User.objects.filter(id=user.id)
+                
+            # Pré-sélectionner l'utilisateur actuel par défaut
+            self.fields['assigned_to'].initial = [user.id]
         else:
             # Par défaut, si aucun utilisateur n'est fourni
             self.fields['assigned_to'].queryset = User.objects.all()

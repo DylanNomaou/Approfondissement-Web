@@ -366,6 +366,65 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Formulaire de statut non trouvé');
         }
     }, 1500);
+    
+    // *** GESTION DU FORMULAIRE D'AJOUT DE TÂCHES ***
+    setTimeout(() => {
+        const addTaskForm = document.getElementById('addTaskForm');
+        const descriptionField = document.getElementById('taskDescription');
+        
+        // Compteur de caractères pour la description
+        if (descriptionField) {
+            const charCount = document.getElementById('charCount');
+            if (charCount) {
+                descriptionField.addEventListener('input', function() {
+                    charCount.textContent = this.value.length;
+                    if (this.value.length > 450) {
+                        charCount.parentElement.classList.add('text-warning');
+                    } else {
+                        charCount.parentElement.classList.remove('text-warning');
+                    }
+                });
+            }
+        }
+        
+        // Gestion de la soumission du formulaire d'ajout
+        if (addTaskForm) {
+            console.log('Gestionnaire de formulaire d\'ajout ajouté');
+            addTaskForm.addEventListener('submit', function(e) {
+                // Laisser la soumission normale du formulaire Django
+                console.log('Soumission du formulaire d\'ajout de tâche');
+                
+                // Optionnel : ajouter un indicateur de chargement
+                const submitBtn = addTaskForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Création en cours...';
+                }
+            });
+        }
+        
+        // Réinitialiser le formulaire quand le modal se ferme
+        const addTaskModal = document.getElementById('addTaskModal');
+        if (addTaskModal) {
+            addTaskModal.addEventListener('hidden.bs.modal', function() {
+                if (addTaskForm) {
+                    addTaskForm.reset();
+                    // Réinitialiser le compteur de caractères
+                    const charCount = document.getElementById('charCount');
+                    if (charCount) {
+                        charCount.textContent = '0';
+                        charCount.parentElement.classList.remove('text-warning');
+                    }
+                    // Réinitialiser le bouton
+                    const submitBtn = addTaskForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Créer la tâche';
+                    }
+                }
+            });
+        }
+    }, 1500);
 });
     
 

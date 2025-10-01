@@ -1,0 +1,96 @@
+<!-- Modal Simple pour Ajouter une Tâche -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addTaskModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Ajouter une nouvelle tâche
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addTaskForm" method="post" action="{% url 'accueil' %}">
+                    {% csrf_token %}
+                    
+                    <!-- Titre de la tâche -->
+                    <div class="mb-3">
+                        <label for="id_title" class="form-label fw-semibold">
+                            <i class="bi bi-pencil me-1 text-primary"></i>
+                            Titre de la tâche
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="id_title" name="title" required>
+                    </div>
+                    
+                    <!-- Priorité -->
+                    <div class="mb-3">
+                        <label for="id_priority" class="form-label fw-semibold">
+                            <i class="bi bi-flag me-1 text-warning"></i>
+                            Priorité
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="id_priority" name="priority" required>
+                            <option value="">Sélectionner une priorité</option>
+                            <option value="Basse">Basse</option>
+                            <option value="Moyenne">Moyenne</option>
+                            <option value="Haute">Haute</option>
+                            <option value="Urgente">Urgente</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Catégorie -->
+                    <div class="mb-3">
+                        <label for="id_category" class="form-label fw-semibold">
+                            <i class="bi bi-tags me-1 text-info"></i>
+                            Catégorie
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="id_category" name="category" required>
+                            <option value="">Sélectionner une catégorie</option>
+                            <option value="Service">Service</option>
+                            <option value="Cuisine">Cuisine</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Administration">Administration</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label fw-semibold">
+                            <i class="bi bi-card-text me-1 text-secondary"></i>
+                            Description
+                            <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="id_description" name="description" rows="3" required></textarea>
+                    </div>
+                    
+                    <!-- Date d'échéance -->
+                    <div class="mb-3">
+                        <label for="id_due_date" class="form-label fw-semibold">
+                            <i class="bi bi-calendar-event me-1 text-success"></i>
+                            Date d'échéance
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="id_due_date" name="due_date" required>
+                    </div>
+                    
+                    <!-- Assigné à (optionnel pour l'instant) -->
+                    <input type="hidden" name="assigned_to" value="{{ user.id }}">
+                    
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Annuler
+                </button>
+                <button type="submit" form="addTaskForm" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Créer la tâche
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

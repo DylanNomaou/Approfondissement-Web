@@ -1,0 +1,161 @@
+{% load static %}
+
+<!-- Modal pour Ajouter une Tâche -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addTaskModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Ajouter une nouvelle tâche
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addTaskForm" method="post" action="{% url 'accueil' %}" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <!-- Titre de la tâche -->
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ task_form.title.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-pencil me-1 text-primary"></i>
+                                {{ task_form.title.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ task_form.title }}
+                            {% if task_form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ task_form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Priorité -->
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ task_form.priority.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-flag me-1 text-warning"></i>
+                                {{ task_form.priority.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ task_form.priority }}
+                            {% if task_form.priority.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ task_form.priority.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Catégorie -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ task_form.category.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-tags me-1 text-info"></i>
+                                {{ task_form.category.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ task_form.category }}
+                            {% if task_form.category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ task_form.category.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Date d'échéance -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ task_form.due_date.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-1 text-success"></i>
+                                {{ task_form.due_date.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ task_form.due_date }}
+                            {% if task_form.due_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ task_form.due_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="{{ task_form.description.id_for_label }}" class="form-label fw-semibold">
+                            <i class="bi bi-card-text me-1 text-secondary"></i>
+                            {{ task_form.description.label }}
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ task_form.description }}
+                        {% if task_form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ task_form.description.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <small class="text-muted">
+                                <span id="charCount">0</span>/500 caractères
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Assigné à -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ task_form.assigned_to.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-people me-1 text-primary"></i>
+                                {{ task_form.assigned_to.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ task_form.assigned_to }}
+                            {% if task_form.assigned_to.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ task_form.assigned_to.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs personnes
+                                    <br>
+                                    <!-- Debug: Affichage du nombre d'utilisateurs -->
+                                    <strong>Debug:</strong> {{ task_form.assigned_to.field.queryset|length }} utilisateur(s) disponible(s)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Durée estimée -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ task_form.estimated_duration.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-clock me-1 text-info"></i>
+                                {{ task_form.estimated_duration.label }}
+                                <small class="text-muted">(optionnel)</small>
+                            </label>
+                            {{ task_form.estimated_duration }}
+                            {% if task_form.estimated_duration.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ task_form.estimated_duration.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+            <div class="modal-footer bg-light d-flex justify-content-between">
+                <div class="text-muted">
+                    <small><span class="text-danger">*</span> Champs obligatoires</small>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Annuler
+                    </button>
+                    <button type="submit" form="addTaskForm" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Créer la tâche
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
