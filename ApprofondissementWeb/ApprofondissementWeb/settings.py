@@ -22,7 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-dy3$n2w_on5961#j2&!5l2qgu9zl=sk31c)a8!%zg5$vm&=ha!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+# En développement local, DEBUG sera True
+# En production (PythonAnywhere), DEBUG sera False
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     '127.0.0.1', 
@@ -61,6 +63,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Ajouter WhiteNoise seulement en production
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
  
 ROOT_URLCONF = 'ApprofondissementWeb.urls'
 
@@ -158,3 +164,13 @@ if not DEBUG:
 
 # Configuration des fichiers statiques pour la production
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Configuration WhiteNoise pour servir les fichiers statiques (seulement en production)
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Configuration pour la production sur PythonAnywhere
+    # Désactiver le service automatique des fichiers statiques par Django
+    STATICFILES_FINDERS = [
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    ]

@@ -28,5 +28,8 @@ urlpatterns = [
     path('accounts/login/', views.login_view, name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name="logout"),
 ]
+
+# Servir les fichiers statiques et media seulement en développement
 if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
