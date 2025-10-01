@@ -26,7 +26,7 @@ urlpatterns = [
     path('',include('restoplus.urls')),
     path('accounts/signup/', views.signup_view, name='signup'),
     path('accounts/login/', views.login_view, name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name="logout"),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/accounts/login/'), name="logout"),
 ]
 
 # Servir les fichiers statiques et media seulement en développement
