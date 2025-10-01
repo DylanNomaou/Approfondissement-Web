@@ -436,6 +436,74 @@ body {
 .main-wrapper .main-content .dashboard-section .dashboard-container .notification-item.success {
   border-left: 4px solid #198754;
 }
+
+/* Notifications with fixed height and internal scroll */
+.main-wrapper .main-content .dashboard-section .dashboard-container .notifications-fixed-body {
+  height: 350px; /* Hauteur fixe pour la div */
+  display: flex;
+  flex-direction: column;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notifications-scroll-container-fixed {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+  padding-right: 5px;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notifications-scroll-container-fixed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notifications-scroll-container-fixed::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notifications-scroll-container-fixed::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notifications-scroll-container-fixed::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notification-item-vertical {
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0; /* Empêche la compression des notifications */
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notification-item-vertical:hover {
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 1);
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notification-item-vertical .notification-icon {
+  transition: all 0.2s ease;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notification-item-vertical:hover .notification-icon {
+  transform: scale(1.05);
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notification-item-vertical .mark-as-read-btn {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  border-width: 1px;
+}
+
+.main-wrapper .main-content .dashboard-section .dashboard-container .notification-item-vertical:hover .mark-as-read-btn {
+  opacity: 1;
+}
+
 .main-wrapper .main-content .dashboard-section .dashboard-container .action-btn {
   -webkit-transition: all 0.3s ease;
   transition: all 0.3s ease;

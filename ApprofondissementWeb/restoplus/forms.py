@@ -128,16 +128,17 @@ class TaskForm(forms.ModelForm):
         if user:
             if user.can_distribute_tasks_to_all():
                 # L'utilisateur peut assigner des tâches à tout le monde
-                self.fields['assigned_to'].queryset = User.objects.all()
+                self.fields['assigned_to'].queryset = User.objects.all().order_by('username')
+                # Ne pas pré-sélectionner automatiquement - laisser le choix libre
+                self.fields['assigned_to'].initial = []
             else:
                 # L'utilisateur ne peut assigner des tâches qu'à lui-même
                 self.fields['assigned_to'].queryset = User.objects.filter(id=user.id)
-                
-            # Pré-sélectionner l'utilisateur actuel par défaut
-            self.fields['assigned_to'].initial = [user.id]
+                # Pré-sélectionner l'utilisateur actuel car il ne peut pas choisir d'autres
+                self.fields['assigned_to'].initial = [user.id]
         else:
             # Par défaut, si aucun utilisateur n'est fourni
-            self.fields['assigned_to'].queryset = User.objects.all()
+            self.fields['assigned_to'].queryset = User.objects.all().order_by('username')
         
         # Marquer tous les champs comme obligatoires sauf estimated_duration
         required_fields = ['title', 'priority', 'category', 'description', 'due_date', 'assigned_to']

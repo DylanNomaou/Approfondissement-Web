@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Task, Role
+from django.utils import timezone
+from .models import User, Task, Role, Notification
 
 # Register your models here.
 @admin.register(User,)
@@ -56,4 +57,47 @@ class TaskAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         """Optimise les requêtes en préchargeant les utilisateurs assignés"""
         return super().get_queryset(request).prefetch_related('assigned_to')
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('titre', 'type_notification', 'assigned_to', 'created_by', 'is_read', 'created_at')
+    list_filter = ('type_notification', 'is_read', 'created_at')
+    search_fields = ('titre', 'description', 'assigned_to__username', 'created_by__username')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'read_at')
+    
+    fieldsets = (
+        ('Contenu de la notification', {
+            'fields': ('titre', 'description', 'type_notification')
+        }),
+        ('Assignation', {
+            'fields': ('assigned_to', 'created_by')
+        }),
+        ('Références', {
+            'fields': ('task_reference', 'role_reference'),
+            'description': 'Références optionnelles vers les objets liés'
+        }),
+        ('Statut', {
+            'fields': ('is_read', 'created_at', 'read_at')
+        }),
+    )
+    
+    def get_queryset(self, request):
+        """Optimise les requêtes"""
+        return super().get_queryset(request).select_related('assigned_to', 'created_by', 'task_reference', 'role_reference')
+    
+    actions = ['mark_as_read', 'mark_as_unread']
+    
+    def mark_as_read(self, request, queryset):
+        """Action pour marquer les notifications comme lues"""
+        updated = queryset.update(is_read=True, read_at=timezone.now())
+        self.message_user(request, f"{updated} notification(s) marquée(s) comme lue(s).")
+    mark_as_read.short_description = "Marquer comme lu"
+    
+    def mark_as_unread(self, request, queryset):
+        """Action pour marquer les notifications comme non lues"""
+        updated = queryset.update(is_read=False, read_at=None)
+        self.message_user(request, f"{updated} notification(s) marquée(s) comme non lue(s).")
+    mark_as_unread.short_description = "Marquer comme non lu"
 

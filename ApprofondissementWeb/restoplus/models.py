@@ -137,3 +137,103 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
+
+class Notification(models.Model):
+    """Modèle pour les notifications système"""
+    
+    NOTIFICATION_TYPES = [
+        ('task_assigned', 'Tâche assignée'),
+        ('role_assigned', 'Rôle assigné'),
+        ('task_completed', 'Tâche terminée'),
+        ('reminder', 'Rappel'),
+        ('system', 'Notification système'),
+    ]
+    
+    titre = models.CharField(max_length=255, verbose_name="Titre")
+    description = models.TextField(verbose_name="Description")
+    type_notification = models.CharField(
+        max_length=20, 
+        choices=NOTIFICATION_TYPES, 
+        default='system',
+        verbose_name="Type de notification"
+    )
+    
+    # Utilisateur qui reçoit la notification
+    assigned_to = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='notifications',
+        verbose_name="Assigné à"
+    )
+    
+    # Utilisateur qui a créé la notification (optionnel)
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='notifications_created',
+        verbose_name="Créé par"
+    )
+    
+    # Statut de la notification
+    is_read = models.BooleanField(default=False, verbose_name="Lu")
+    
+    # Dates
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="Lu le")
+    
+    # Référence optionnelle vers l'objet lié (tâche, rôle, etc.)
+    task_reference = models.ForeignKey(
+        'Task', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        verbose_name="Tâche liée"
+    )
+    
+    role_reference = models.ForeignKey(
+        'Role', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        verbose_name="Rôle lié"
+    )
+    
+    class Meta:
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+        ordering = ['-created_at']  # Plus récentes en premier
+    
+    def __str__(self):
+        return f"{self.titre} - {self.assigned_to.username}"
+    
+    def mark_as_read(self):
+        """Marquer la notification comme lue"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
+    
+    def get_type_display_icon(self):
+        """Retourner l'icône Bootstrap selon le type"""
+        icons = {
+            'task_assigned': 'bi-clipboard-check',
+            'role_assigned': 'bi-person-badge',
+            'task_completed': 'bi-check-circle',
+            'reminder': 'bi-bell',
+            'system': 'bi-info-circle',
+        }
+        return icons.get(self.type_notification, 'bi-bell')
+    
+    def get_type_display_color(self):
+        """Retourner la couleur selon le type"""
+        colors = {
+            'task_assigned': 'primary',
+            'role_assigned': 'success',
+            'task_completed': 'info',
+            'reminder': 'warning',
+            'system': 'secondary',
+        }
+        return colors.get(self.type_notification, 'secondary')
+

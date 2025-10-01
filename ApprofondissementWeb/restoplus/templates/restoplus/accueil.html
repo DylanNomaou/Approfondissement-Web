@@ -150,56 +150,71 @@
         <div class="col-lg-4 mb-4">
           <div class="dashboard-card bg-white rounded-3 shadow-sm h-100">
             <div class="card-header bg-transparent border-0 p-4 pb-0">
-              <h3 class="h5 mb-0">
-                <span class="bell-icon text-primary me-2"></span>
-                Notifications
-              </h3>
+              <div class="d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">
+                  <span class="bell-icon text-primary me-2"></span>
+                  Notifications non lues
+                </h3>
+                {% if unread_notifications_count > 0 %}
+                <span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>
+                {% endif %}
+              </div>
             </div>
-            <div class="card-body p-4">
-              <!-- Stock faible -->
-              <div
-                class="notification-item border-start border-warning border-4 ps-3 mb-4"
-              >
-                <div class="d-flex align-items-start">
-                  <span class="warning-icon text-warning me-2 mt-1"></span>
-                  <div>
-                    <h6 class="mb-1 text-warning">Stock faible</h6>
-                    <p class="small text-muted mb-0">Tomates (3 kg restants)</p>
-                  </div>
+            <div class="card-body p-4 notifications-fixed-body">
+              {% if user_notifications %}
+                <!-- Conteneur avec scroll vertical à hauteur fixe -->
+                <div class="notifications-scroll-container-fixed">
+                  {% for notification in user_notifications %}
+                    {% if not notification.is_read %}
+                    <div class="notification-item-vertical border border-{{ notification.get_type_display_color }} border-2 rounded-3 p-3 bg-light mb-3" 
+                         data-notification-id="{{ notification.id }}">
+                      <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0 me-3">
+                          <div class="notification-icon bg-{{ notification.get_type_display_color }} text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                            <i class="bi {{ notification.get_type_display_icon }} small"></i>
+                          </div>
+                        </div>
+                        <div class="flex-grow-1">
+                          <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="notification-title mb-0 fw-bold text-{{ notification.get_type_display_color }}" style="font-size: 0.9rem;">
+                              {{ notification.titre|truncatechars:30 }}
+                            </h6>
+                            <button class="btn btn-sm btn-outline-primary mark-as-read-btn p-1" data-notification-id="{{ notification.id }}" style="font-size: 0.7rem;">
+                              <i class="bi bi-check"></i>
+                            </button>
+                          </div>
+                          <p class="notification-description text-muted mb-2 small" style="font-size: 0.8rem; line-height: 1.3;">
+                            {{ notification.description|truncatewords:12 }}
+                          </p>
+                          <div class="notification-meta small text-muted" style="font-size: 0.75rem;">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ notification.created_at|timesince }} ago
+                          </div>
+                          {% if notification.created_by %}
+                          <div class="notification-author small text-muted" style="font-size: 0.75rem;">
+                            <i class="bi bi-person me-1"></i>
+                            {{ notification.created_by.get_full_name|default:notification.created_by.username|truncatechars:20 }}
+                          </div>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                  {% endfor %}
                 </div>
-              </div>
-
-              <!-- Réservation -->
-              <div
-                class="notification-item border-start border-info border-4 ps-3 mb-4"
-              >
-                <div class="d-flex align-items-start">
-                  <i class="bi bi-calendar-check text-info me-2 mt-1"></i>
-                  <div>
-                    <h6 class="mb-1 text-info">Réservation</h6>
-                    <p class="small text-muted mb-0">
-                      Table 6 - 19h30 (4 pers.)
-                    </p>
-                  </div>
+              {% else %}
+                <div class="text-center py-3">
+                  <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
+                  <h6 class="text-muted mt-2 mb-1">Aucune notification</h6>
+                  <p class="text-muted small mb-0">Tout est à jour pour le moment.</p>
                 </div>
-              </div>
-
-              <!-- Livraison -->
-              <div
-                class="notification-item border-start border-success border-4 ps-3 mb-0"
-              >
-                <div class="d-flex align-items-start">
-                  <i class="bi bi-truck text-success me-2 mt-1"></i>
-                  <div>
-                    <h6 class="mb-1 text-success">Livraison reçue</h6>
-                    <p class="small text-muted mb-0">Produits frais - 14h30</p>
-                  </div>
-                </div>
-              </div>
+              {% endif %}
             </div>
           </div>
         </div>
       </div>
+
+      
 
       <!-- Actions Rapides -->
       <div class="row mb-4">

@@ -115,7 +115,17 @@
                             {% endif %}
                             <div class="form-text">
                                 <small class="text-muted">
-                                    Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs personnes
+                                    {% if user.can_distribute_tasks_to_all %}
+                                        <i class="bi bi-check-circle text-success me-1"></i>
+                                        Vous pouvez assigner cette tâche à n'importe qui.
+                                        <br>
+                                        Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs personnes.
+                                    {% else %}
+                                        <i class="bi bi-info-circle text-warning me-1"></i>
+                                        Vous ne pouvez assigner des tâches qu'à vous-même.
+                                        <br>
+                                        Contactez un administrateur pour obtenir plus de permissions.
+                                    {% endif %}
                                     <br>
                                     <!-- Debug: Affichage du nombre d'utilisateurs -->
                                     <strong>Debug:</strong> {{ task_form.assigned_to.field.queryset|length }} utilisateur(s) disponible(s)

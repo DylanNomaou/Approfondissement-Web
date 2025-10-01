@@ -271,7 +271,45 @@ function closeModal() {
 
 // Quand la page est chargée
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM chargé !');
+    console.log('DOM chargé, initialisation des gestionnaires...');
+    
+    // Vérifier s'il y a des erreurs de formulaire et rouvrir le modal
+    setTimeout(() => {
+        checkForFormErrors();
+    }, 500);
+    
+    // *** FONCTION POUR VÉRIFIER LES ERREURS DE FORMULAIRE ***
+    function checkForFormErrors() {
+        const taskForm = document.getElementById('addTaskForm');
+        if (!taskForm) return;
+        
+        // Vérifier s'il y a des erreurs de validation
+        const errorElements = taskForm.querySelectorAll('.invalid-feedback, .is-invalid');
+        const hasErrors = errorElements.length > 0;
+        
+        // Vérifier s'il y a des messages d'erreur Django
+        const messageErrors = document.querySelectorAll('.alert-danger');
+        const hasDjangoErrors = messageErrors.length > 0;
+        
+        if (hasErrors || hasDjangoErrors) {
+            console.log('Erreurs de formulaire détectées, réouverture du modal...');
+            
+            // Rouvrir le modal de tâche
+            const addTaskModal = document.getElementById('addTaskModal');
+            if (addTaskModal) {
+                const modal = new bootstrap.Modal(addTaskModal);
+                modal.show();
+                
+                // Focus sur le premier champ avec erreur
+                setTimeout(() => {
+                    const firstError = taskForm.querySelector('.is-invalid');
+                    if (firstError) {
+                        firstError.focus();
+                    }
+                }, 300);
+            }
+        }
+    }
     
     // GESTION DES CLICS SUR LES TÂCHES
     console.log('Ajout des gestionnaires de clic sur les tâches...');
@@ -386,6 +424,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
+        
+        // Gestion du scroll vers la section notifications
+        function handleNotificationSectionScroll() {
+            const notificationLinks = document.querySelectorAll('a[href="#notifications-section"]');
+            notificationLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector('#notifications-section');
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Appeler la fonction pour gérer le scroll
+        handleNotificationSectionScroll();
         
         // Gestion de la soumission du formulaire d'ajout
         if (addTaskForm) {
@@ -589,3 +647,237 @@ function showNotification(message, type = 'info') {
         }
     }, 5000);
 }
+
+
+// =========================================
+// FONCTIONS POUR LES NOTIFICATIONS
+// =========================================
+
+/**
+ * Marquer une notification comme lue
+ * @param {string} notificationId - ID de la notification
+ */
+function markNotificationAsRead(notificationId) {
+    fetch('/mark-notification-read/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            notification_id: notificationId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour l'affichage de la notification
+            const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notificationElement) {
+                notificationElement.classList.remove('bg-light');
+                const titleElement = notificationElement.querySelector('.notification-title');
+                if (titleElement) {
+                    titleElement.classList.remove('fw-bold');
+                }
+                const markAsReadBtn = notificationElement.querySelector('.mark-as-read-btn');
+                if (markAsReadBtn) {
+                    markAsReadBtn.outerHTML = '<small class="text-success"><i class="bi bi-check-circle"></i></small>';
+                }
+            }
+            
+            // Mettre à jour le compteur de notifications non lues
+            updateUnreadNotificationsCount();
+            
+            showNotification('Notification marquée comme lue', 'success');
+        } else {
+            showNotification(data.message || 'Erreur lors du marquage', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+/**
+ * Charger plus de notifications
+ */
+function loadMoreNotifications() {
+    fetch('/notifications/?limit=20&offset=' + document.querySelectorAll('.notification-item').length)
+    .then(response => response.json())
+    .then(data => {
+        if (data.notifications && data.notifications.length > 0) {
+            const notificationsList = document.querySelector('.notifications-list');
+            data.notifications.forEach(notification => {
+                const notificationHtml = createNotificationElement(notification);
+                notificationsList.insertAdjacentHTML('beforeend', notificationHtml);
+            });
+            
+            // Cacher le bouton s'il n'y a plus de notifications
+            if (data.notifications.length < 20) {
+                const loadMoreBtn = document.getElementById('loadMoreNotifications');
+                if (loadMoreBtn) {
+                    loadMoreBtn.style.display = 'none';
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showNotification('Erreur lors du chargement', 'error');
+    });
+}
+
+/**
+ * Créer l'élément HTML pour une notification
+ * @param {Object} notification - Données de la notification
+ * @returns {string} - HTML de la notification
+ */
+function createNotificationElement(notification) {
+    return `
+        <div class="notification-item border-bottom pb-3 mb-3 ${!notification.is_read ? 'bg-light' : ''}" data-notification-id="${notification.id}">
+            <div class="d-flex">
+                <div class="flex-shrink-0 me-3">
+                    <div class="notification-icon bg-${notification.color} text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="bi ${notification.icon}"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="notification-title mb-1 ${!notification.is_read ? 'fw-bold' : ''}">
+                                ${notification.titre}
+                            </h6>
+                            <p class="notification-description text-muted mb-2 small">
+                                ${notification.description.length > 80 ? notification.description.substring(0, 80) + '...' : notification.description}
+                            </p>
+                            <div class="notification-meta small text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                ${notification.created_at}
+                                ${notification.created_by ? `<span class="ms-2"><i class="bi bi-person me-1"></i>${notification.created_by}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="notification-actions">
+                            ${!notification.is_read ? 
+                                `<button class="btn btn-sm btn-outline-primary mark-as-read-btn" data-notification-id="${notification.id}">
+                                    <i class="bi bi-check"></i>
+                                </button>` : 
+                                '<small class="text-success"><i class="bi bi-check-circle"></i></small>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Mettre à jour le compteur de notifications non lues
+ */
+function updateUnreadNotificationsCount() {
+    fetch('/notifications/')
+    .then(response => response.json())
+    .then(data => {
+        const badge = document.querySelector('.badge.bg-danger.rounded-pill');
+        if (data.unread_count > 0) {
+            if (badge) {
+                badge.textContent = data.unread_count;
+                badge.style.display = 'inline';
+            }
+        } else {
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+}
+
+/**
+ * Obtenir le token CSRF
+ * @returns {string} - Token CSRF
+ */
+function getCsrfToken() {
+    const csrfCookie = document.cookie.split(';').find(row => row.trim().startsWith('csrftoken='));
+    if (csrfCookie) {
+        return csrfCookie.split('=')[1];
+    }
+    
+    // Fallback: chercher dans un meta tag ou input hidden
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) {
+        return csrfMeta.getAttribute('content');
+    }
+    
+    const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
+    
+    return '';
+}
+
+// Ajouter les gestionnaires d'événements pour les notifications au chargement du DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Gestionnaires de notifications chargés');
+    
+    // Gestionnaire pour les boutons "Marquer comme lu"
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('mark-as-read-btn') || e.target.closest('.mark-as-read-btn')) {
+            e.preventDefault();
+            const btn = e.target.classList.contains('mark-as-read-btn') ? e.target : e.target.closest('.mark-as-read-btn');
+            const notificationId = btn.getAttribute('data-notification-id');
+            if (notificationId) {
+                markNotificationAsRead(notificationId);
+            }
+        }
+    });
+    
+    // Gestionnaire pour le bouton "Voir plus de notifications"
+    const loadMoreBtn = document.getElementById('loadMoreNotifications');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadMoreNotifications);
+    }
+    
+    // Gestionnaire pour le bouton de test de notification
+    const testNotificationBtn = document.getElementById('testNotificationBtn');
+    if (testNotificationBtn) {
+        testNotificationBtn.addEventListener('click', function() {
+            console.log('Création d\'une notification de test...');
+            
+            // Désactiver le bouton temporairement
+            testNotificationBtn.disabled = true;
+            testNotificationBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Création...';
+            
+            fetch('/test-notification/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Notification de test créée ! Actualisez la page pour la voir.', 'success');
+                    // Actualiser la page après 2 secondes
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(data.message || 'Erreur lors de la création', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                showNotification('Erreur de connexion', 'error');
+            })
+            .finally(() => {
+                // Réactiver le bouton
+                testNotificationBtn.disabled = false;
+                testNotificationBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Test Notification';
+            });
+        });
+    }
+});
