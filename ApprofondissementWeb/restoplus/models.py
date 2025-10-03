@@ -59,15 +59,17 @@ class User(AbstractUser):
         # Les superusers peuvent tout faire
         if self.is_superuser:
             return True
-        
         # Les utilisateurs avec la permission can_distribute_tasks peuvent assigner à tous
         if self.can_distribute_tasks_to_all():
-            return True
-        
+            return True    
         # Sinon, on peut seulement s'assigner des tâches à soi-même
         return self == target_user
-    
 
+class Disponibilite(models.Model):
+    employe=models.ForeignKey(User,on_delete=models.CASCADE)
+    jour=models.CharField(max_length=10)
+    heure_debut=models.TimeField()
+    heure_fin=models.TimeField()
 
 class Task(models.Model):
     # Titre de la tâche
