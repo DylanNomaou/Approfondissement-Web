@@ -196,6 +196,17 @@ def admin_dashboard(request):
     return render(request, "restoplus/admin_dashboard.html", context)
 
 @login_required
+def employees_dashboard(request):
+    """Permet d'accéder aux données des emplyés"""
+    employes = User.objects.all()
+    return render(request,"restoplus/employees_dashboard.html",{"employes": employes})
+
+@login_required
+def dispo_form(request):
+
+    return render(request, "restoplus/dispo_form.html", {"form": form})
+
+@login_required
 def manage_user_role(request, user_id):
     """Modifier le rôle d'un utilisateur"""
     if not request.user.has_permission('can_manage_users'):

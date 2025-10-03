@@ -1,0 +1,43 @@
+{% extends "restoplus/base.html" %}
+{% load static %}
+
+{% block title %}RestoPlus - Section Employés{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Gestion des employés</h2>
+
+    <div class="row">
+        {% for employe in employes %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <!--ALERTE Doit compléter fiches détails employés pour que ceci fonctionne -->
+                    <h5 class="card-title">{{employe.username}}{{ employe.prenom }} {{ employe.nom }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ employe.poste }}</h6>
+                    <p class="card-text">
+                        <i class="bi bi-envelope"></i> {{ employe.email }}
+                    </p>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        <!-- Bouton demander de remplir disponibilités -->
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-calendar-plus"></i> Demander disponibilités
+                        </a>
+
+                        <!-- Bouton visualiser disponibilités -->
+                        <a href="#" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-calendar-week"></i> Voir disponibilités
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">Aucun employé trouvé.</p>
+        {% endfor %}
+        <button method="Post" action="{% url 'dispo_form' %}" >Accès formulaire Bouton Temporaire</button>
+    </div>
+</div>
+{% endblock %}

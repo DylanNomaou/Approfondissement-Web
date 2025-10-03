@@ -18,4 +18,5 @@ urlpatterns=[
     path('notifications/', views.get_user_notifications, name='get_user_notifications'),
     path('mark-notification-read/', views.mark_notification_as_read, name='mark_notification_as_read'),
     path('test-notification/', views.create_test_notification, name='create_test_notification'),
+    path('dashboard/',views.employees_dashboard,name="employees_dashboard"),
 ]

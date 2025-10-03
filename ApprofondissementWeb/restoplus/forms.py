@@ -77,7 +77,16 @@ class UserLoginForm(forms.Form):
     def get_user(self):
         return getattr(self, "user", None)
 
-
+class DisponibiliteForm(forms.Form):
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    heure_debut = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+    heure_fin = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
 
 class TaskForm(forms.ModelForm):
     DURATION_CHOICES = [
