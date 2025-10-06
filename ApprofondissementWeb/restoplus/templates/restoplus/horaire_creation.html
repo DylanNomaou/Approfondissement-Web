@@ -1,0 +1,282 @@
+{% extends 'restoplus/base.html' %}
+{% load static %}
+
+{% block title %}Créer Horaire - RestoPlus{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'restoplus/css/horaire.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="horaire-container">
+    <!-- En-tête -->
+    <div class="horaire-header">
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-calendar-alt"></i>
+                Création d'Horaire
+            </h1>
+            <!-- Actions de navigation et de sauvegarde -->
+            <div class="header-actions">
+                <!-- Sélecteur de semaine avec navigation -->
+                <div class="week-selector">
+                    <!-- Bouton semaine précédente -->
+                    <button class="btn-week" onclick="previousWeek()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <!-- Affichage de la semaine courante -->
+                    <span class="current-week">Semaine du 7 - 13 Oct 2024</span>
+                    <!-- Bouton semaine suivante -->
+                    <button class="btn-week" onclick="nextWeek()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <!-- Boutons d'action principaux -->
+                <div class="action-buttons">
+                    <!-- Bouton pour sauvegarder en brouillon -->
+                    <button class="btn btn-secondary" onclick="saveAsDraft()">
+                        <i class="fas fa-save"></i>
+                        Sauvegarder en brouillon
+                    </button>
+                    <!-- Bouton pour publier l'horaire final -->
+                    <button class="btn btn-success" onclick="publishSchedule()">
+                        <i class="fas fa-check"></i>
+                        Publier l'horaire
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outils de planification -->
+    <div class="planning-tools">
+        <div class="tools-section">
+            <!-- Titre de la section des outils -->
+            <h3><i class="fas fa-tools"></i> Outils de planification</h3>
+            <div class="tools-grid">
+                <!-- Bouton pour le remplissage automatique des créneaux -->
+                <button class="tool-btn" onclick="autoFillShifts()" title="Remplissage automatique basé sur les disponibilités">
+                    <i class="fas fa-magic"></i>
+                    <span>Remplissage auto</span>
+                </button>
+                <!-- Bouton pour copier les créneaux de la semaine précédente -->
+                <button class="tool-btn" onclick="copyFromLastWeek()" title="Copier la semaine précédente">
+                    <i class="fas fa-copy"></i>
+                    <span>Copier sem. précédente</span>
+                </button>
+                <!-- Bouton pour effacer tous les créneaux planifiés -->
+                <button class="tool-btn" onclick="clearAllShifts()" title="Effacer tous les créneaux">
+                    <i class="fas fa-eraser"></i>
+                    <span>Tout effacer</span>
+                </button>
+                <!-- Bouton pour basculer l'affichage des conflits d'horaires -->
+                <button class="tool-btn" onclick="toggleConflictView()" title="Afficher/masquer les conflits">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Voir conflits</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Statistiques rapides -->
+        <div class="quick-stats">
+            <!-- Statistique des heures totales planifiées -->
+            <div class="stat-item">
+            <i class="fas fa-clock"></i>
+            <span class="stat-value" id="totalHours">0h</span>
+            <span class="stat-label">Heures totales</span>
+            </div>
+            <!-- Statistique du nombre d'employés ayant des créneaux assignés -->
+            <div class="stat-item">
+            <i class="fas fa-users"></i>
+            <span class="stat-value" id="employeesScheduled">0/5</span>
+            <span class="stat-label">Employés planifiés</span>
+            </div>
+            <!-- Compteur des conflits d'horaires détectés -->
+            <div class="stat-item">
+            <i class="fas fa-exclamation-circle"></i>
+            <span class="stat-value" id="conflictCount">0</span>
+            <span class="stat-label">Conflits</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille d'horaires -->
+    <div class="schedule-grid-container">
+        <div class="schedule-grid">
+            <!-- En-tête des jours -->
+            <div class="grid-header">
+                <div class="employee-header">Employés</div>
+                {% for jour in jours %}
+                <div class="day-header">
+                    <div class="day-name">{{ jour|title }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Lignes d'employés -->
+            {% for employe in employes %}
+            <div class="employee-row" data-employee-id="{{ employe.id }}">
+                <!-- Colonne employé -->
+                <div class="employee-info">
+                    <div class="employee-avatar" style="background-color: {{ employe.couleur }};">
+                        {{ employe.nom|slice:":2"|upper }}
+                    </div>
+                    <div class="employee-details">
+                        <div class="employee-name">{{ employe.nom }}</div>
+                        <div class="employee-role">{{ employe.poste }}</div>
+                        <div class="employee-weekly-hours">
+                            <span id="weeklyHours-{{ employe.id }}">0h</span> / 35h
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Créneaux pour chaque jour -->
+                {% for jour in jours_semaine %}
+                <div class="day-cell" data-day="{{ jour }}" data-employee="{{ employe.id }}">
+                    {% if employe.disponibilites|lookup:jour %}
+                    <div class="shift-container" 
+                         data-min-hour="{{ employe.disponibilites|lookup:jour|lookup:'min' }}"
+                         data-max-hour="{{ employe.disponibilites|lookup:jour|lookup:'max' }}">
+                        <div class="availability-indicator">
+                            Dispo: {{ employe.disponibilites|lookup:jour|lookup:'min' }}h-{{ employe.disponibilites|lookup:jour|lookup:'max' }}h
+                        </div>
+                        <div class="shift-slot" onclick="openShiftEditor({{ employe.id }}, '{{ jour }}')">
+                            <i class="fas fa-plus"></i>
+                            <span>Ajouter créneau</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="unavailable-day">
+                        <i class="fas fa-times"></i>
+                        <span>Non disponible</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="schedule-legend">
+        <h4><i class="fas fa-info-circle"></i> Légende</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="legend-color available"></div>
+                <span>Disponible</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color unavailable"></div>
+                <span>Non disponible</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color scheduled"></div>
+                <span>Planifié</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color conflict"></div>
+                <span>Conflit</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'édition de créneau -->
+<div id="shiftModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-clock"></i>
+                <span id="modalTitle">Ajouter un créneau</span>
+            </h3>
+            <button class="modal-close" onclick="closeShiftModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <form id="shiftForm">
+                <div class="form-group">
+                    <label>Employé</label>
+                    <div class="employee-info-modal">
+                        <div class="employee-avatar-small" id="modalEmployeeAvatar"></div>
+                        <div>
+                            <div id="modalEmployeeName"></div>
+                            <div id="modalEmployeeRole"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Jour</label>
+                    <input type="text" id="modalDay" readonly>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Heure de début</label>
+                        <select id="startTime" onchange="updateEndTimeOptions()">
+                            <!-- Options générées par JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Heure de fin</label>
+                        <select id="endTime" onchange="calculateDuration()">
+                            <!-- Options générées par JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Durée</label>
+                    <div class="duration-display" id="shiftDuration">0h 00min</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Type de créneau</label>
+                    <select id="shiftType">
+                        <option value="normal">Service normal</option>
+                        <option value="opening">Ouverture</option>
+                        <option value="closing">Fermeture</option>
+                        <option value="break">Pause</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes (optionnel)</label>
+                    <textarea id="shiftNotes" placeholder="Notes spéciales pour ce créneau..."></textarea>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeShiftModal()">
+                <i class="fas fa-times"></i>
+                Annuler
+            </button>
+            <button class="btn btn-danger" id="deleteShiftBtn" onclick="deleteShift()" style="display: none;">
+                <i class="fas fa-trash"></i>
+                Supprimer
+            </button>
+            <button class="btn btn-success" onclick="saveShift()">
+                <i class="fas fa-check"></i>
+                Sauvegarder
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay pour le modal -->
+<div id="modalOverlay" class="modal-overlay" onclick="closeShiftModal()"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Données des employés depuis Django
+    var employesData = {{ employes_json|safe }};
+</script>
+<script src="{% static 'restoplus/js/horaire.js' %}"></script>
+{% endblock %}
+

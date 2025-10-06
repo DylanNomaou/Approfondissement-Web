@@ -483,3 +483,101 @@ def create_test_notification(request):
             return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
     
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+
+
+# --- SPRINT DEUX ----
+def horaire_creation(request):
+    """Vue pour la création des horaires"""
+    if not request.user.is_authenticated:
+        messages.info(request, "Vous devez être connecté pour accéder à cette page.")
+        return redirect('login')
+    
+
+    # Préparer les données des employés pour le JavaScript
+    jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+    employes= [
+        {
+            'id': 1,
+            'nom': 'Sophie Martin',
+            'poste': 'Chef de cuisine',
+            'couleur': '#FF6B6B',
+            'disponibilites': {
+                'lundi': {'min': 6, 'max': 22},
+                'mardi': {'min': 6, 'max': 22},
+                'mercredi': {'min': 6, 'max': 22},
+                'jeudi': {'min': 6, 'max': 22},
+                'vendredi': {'min': 6, 'max': 22},
+                'samedi': {'min': 8, 'max': 20},
+                'dimanche': {'min': 10, 'max': 18}
+            }
+        },
+        {
+            'id': 2,
+            'nom': 'Pierre Dubois',
+            'poste': 'Serveur',
+            'couleur': '#4ECDC4',
+            'disponibilites': {
+                'lundi': {'min': 8, 'max': 20},
+                'mardi': {'min': 8, 'max': 20},
+                'mercredi': {'min': 8, 'max': 20},
+                'jeudi': {'min': 8, 'max': 20},
+                'vendredi': {'min': 8, 'max': 22},
+                'samedi': {'min': 8, 'max': 22},
+                'dimanche': None
+            }
+        },
+        {
+            'id': 3,
+            'nom': 'Marie Leroy',
+            'poste': 'Serveuse',
+            'couleur': '#95E1D3',
+            'disponibilites': {
+                'lundi': {'min': 10, 'max': 18},
+                'mardi': {'min': 10, 'max': 18},
+                'mercredi': {'min': 10, 'max': 18},
+                'jeudi': {'min': 10, 'max': 18},
+                'vendredi': {'min': 10, 'max': 22},
+                'samedi': {'min': 10, 'max': 22},
+                'dimanche': {'min': 10, 'max': 18}
+            }
+        },
+        {
+            'id': 4,
+            'nom': 'Jean Moreau',
+            'poste': 'Commis de cuisine',
+            'couleur': '#F7D794',
+            'disponibilites': {
+                'lundi': {'min': 7, 'max': 19},
+                'mardi': {'min': 7, 'max': 19},
+                'mercredi': {'min': 7, 'max': 19},
+                'jeudi': {'min': 7, 'max': 19},
+                'vendredi': {'min': 7, 'max': 21},
+                'samedi': {'min': 7, 'max': 21},
+                'dimanche': None
+            }
+        },
+        {
+            'id': 5,
+            'nom': 'Amélie Petit',
+            'poste': 'Responsable salle',
+            'couleur': '#D6A2E8',
+            'disponibilites': {
+                'lundi': {'min': 9, 'max': 21},
+                'mardi': {'min': 9, 'max': 21},
+                'mercredi': {'min': 9, 'max': 21},
+                'jeudi': {'min': 9, 'max': 21},
+                'vendredi': {'min': 9, 'max': 23},
+                'samedi': {'min': 9, 'max': 23},
+                'dimanche': {'min': 12, 'max': 20}
+            }
+        }
+    ]
+
+    
+    context = {
+        'employes_data_json': json.dumps(employes),
+        'jours': json.dumps(jours),
+    }
+    
+    return render(request, "restoplus/horaire_creation.html", context)
