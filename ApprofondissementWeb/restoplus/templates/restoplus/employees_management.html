@@ -22,13 +22,14 @@
                 <div class="card-footer bg-white">
                     <div class="d-flex justify-content-between">
                         <!-- Bouton demander de remplir disponibilités -->
-                        <a href="#" class="btn btn-outline-primary btn-sm">
+                        <a href="{% url 'send_availabilities_form' employe.id %}"
+                            class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-calendar-plus"></i> Demander disponibilités
                         </a>
 
-                        <!-- Bouton visualiser disponibilités -->
-                        <a href="#" class="btn btn-outline-success btn-sm">
-                            <i class="bi bi-calendar-week"></i> Voir disponibilités
+                        <!-- Profil de l'employé -->
+                        <a href="{% url 'employee_profile' employe.id %}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-person-lines-fill"></i> Voir profil
                         </a>
                     </div>
                 </div>
@@ -37,7 +38,7 @@
         {% empty %}
         <p class="text-muted">Aucun employé trouvé.</p>
         {% endfor %}
-        <button method="Post" action="#" >Accès formulaire Bouton Temporaire</button>
+        <button method="Post" action="#">Accès formulaire Bouton Temporaire</button>
     </div>
 </div>
 {% endblock %}

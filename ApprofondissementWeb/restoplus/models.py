@@ -65,9 +65,14 @@ class User(AbstractUser):
         # Sinon, on peut seulement s'assigner des tâches à soi-même
         return self == target_user
 
-class Disponibilite(models.Model):
+class Availability(models.Model):
+    STATUTS = [
+        ('en_attente', 'En attente'),
+        ('remplie', 'Remplie'),
+        ('validee', 'Validée'),
+    ]
     employe=models.ForeignKey(User,on_delete=models.CASCADE)
-    jour=models.CharField(max_length=10, choices=[  
+    day=models.CharField(max_length=10, choices=[  
         ('lundi', 'Lundi'),
         ('mardi', 'Mardi'),
         ('mercredi', 'Mercredi'),
@@ -78,13 +83,13 @@ class Disponibilite(models.Model):
         ])
     heure_debut=models.TimeField()
     heure_fin=models.TimeField()
+    remplie = models.BooleanField(default=False)
+    def __str__(self):
+        return f"{self.employe.username} - {self.jour} ({self.heure_debut} à {self.heure_fin})"
 
 class Task(models.Model):
     # Titre de la tâche
     title = models.CharField(max_length=255, verbose_name="Titre") 
-
-    # Priorité de la tâche
-
     # Choix de priorité
     PRIORITY_CHOICES = [
         ('low', 'Basse'),

@@ -5,12 +5,10 @@ from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm, UserLoginForm, TaskForm
 from django.contrib.auth import get_user_model
 from datetime import date
-from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-
-from .models import User, Role, Task, Notification
+from .models import User, Role, Task, Notification,Availability
 from .notifications import notify_task_assigned, notify_role_assigned
 # Create your views here.
 def accueil(request):
@@ -195,15 +193,53 @@ def admin_dashboard(request):
     }
     return render(request, "restoplus/admin_dashboard.html", context)
 
+#SECTION GESTION DES EMPLOYÉS
+
 @login_required
-def employees_dashboard(request):
+def employees_management(request):
     """Permet d'accéder aux données des emplyés"""
     employes = User.objects.all()
-    return render(request,"restoplus/employees_dashboard.html",{"employes": employes})
+    return render(request,"restoplus/employees_management.html",{"employes": employes})
+
+@login_required
+def employee_profile(request, employe_id):
+    employee = get_object_or_404(User, id=employe_id)
+    availabilities = Availability.objects.filter(employe=employee).order_by('day')
+
+    if not availabilities.exists():
+        status_label = "Aucune disponibilité reçue"
+        status_class = "secondary"
+    elif all(a.status == "validated" for a in availabilities):
+        status_label = "Disponibilités validées ✅"
+        status_class = "success"
+    elif any(a.status == "filled" for a in availabilities):
+        status_label = "Disponibilités remplies (en attente de validation)"
+        status_class = "warning"
+    else:
+        status_label = "Disponibilités demandées (en attente)"
+        status_class = "info"
+
+    return render(request, "restoplus/employee_profile.html", {
+        "employe": employee,
+        "availabilities": availabilities,
+        "status_label": status_label,
+        "status_class": status_class,
+    })
+
+
+@login_required
+def ask_availibilities(request,employe_id):
+    """Permet d'envoyer une demande à l'employé sélectionné"""
+    if request.method == "POST":
+        employe = get_object_or_404(User, id=employe_id)
+        messages.success(request, f"Une demande de disponibilités a été envoyée à {employe.username}.")
+        return redirect('restoplus/accueil')
+    else:
+        messages.error(request, "Méthode non autorisée.")
+        return redirect('gestion_employes') 
 
 @login_required
 def dispo_form(request):
-
     return render(request, "restoplus/dispo_form.html", {"form": form})
 
 @login_required
