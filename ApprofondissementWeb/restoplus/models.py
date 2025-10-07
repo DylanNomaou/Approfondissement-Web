@@ -4,8 +4,6 @@ from django.forms import ValidationError
 from django.utils import timezone
 from datetime import date
 
-
-
 class Role(models.Model):
     """Modèle pour définir les rôles"""
 
@@ -25,7 +23,6 @@ class Role(models.Model):
         verbose_name = "Rôle"
         verbose_name_plural = "Rôles"
         ordering = ['name']
-
 
 class User(AbstractUser):
     class AvailabilityStatus(models.TextChoices):

@@ -245,9 +245,14 @@ def ask_availibilities(request, employe_id):
         if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
             employe.availability_status = User.AvailabilityStatus.PENDING
             employe.save()
+
+            task_description = (
+            "Merci de remplir ton formulaire de disponibilités dès que possible.")
+
             task = Task.objects.create(
             title="Remplir ses disponibilités",
-            description="Merci de remplir ton formulaire de disponibilités dès que possible.",
+            estimated_duration=15,
+            description=task_description,
             priority="moyenne")
 
             task.assigned_to.add(employe)
