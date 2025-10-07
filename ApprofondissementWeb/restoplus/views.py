@@ -227,17 +227,42 @@ def employee_profile(request, employe_id):
     })
 
 
+from django.utils import timezone
+from .models import Availability, Task
+from .notifications import notify_task_assigned
+
 @login_required
-def ask_availibilities(request,employe_id):
-    """Permet d'envoyer une demande à l'employé sélectionné"""
+def ask_availibilities(request, employe_id):
+    """Permet d'envoyer une demande de disponibilités à un employé, si aucune demande n'est déjà active."""
     if request.method == "POST":
         employe = get_object_or_404(User, id=employe_id)
-        messages.success(request, f"Une demande de disponibilités a été envoyée à {employe.username}.")
-        return redirect('restoplus/accueil')
+        
+        #Si le status est en attente, ou complétée alors message!
+        if employe.availability_status in[User.AvailabilityStatus.PENDING,User.AvailabilityStatus.FILLED]:
+            messages.warning(request, f"⚠️ Une demande de disponibilités est déjà en attente pour {employe.username}.")
+            return redirect('employees_management')
+        
+        if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
+            employe.availability_status = User.AvailabilityStatus.PENDING
+            employe.save()
+            task = Task.objects.create(
+            title="Remplir ses disponibilités",
+            description="Merci de remplir ton formulaire de disponibilités dès que possible.",
+            priority="moyenne")
+
+            task.assigned_to.add(employe)
+            notify_task_assigned(task, [employe], request.user)
+
+            messages.success(request, f"✅ Une demande de disponibilités a été envoyée à {employe.username}.")
+            return redirect('employees_management')
+        else :
+            messages.warning('La demande n\a pu être complétée')
+            return redirect('employees_management')
     else:
         messages.error(request, "Méthode non autorisée.")
-        return redirect('gestion_employes') 
+        return redirect('employee_profile', employe_id=employe_id)
 
+    
 @login_required
 def dispo_form(request):
     return render(request, "restoplus/dispo_form.html", {"form": form})
@@ -409,14 +434,11 @@ def assign_role_to_user(request):
             
             user = User.objects.get(id=user_id)
             role = Role.objects.get(id=role_id)
-            
             # Sauvegarder l'ancien rôle pour comparaison
             old_role = user.role
-            
             # Assigner le nouveau rôle
             user.role = role
-            user.save()
-            
+            user.save()      
             # Créer une notification si le rôle a changé
             if old_role != role:
                 notification = notify_role_assigned(user, role, request.user)
@@ -438,16 +460,14 @@ def assign_role_to_user(request):
         except Role.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Rôle introuvable'})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
-    
+            return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})    
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
 
 
 @login_required
 def get_user_notifications(request):
     """Vue pour récupérer les notifications de l'utilisateur connecté"""
-    from .notifications import get_recent_notifications, get_unread_notifications_count
-    
+    from .notifications import get_recent_notifications, get_unread_notifications_count 
     # Récupérer les notifications récentes
     notifications = get_recent_notifications(request.user, limit=20)
     unread_count = get_unread_notifications_count(request.user)

@@ -28,6 +28,15 @@ class Role(models.Model):
 
 
 class User(AbstractUser):
+    class AvailabilityStatus(models.TextChoices):
+        NOT_FILLED = 'not_filled', 'Not filled'
+        PENDING = 'pending', 'Pending'
+        FILLED = 'filled', 'Filled'
+    availability_status = models.CharField(
+        max_length=20,
+        choices=AvailabilityStatus.choices,
+        default=AvailabilityStatus.NOT_FILLED
+    )
     first_name = models.CharField(max_length=150, blank=True, verbose_name="Prénom")
     last_name = models.CharField(max_length=150, blank=True, verbose_name="Nom de famille")
     email = models.EmailField(blank=True, verbose_name="Courriel")
@@ -66,11 +75,6 @@ class User(AbstractUser):
         return self == target_user
 
 class Availability(models.Model):
-    STATUTS = [
-        ('en_attente', 'En attente'),
-        ('remplie', 'Remplie'),
-        ('validee', 'Validée'),
-    ]
     employe=models.ForeignKey(User,on_delete=models.CASCADE)
     day=models.CharField(max_length=10, choices=[  
         ('lundi', 'Lundi'),
@@ -120,20 +124,14 @@ class Task(models.Model):
 
     # Description de la tâche
     description = models.TextField(blank=True, verbose_name="Description")
-
     # Date d'échéance
     due_date = models.DateField(null=True, blank=True, verbose_name="Date d'échéance")
-
-
     # Utilisateur assigné à la tâche
     assigned_to = models.ManyToManyField(User, blank=True, related_name='tasks', verbose_name="Assigné à")
-
     # Durée estimée en minutes
     estimated_duration = models.PositiveIntegerField(null=True, blank=True, verbose_name="Durée estimée (minutes)")
-
     # état de la tâche
     is_completed = models.BooleanField(default=False, verbose_name="Complétée")
-
     # Date de création
     created_at = models.DateTimeField(null=True, blank=True, default=timezone.now, verbose_name="Créé le")
 
