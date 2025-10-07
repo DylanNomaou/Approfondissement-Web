@@ -29,14 +29,15 @@ class Role(models.Model):
 
 class User(AbstractUser):
     class AvailabilityStatus(models.TextChoices):
-        NOT_FILLED = 'not_filled', 'Not filled'
-        PENDING = 'pending', 'Pending'
-        FILLED = 'filled', 'Filled'
+        NOT_FILLED = "not_filled", "Non remplie"
+        PENDING    = "pending",    "En attente"
+        FILLED     = "filled",     "Remplie"
     availability_status = models.CharField(
         max_length=20,
         choices=AvailabilityStatus.choices,
-        default=AvailabilityStatus.NOT_FILLED
-    )
+        default=AvailabilityStatus.NOT_FILLED,
+        verbose_name="Statut des disponibilités"
+        )
     first_name = models.CharField(max_length=150, blank=True, verbose_name="Prénom")
     last_name = models.CharField(max_length=150, blank=True, verbose_name="Nom de famille")
     email = models.EmailField(blank=True, verbose_name="Courriel")

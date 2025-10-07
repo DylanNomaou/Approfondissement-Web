@@ -203,24 +203,24 @@ def employees_management(request):
 
 @login_required
 def employee_profile(request, employe_id):
-    employee = get_object_or_404(User, id=employe_id)
-    availabilities = Availability.objects.filter(employe=employee).order_by('day')
+    employe = get_object_or_404(User, id=employe_id)
+    availabilities = Availability.objects.filter(employe=employe).order_by('day')
 
-    if not availabilities.exists():
+    if employe.availability_status == User.AvailabilityStatus.NOT_FILLED:
         status_label = "Aucune disponibilité reçue"
         status_class = "secondary"
-    elif all(a.status == "validated" for a in availabilities):
-        status_label = "Disponibilités validées ✅"
-        status_class = "success"
-    elif any(a.status == "filled" for a in availabilities):
-        status_label = "Disponibilités remplies (en attente de validation)"
-        status_class = "warning"
-    else:
-        status_label = "Disponibilités demandées (en attente)"
+    elif employe.availability_status == User.AvailabilityStatus.PENDING:
+        status_label = "Demande envoyée (en attente de réponse)"
         status_class = "info"
+    elif employe.availability_status == User.AvailabilityStatus.FILLED:
+        status_label = "Disponibilités complétées ✅"
+        status_class = "success"
+    else:
+        status_label = "Statut inconnu"
+        status_class = "dark"
 
     return render(request, "restoplus/employee_profile.html", {
-        "employe": employee,
+        "employe": employe,
         "availabilities": availabilities,
         "status_label": status_label,
         "status_class": status_class,
