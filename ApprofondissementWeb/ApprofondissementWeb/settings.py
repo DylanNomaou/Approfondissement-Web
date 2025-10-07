@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-dy3$n2w_on5961#j2&!5l2qgu9zl=sk31c)a8!%zg5$vm&=ha!
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
-    '127.0.0.1', 
+    '127.0.0.1',
     'localhost',
     'www.hasanaldulaimi.com',
     'hasanaldulaimi.com',
@@ -67,7 +67,7 @@ MIDDLEWARE = [
 # Ajouter WhiteNoise seulement en production
 if not DEBUG:
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
- 
+
 ROOT_URLCONF = 'ApprofondissementWeb.urls'
 
 TEMPLATES = [
@@ -86,7 +86,7 @@ TEMPLATES = [
         },
     },
 ]
- 
+
 WSGI_APPLICATION = 'ApprofondissementWeb.wsgi.application'
 
 
@@ -145,7 +145,7 @@ AUTH_USER_MODEL = 'restoplus.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login/'
 
 # Configuration pour la production
@@ -153,7 +153,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Paramètres de sécurité pour la production
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
