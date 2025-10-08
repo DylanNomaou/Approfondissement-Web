@@ -24,30 +24,30 @@
                     <span>Page d'accueil</span>
                 </a>
             </li>
-            
-            <!--<li class="nav-item">
-                <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link" href="#" data-bs-toggle="collapse" data-bs-target="#employeesSubmenu">
-                    <i class="bi bi-people me-3"></i>
-                    <span>Employés</span>
-                    <i class="bi bi-chevron-right ms-auto"></i>
-                </a>
-                <div class="collapse" id="employeesSubmenu">
-                    <ul class="nav flex-column ms-4">
-                        <li class="nav-item">
-                            <a class="nav-link text-light-50 py-2" href="#">
-                                <i class="bi bi-person-plus me-2"></i>Ajouter Employé
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-light-50 py-2" href="#">
-                                <i class="bi bi-list-ul me-2"></i>Liste Employés
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-            
-            <li class="nav-item">
+           {%if user.is_authenticated and user.can_manage_employees %}
+                <li class="nav-item">
+                        <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link" href="#" data-bs-toggle="collapse" data-bs-target="#employeesSubmenu">
+                            <i class="bi bi-people me-3"></i>
+                            <span>Employés</span>
+                            <i class="bi bi-chevron-right ms-auto"></i>
+                        </a>
+                        <div class="collapse" id="employeesSubmenu">
+                            <ul class="nav flex-column ms-4">
+                                <li class="nav-item">
+                                    <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'add_employee' %}active{% endif %}" href="{% url 'add_employee' %}">
+                                        <i class="bi bi-person-plus me-2"></i>Ajouter Employé
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light-50 py-2" href="#">
+                                        <i class="bi bi-list-ul me-2"></i>Liste Employés
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+            {% endif %}
+           <!-- <li class="nav-item">
                 <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link" href="#" data-bs-toggle="collapse" data-bs-target="#inventorySubmenu">
                     <i class="bi bi-boxes me-3"></i>
                     <span>Inventaire</span>
@@ -67,7 +67,7 @@
                         </li>
                     </ul>
                 </div>
-            </li> <!-- IGNORE -->
+            </li>  -->
 
             <li class="nav-item">
                 <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'create_role' or request.resolver_match.url_name == 'manage_user_role' %}active{% endif %}" href="#" data-bs-toggle="collapse" data-bs-target="#adminSubmenu">
@@ -120,7 +120,7 @@
                         <span>Page d'accueil</span>
                     </a>
                 </li>
-                
+
                 <li class="nav-item">
                     <a class="nav-link text-light d-flex align-items-center py-3 sidebar-link" href="#" data-bs-toggle="collapse" data-bs-target="#mobileEmployeesSubmenu">
                         <i class="bi bi-people me-3"></i>
@@ -142,7 +142,7 @@
                         </ul>
                     </div>
                 </li>
-                
+
                 <li class="nav-item">
                     <a class="nav-link text-light d-flex align-items-center py-3 sidebar-link" href="#" data-bs-toggle="collapse" data-bs-target="#mobileInventorySubmenu">
                         <i class="bi bi-boxes me-3"></i>
@@ -164,7 +164,7 @@
                         </ul>
                     </div>
                 </li>
-                
+
                 <li class="nav-item">
                     <a class="nav-link text-light d-flex align-items-center py-3 sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'create_role' or request.resolver_match.url_name == 'manage_user_role' %}active{% endif %}" href="#" data-bs-toggle="collapse" data-bs-target="#mobileAdminSubmenu">
                         <i class="bi bi-gear me-3"></i>
