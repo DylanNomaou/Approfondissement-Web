@@ -41,7 +41,7 @@ class User(AbstractUser):
             return f"{self.first_name} ({self.username})"
         else:
             return self.username
-    
+
     def has_permission(self, permission):
         """Vérifier si l'utilisateur a une permission spécifique basée sur son rôle"""
         if self.is_superuser:
@@ -49,29 +49,34 @@ class User(AbstractUser):
         if not self.role:
             return False
         return getattr(self.role, permission, False)
-    
+
     def can_distribute_tasks_to_all(self):
         """Vérifier si l'utilisateur peut distribuer des tâches à tous les utilisateurs"""
         return self.has_permission('can_distribute_tasks')
-    
+
     def can_create_task_for_user(self, target_user):
         """Vérifier si l'utilisateur peut créer une tâche pour un utilisateur spécifique"""
         # Les superusers peuvent tout faire
         if self.is_superuser:
             return True
-        
+
         # Les utilisateurs avec la permission can_distribute_tasks peuvent assigner à tous
         if self.can_distribute_tasks_to_all():
             return True
-        
         # Sinon, on peut seulement s'assigner des tâches à soi-même
         return self == target_user
-    
+
+    def can_manage_employees(self):
+        """Vérifier si l'utilisateur peut gérer les employés"""
+        if self.is_superuser:
+            return True
+        return self.has_permission('can_manage_users')
+
 
 
 class Task(models.Model):
     # Titre de la tâche
-    title = models.CharField(max_length=255, verbose_name="Titre") 
+    title = models.CharField(max_length=255, verbose_name="Titre")
 
     # Priorité de la tâche
 
@@ -133,14 +138,14 @@ class Task(models.Model):
         # Validation personnalisée
         if self.due_date and self.due_date < date.today():
             raise ValidationError("La date d'échéance ne peut pas être dans le passé.")
-        
+
     def __str__(self):
         return self.title
 
 
 class Notification(models.Model):
     """Modèle pour les notifications système"""
-    
+
     NOTIFICATION_TYPES = [
         ('task_assigned', 'Tâche assignée'),
         ('role_assigned', 'Rôle assigné'),
@@ -148,73 +153,73 @@ class Notification(models.Model):
         ('reminder', 'Rappel'),
         ('system', 'Notification système'),
     ]
-    
+
     titre = models.CharField(max_length=255, verbose_name="Titre")
     description = models.TextField(verbose_name="Description")
     type_notification = models.CharField(
-        max_length=20, 
-        choices=NOTIFICATION_TYPES, 
+        max_length=20,
+        choices=NOTIFICATION_TYPES,
         default='system',
         verbose_name="Type de notification"
     )
-    
+
     # Utilisateur qui reçoit la notification
     assigned_to = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE, 
+        User,
+        on_delete=models.CASCADE,
         related_name='notifications',
         verbose_name="Assigné à"
     )
-    
+
     # Utilisateur qui a créé la notification (optionnel)
     created_by = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='notifications_created',
         verbose_name="Créé par"
     )
-    
+
     # Statut de la notification
     is_read = models.BooleanField(default=False, verbose_name="Lu")
-    
+
     # Dates
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     read_at = models.DateTimeField(null=True, blank=True, verbose_name="Lu le")
-    
+
     # Référence optionnelle vers l'objet lié (tâche, rôle, etc.)
     task_reference = models.ForeignKey(
-        'Task', 
-        on_delete=models.CASCADE, 
-        null=True, 
+        'Task',
+        on_delete=models.CASCADE,
+        null=True,
         blank=True,
         verbose_name="Tâche liée"
     )
-    
+
     role_reference = models.ForeignKey(
-        'Role', 
-        on_delete=models.CASCADE, 
-        null=True, 
+        'Role',
+        on_delete=models.CASCADE,
+        null=True,
         blank=True,
         verbose_name="Rôle lié"
     )
-    
+
     class Meta:
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
         ordering = ['-created_at']  # Plus récentes en premier
-    
+
     def __str__(self):
         return f"{self.titre} - {self.assigned_to.username}"
-    
+
     def mark_as_read(self):
         """Marquer la notification comme lue"""
         if not self.is_read:
             self.is_read = True
             self.read_at = timezone.now()
             self.save()
-    
+
     def get_type_display_icon(self):
         """Retourner l'icône Bootstrap selon le type"""
         icons = {
@@ -225,7 +230,7 @@ class Notification(models.Model):
             'system': 'bi-info-circle',
         }
         return icons.get(self.type_notification, 'bi-bell')
-    
+
     def get_type_display_color(self):
         """Retourner la couleur selon le type"""
         colors = {
