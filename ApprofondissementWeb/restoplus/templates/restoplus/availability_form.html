@@ -3,6 +3,14 @@
 
 {% block content %}
 <div class="container py-5">
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
   <div class="card shadow-lg mx-auto" style="max-width: 800px;">
     <div class="card-header bg-light text-center">
       <h4 class="mb-0">
@@ -130,8 +138,8 @@
     </div>
 
     <div class="card-footer text-center bg-light">
-      <a href="{% url 'employee_profile' employe.id %}" class="text-decoration-none">
-        <i class="bi bi-arrow-left"></i> Retour au profil
+      <a href="{% url 'accueil' %}" class="text-decoration-none">
+        <i class="bi bi-arrow-left"></i> Retour à l'accueil
       </a>
     </div>
   </div>

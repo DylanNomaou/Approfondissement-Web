@@ -105,17 +105,20 @@ class AvailabilityForm(forms.Form):
     def clean(self):
         """Validation logique des heures de début/fin"""
         cleaned_data = super().clean()
-        errors = {}
         for key, label in self.DAYS:
             start = cleaned_data.get(f"{key}_start")
             end = cleaned_data.get(f"{key}_end")
-            if (start and not end) or (end and not start):
-                errors[key] = f"{label} : veuillez remplir à la fois l'heure de début et l'heure de fin."
-            # Si les deux sont présentes mais incohérentes
+            # Cas 1 : un seul champ rempli
+            if (end and not start):
+                msg = f"veuillez remplir l'heure de début."
+                self.add_error(f"{key}_start", msg)
+            if(start and not end):
+                msg = f"veuillez remplir l'heure de fin."
+                self.add_error(f"{key}_end", msg)
+            # Cas 2 : incohérence logique (début >= fin)
             elif start and end and start >= end:
-                errors[key] = f"{label} : l'heure de fin doit être après l'heure de début."
-        if errors:
-            raise ValidationError(errors)
+                msg = f"l'heure de fin doit être après l'heure de début."
+                self.add_error(f"{key}_end", msg)
         return cleaned_data
 
 class TaskForm(forms.ModelForm):

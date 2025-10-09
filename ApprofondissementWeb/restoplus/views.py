@@ -215,7 +215,7 @@ def employee_profile(request, employe_id):
         status_label = "Demande envoyée (en attente de réponse)"
         status_class = "info"
     elif employe.availability_status == User.AvailabilityStatus.FILLED:
-        status_label = "Disponibilités complétées ✅"
+        status_label = "Disponibilités complétées "
         status_class = "success"
     else:
         status_label = "Statut inconnu"
@@ -255,7 +255,7 @@ def ask_availibilities(request, employe_id):
 
             task.assigned_to.add(employe)
             notify_task_assigned(task, [employe], request.user)
-            messages.success(request, f"✅ Une demande de disponibilités a été envoyée à {employe.username}.")
+            messages.success(request, f" Une demande de disponibilités a été envoyée à {employe.username}.")
             return redirect('employees_management')
         else :
             messages.warning('La demande n\a pu être complétée')
@@ -265,10 +265,9 @@ def ask_availibilities(request, employe_id):
     return redirect('employee_profile', employe_id=employe_id)
 
 @login_required
-def availability_form(request, employe_id):
+def availability_form(request):
     """Formulaire pour remplir les disponibilités"""
     employe = employe = request.user
-
     if request.method == 'POST':
         form = AvailabilityForm(request.POST)
         if form.is_valid():
@@ -290,7 +289,7 @@ def availability_form(request, employe_id):
                         day=day_key,
                         defaults={'heure_debut': start, 'heure_fin': end, 'remplie': True}
                     )
-            messages.success(request, "Disponibilités envoyées ✅")
+            messages.success(request, "Disponibilités sauvegardés ✅, merci!")
             return redirect('fill_availability') 
     else:
         existing = {a.day: a for a in Availability.objects.filter(employe=employe)}
