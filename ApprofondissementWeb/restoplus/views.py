@@ -2,28 +2,30 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import UserRegisterForm, UserLoginForm, TaskForm
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
 from django.contrib.auth import get_user_model
 from datetime import date
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import User, Role, Task, Notification,Availability
+from .models import User, Role, Task, Notification,Availability, Task
 from .notifications import notify_task_assigned, notify_role_assigned
+from django.utils import timezone
+
 # Create your views here.
 def accueil(request):
     """Vue pour la page d'accueil."""
     if not request.user.is_authenticated:
         messages.info(request, "Vous devez être connecté pour accéder à cette page.")
         return redirect('login')
-    
+
     # Gestion du formulaire de tâche
     if request.method == 'POST':
         task_form = TaskForm(request.POST, user=request.user)
         if task_form.is_valid():
             # Vérification des permissions avant de sauvegarder
             assigned_users_from_form = task_form.cleaned_data['assigned_to']
-            
+
             # Vérifier que l'utilisateur a le droit d'assigner à ces utilisateurs
             if not request.user.can_distribute_tasks_to_all():
                 # Si l'utilisateur n'a pas la permission, il ne peut assigner qu'à lui-même
@@ -31,7 +33,7 @@ def accueil(request):
                 if unauthorized_users:
                     unauthorized_names = ", ".join([str(user) for user in unauthorized_users])
                     messages.error(
-                        request, 
+                        request,
                         f"❌ Vous n'avez pas l'autorisation d'assigner des tâches à : {unauthorized_names}. "
                         f"Vous ne pouvez assigner des tâches qu'à vous-même."
                     )
@@ -43,10 +45,10 @@ def accueil(request):
                     task = task_form.save(commit=False)
                     task.save()
                     task_form.save_m2m()
-                    
+
                     assigned_users = list(task.assigned_to.all())
                     notifications = notify_task_assigned(task, assigned_users, request.user)
-                    
+
                     messages.success(request, f"✅ Tâche '{task.title}' créée avec succès et assignée à vous-même !")
                     return redirect('accueil')
             else:
@@ -54,24 +56,24 @@ def accueil(request):
                 task = task_form.save(commit=False)
                 task.save()
                 task_form.save_m2m()
-                
+
                 # Vérifier qu'au moins un utilisateur est assigné
                 assigned_users = list(task.assigned_to.all())
                 if not assigned_users:
                     # Si aucun utilisateur n'est assigné, assigner à l'utilisateur actuel par défaut
                     task.assigned_to.add(request.user)
                     assigned_users = [request.user]
-                
+
                 # Créer des notifications pour tous les utilisateurs assignés
                 notifications = notify_task_assigned(task, assigned_users, request.user)
-                
+
                 # Message de succès détaillé
                 assigned_users_names = ", ".join([str(user) for user in assigned_users])
                 if assigned_users_names:
                     notification_count = len(notifications)
                     if notification_count > 0:
                         messages.success(
-                            request, 
+                            request,
                             f"✅ Tâche '{task.title}' créée avec succès ! Assignée à : {assigned_users_names} "
                             f"({notification_count} notification(s) envoyée(s))"
                         )
@@ -90,48 +92,48 @@ def accueil(request):
                     current_class = widget.attrs.get('class', '')
                     if 'is-invalid' not in current_class:
                         widget.attrs['class'] = current_class + ' is-invalid'
-                
+
                 # Collecter les erreurs pour le message
                 for error in field_errors:
                     field_label = task_form.fields[field_name].label if field_name in task_form.fields else field_name
                     errors_list.append(f"{field_label}: {error}")
-            
+
             if errors_list:
                 error_message = "Erreurs dans le formulaire : " + " | ".join(errors_list[:3])
                 if len(errors_list) > 3:
                     error_message += f" (et {len(errors_list) - 3} autre(s) erreur(s))"
                 messages.error(request, error_message)
-        
+
         # Pas de redirection en cas d'erreur - on reste sur la page avec le formulaire invalide
     else:
         task_form = TaskForm(user=request.user)
-    
+
     # Récupérer les tâches assignées à l'utilisateur connecté
     today = date.today()
-    
+
     # Pour déboguer : récupérer TOUTES les tâches assignées à l'utilisateur (terminées et non terminées)
     user_tasks_today = Task.objects.filter(
         assigned_to=request.user
     ).order_by('-is_completed', 'due_date')
-    
+
     # Tâches à venir (avec date d'échéance future)
     user_tasks_upcoming = Task.objects.filter(
         assigned_to=request.user,
         is_completed=False,
         due_date__gt=today
     ).order_by('due_date', 'priority')[:5]  # Limiter à 5 tâches
-    
+
     # Tâches terminées récemment
     user_tasks_completed = Task.objects.filter(
         assigned_to=request.user,
         is_completed=True
     ).order_by('-due_date')[:3]  # Les 3 dernières terminées
-    
+
     # Récupérer les notifications de l'utilisateur
     from .notifications import get_recent_notifications, get_unread_notifications_count
     user_notifications = get_recent_notifications(request.user, limit=10)
     unread_notifications_count = get_unread_notifications_count(request.user)
-    
+
     context = {
         'task_form': task_form,
         'user_tasks_today': user_tasks_today,
@@ -178,7 +180,7 @@ def admin_dashboard(request):
     users = User.objects.exclude(id=request.user.id).select_related('role')
     all_users = User.objects.all().select_related('role')  # Pour les statistiques générales
     roles = Role.objects.all()
-    
+
     # Calculer les statistiques sur tous les utilisateurs
     users_without_role = all_users.filter(role__isnull=True)
     active_users = all_users.filter(is_active=True)
@@ -227,21 +229,17 @@ def employee_profile(request, employe_id):
     })
 
 
-from django.utils import timezone
-from .models import Availability, Task
-from .notifications import notify_task_assigned
-
 @login_required
 def ask_availibilities(request, employe_id):
     """Permet d'envoyer une demande de disponibilités à un employé, si aucune demande n'est déjà active."""
     if request.method == "POST":
         employe = get_object_or_404(User, id=employe_id)
-        
+
         #Si le status est en attente, ou complétée alors message!
         if employe.availability_status in[User.AvailabilityStatus.PENDING,User.AvailabilityStatus.FILLED]:
             messages.warning(request, f"⚠️ Une demande de disponibilités est déjà en attente pour {employe.username}.")
             return redirect('employees_management')
-        
+
         if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
             employe.availability_status = User.AvailabilityStatus.PENDING
             employe.save()
@@ -257,20 +255,53 @@ def ask_availibilities(request, employe_id):
 
             task.assigned_to.add(employe)
             notify_task_assigned(task, [employe], request.user)
-
             messages.success(request, f"✅ Une demande de disponibilités a été envoyée à {employe.username}.")
             return redirect('employees_management')
         else :
             messages.warning('La demande n\a pu être complétée')
             return redirect('employees_management')
-    else:
-        messages.error(request, "Méthode non autorisée.")
-        return redirect('employee_profile', employe_id=employe_id)
 
-    
+    messages.error(request, "Méthode non autorisée.")
+    return redirect('employee_profile', employe_id=employe_id)
+
 @login_required
-def dispo_form(request):
-    return render(request, "restoplus/dispo_form.html", {"form": form})
+def availability_form(request, employe_id):
+    """Formulaire pour remplir les disponibilités"""
+    employe = employe = request.user
+
+    if request.method == 'POST':
+        form = AvailabilityForm(request.POST)
+        if form.is_valid():
+            days = [
+                ('monday', 'Lundi'),
+                ('tuesday', 'Mardi'),
+                ('wednesday', 'Mercredi'),
+                ('thursday', 'Jeudi'),
+                ('friday', 'Vendredi'),
+                ('saturday', 'Samedi'),
+                ('sunday', 'Dimanche'),
+            ]
+            for day_key, day_label in days:
+                start = form.cleaned_data.get(f"{day_key}_start")
+                end = form.cleaned_data.get(f"{day_key}_end")
+                if start and end:
+                    Availability.objects.update_or_create(
+                        employe=employe,
+                        day=day_key,
+                        defaults={'heure_debut': start, 'heure_fin': end, 'remplie': True}
+                    )
+            messages.success(request, "Disponibilités envoyées ✅")
+            return redirect('fill_availability') 
+    else:
+        existing = {a.day: a for a in Availability.objects.filter(employe=employe)}
+        initial = {}
+        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+            if day in existing:
+                initial[f"{day}_start"] = existing[day].heure_debut
+                initial[f"{day}_end"] = existing[day].heure_fin
+        form = AvailabilityForm(initial=initial)
+    return render(request, 'restoplus/availability_form.html', {"form": form, "employe": employe})
+
 
 @login_required
 def manage_user_role(request, user_id):
@@ -332,7 +363,7 @@ def create_role(request):
             if can_manage_inventory: permissions_list.append("Gérer l'inventaire")
             if can_view_reports: permissions_list.append("Voir les rapports")
             if can_distribute_tasks: permissions_list.append("Distribuer des tâches à tous")
-            
+
             permissions_text = ", ".join(permissions_list) if permissions_list else "Aucune permission spéciale"
             messages.success(request, f"Nouveau rôle '{name}' créé avec succès ! Permissions : {permissions_text}")
     return redirect('admin_dashboard')
@@ -349,11 +380,11 @@ def get_task_details(request, task_id):
     """Vue pour récupérer les détails d'une tâche"""
     try:
         task = get_object_or_404(Task, id=task_id)
-        
+
         # Vérifier que l'utilisateur peut voir cette tâche
         if request.user not in task.assigned_to.all() and not request.user.is_staff:
             return JsonResponse({'success': False, 'message': 'Permission refusée'})
-        
+
         # Préparer les données de la tâche
         task_data = {
             'id': task.id,
@@ -375,12 +406,12 @@ def get_task_details(request, task_id):
                 for user in task.assigned_to.all()
             ]
         }
-        
+
         return JsonResponse({
             'success': True,
             'task': task_data
         })
-        
+
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
 
@@ -393,30 +424,30 @@ def toggle_task_status(request):
             task_id = request.POST.get('task_id')
             if not task_id:
                 return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
-            
+
             task = get_object_or_404(Task, id=task_id)
-            
+
             # Vérifier que l'utilisateur peut modifier cette tâche
             if request.user not in task.assigned_to.all() and not request.user.is_staff:
                 return JsonResponse({'success': False, 'message': 'Permission refusée'})
-            
+
             # Changer le statut
             task.is_completed = not task.is_completed
             task.save()
-            
+
             # Message de retour
             status_text = "terminée" if task.is_completed else "réouverte"
             message = f"Tâche '{task.title}' marquée comme {status_text}"
-            
+
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'message': message,
                 'is_completed': task.is_completed
             })
-            
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
-    
+
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
 
 
@@ -429,54 +460,54 @@ def assign_role_to_user(request):
             data = json.loads(request.body)
             user_id = data.get('user_id')
             role_id = data.get('role_id')
-            
+
             if not user_id or not role_id:
                 return JsonResponse({'success': False, 'message': 'Utilisateur et rôle requis'})
-            
+
             # Vérifier les permissions (seuls les admins ou utilisateurs avec permission peuvent assigner des rôles)
             if not (request.user.is_superuser or request.user.has_permission('can_manage_users')):
                 return JsonResponse({'success': False, 'message': 'Permission insuffisante'})
-            
+
             user = User.objects.get(id=user_id)
             role = Role.objects.get(id=role_id)
             # Sauvegarder l'ancien rôle pour comparaison
             old_role = user.role
             # Assigner le nouveau rôle
             user.role = role
-            user.save()      
+            user.save()
             # Créer une notification si le rôle a changé
             if old_role != role:
                 notification = notify_role_assigned(user, role, request.user)
-                
+
                 return JsonResponse({
-                    'success': True, 
+                    'success': True,
                     'message': f"Rôle '{role.name}' assigné à {user.get_full_name() or user.username}. Notification envoyée.",
                     'notification_sent': True
                 })
             else:
                 return JsonResponse({
-                    'success': True, 
+                    'success': True,
                     'message': f"L'utilisateur avait déjà le rôle '{role.name}'.",
                     'notification_sent': False
                 })
-            
+
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Utilisateur introuvable'})
         except Role.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Rôle introuvable'})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})    
+            return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
 
 
 @login_required
 def get_user_notifications(request):
     """Vue pour récupérer les notifications de l'utilisateur connecté"""
-    from .notifications import get_recent_notifications, get_unread_notifications_count 
+    from .notifications import get_recent_notifications, get_unread_notifications_count
     # Récupérer les notifications récentes
     notifications = get_recent_notifications(request.user, limit=20)
     unread_count = get_unread_notifications_count(request.user)
-    
+
     notifications_data = []
     for notification in notifications:
         notifications_data.append({
@@ -491,7 +522,7 @@ def get_user_notifications(request):
             'created_at': notification.created_at.strftime('%d/%m/%Y %H:%M'),
             'created_by': notification.created_by.get_full_name() or notification.created_by.username if notification.created_by else None,
         })
-    
+
     return JsonResponse({
         'notifications': notifications_data,
         'unread_count': unread_count
@@ -506,27 +537,27 @@ def mark_notification_as_read(request):
         try:
             data = json.loads(request.body)
             notification_id = data.get('notification_id')
-            
+
             if not notification_id:
                 return JsonResponse({'success': False, 'message': 'ID de notification requis'})
-            
+
             notification = Notification.objects.get(
-                id=notification_id, 
+                id=notification_id,
                 assigned_to=request.user
             )
-            
+
             notification.mark_as_read()
-            
+
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'message': 'Notification marquée comme lue'
             })
-            
+
         except Notification.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Notification introuvable'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
-    
+
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
 
 
@@ -536,7 +567,7 @@ def create_test_notification(request):
     if request.method == 'POST':
         try:
             from .notifications import create_notification
-            
+
             notification = create_notification(
                 titre="🎉 Notification de test",
                 description="Ceci est une notification de test pour vérifier que le système fonctionne correctement ! Si vous voyez ce message, tout est opérationnel.",
@@ -544,14 +575,14 @@ def create_test_notification(request):
                 created_by=request.user,
                 notification_type='system'
             )
-            
+
             return JsonResponse({
                 'success': True,
                 'message': 'Notification de test créée avec succès !',
                 'notification_id': notification.id
             })
-            
+
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Erreur: {str(e)}'})
-    
+
     return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})

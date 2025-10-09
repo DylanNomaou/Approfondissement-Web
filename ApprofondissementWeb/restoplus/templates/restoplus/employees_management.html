@@ -1,47 +1,55 @@
-{% extends "restoplus/base.html" %}
-{% load static %}
-
-{% block title %}RestoPlus - Section Employés{% endblock %}
-
-{% block content %}
+{% extends "restoplus/base.html" %} {% load static %} {% block title %}RestoPlus
+- Section Employés{% endblock %} {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Gestion des employés</h2>
-    {% if messages %}
-    <div class="mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-        </div>
-        {% endfor %}
+  <h2 class="mb-4">Gestion des employés</h2>
+  {% if messages %}
+  <div class="mt-3">
+    {% for message in messages %}
+    <div
+      class="alert alert-{{ message.tags }} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+        aria-label="Fermer"
+      ></button>
     </div>
-    {% endif %}
-    <div class="row">
-        {% for employe in employes %}
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <!--ALERTE Doit compléter fiches détails employés pour que ceci fonctionne -->
-                    <h5 class="card-title">{{employe.username}}{{ employe.prenom }} {{ employe.nom }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">{{ employe.poste }}</h6>
-                    <p class="card-text">
-                        <i class="bi bi-envelope"></i> {{ employe.email }}
-                    </p>
-                </div>
-                <div class="card-footer bg-white">
-                    <div class="d-flex justify-content-between">
-                        <!-- Profil de l'employé -->
-                        <a href="{% url 'employee_profile' employe.id %}" class="btn btn-outline-info btn-sm">
-                            <i class="bi bi-person-lines-fill"></i> Voir profil
-                        </a>
-                    </div>
-                </div>
-            </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="row">
+    {% for employe in employes %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <!--ALERTE Doit compléter fiches détails employés pour que ceci fonctionne -->
+          <h5 class="card-title">
+            {{employe.username}}{{ employe.prenom }} {{ employe.nom }}
+          </h5>
+          <h6 class="card-subtitle mb-2 text-muted">{{ employe.poste }}</h6>
+          <p class="card-text">
+            <i class="bi bi-envelope"></i> {{ employe.email }}
+          </p>
         </div>
-        {% empty %}
-        <p class="text-muted">Aucun employé trouvé.</p>
-        {% endfor %}
-        <button method="Post" action="#">Accès formulaire Bouton Temporaire</button>
+        <div class="card-footer bg-white">
+          <div class="d-flex justify-content-between">
+            <!-- Profil de l'employé -->
+            <a
+              href="{% url 'employee_profile' employe.id %}"
+              class="btn btn-outline-info btn-sm"
+            >
+              <i class="bi bi-person-lines-fill"></i> Voir profil
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
+    {% empty %}
+    <p class="text-muted">Aucun employé trouvé.</p>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

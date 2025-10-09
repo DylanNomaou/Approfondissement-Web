@@ -872,7 +872,7 @@ body {
   border-radius: 0.5rem;
   border: none;
 }
-.admin-dashboard__badge--, .admin-dashboard__badge--employé, .admin-dashboard__badge--employee {
+.admin-dashboard__badge--employe, .admin-dashboard__badge--employé, .admin-dashboard__badge--employee {
   background-color: #858796 !important;
   color: white;
   font-weight: 600;

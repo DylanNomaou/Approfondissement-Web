@@ -1,0 +1,139 @@
+{% extends "restoplus/base.html" %}
+{% block title %}Formulaire de disponibilités{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow-lg mx-auto" style="max-width: 800px;">
+    <div class="card-header bg-light text-center">
+      <h4 class="mb-0">
+        <i class="bi bi-calendar-week"></i> Remplir mes disponibilités
+      </h4>
+    </div>
+
+    <div class="card-body px-4 py-4">
+      <form method="POST" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <!-- Lundi -->
+        <div class="mb-3 border-bottom pb-2">
+          <h6 class="fw-bold text-primary">Lundi</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.monday_start.label_tag }} {{ form.monday_start }}
+              <div class="text-danger small">{{ form.monday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.monday_end.label_tag }} {{ form.monday_end }}
+              <div class="text-danger small">{{ form.monday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mardi -->
+        <div class="mb-3 border-bottom pb-2">
+          <h6 class="fw-bold text-primary">Mardi</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.tuesday_start.label_tag }} {{ form.tuesday_start }}
+              <div class="text-danger small">{{ form.tuesday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.tuesday_end.label_tag }} {{ form.tuesday_end }}
+              <div class="text-danger small">{{ form.tuesday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mercredi -->
+        <div class="mb-3 border-bottom pb-2">
+          <h6 class="fw-bold text-primary">Mercredi</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.wednesday_start.label_tag }} {{ form.wednesday_start }}
+              <div class="text-danger small">{{ form.wednesday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.wednesday_end.label_tag }} {{ form.wednesday_end }}
+              <div class="text-danger small">{{ form.wednesday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Jeudi -->
+        <div class="mb-3 border-bottom pb-2">
+          <h6 class="fw-bold text-primary">Jeudi</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.thursday_start.label_tag }} {{ form.thursday_start }}
+              <div class="text-danger small">{{ form.thursday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.thursday_end.label_tag }} {{ form.thursday_end }}
+              <div class="text-danger small">{{ form.thursday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendredi -->
+        <div class="mb-3 border-bottom pb-2">
+          <h6 class="fw-bold text-primary">Vendredi</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.friday_start.label_tag }} {{ form.friday_start }}
+              <div class="text-danger small">{{ form.friday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.friday_end.label_tag }} {{ form.friday_end }}
+              <div class="text-danger small">{{ form.friday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Samedi -->
+        <div class="mb-3 border-bottom pb-2">
+          <h6 class="fw-bold text-primary">Samedi</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.saturday_start.label_tag }} {{ form.saturday_start }}
+              <div class="text-danger small">{{ form.saturday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.saturday_end.label_tag }} {{ form.saturday_end }}
+              <div class="text-danger small">{{ form.saturday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dimanche -->
+        <div class="mb-3">
+          <h6 class="fw-bold text-primary">Dimanche</h6>
+          <div class="row g-2">
+            <div class="col">
+              {{ form.sunday_start.label_tag }} {{ form.sunday_start }}
+              <div class="text-danger small">{{ form.sunday_start.errors }}</div>
+            </div>
+            <div class="col">
+              {{ form.sunday_end.label_tag }} {{ form.sunday_end }}
+              <div class="text-danger small">{{ form.sunday_end.errors }}</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 mt-4 py-2">
+          <i class="bi bi-check-circle"></i> Enregistrer mes disponibilités
+        </button>
+      </form>
+    </div>
+
+    <div class="card-footer text-center bg-light">
+      <a href="{% url 'employee_profile' employe.id %}" class="text-decoration-none">
+        <i class="bi bi-arrow-left"></i> Retour au profil
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

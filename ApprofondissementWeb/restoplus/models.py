@@ -75,13 +75,13 @@ class User(AbstractUser):
 class Availability(models.Model):
     employe=models.ForeignKey(User,on_delete=models.CASCADE)
     day=models.CharField(max_length=10, choices=[
-        ('lundi', 'Lundi'),
-        ('mardi', 'Mardi'),
-        ('mercredi', 'Mercredi'),
-        ('jeudi', 'Jeudi'),
-        ('vendredi', 'Vendredi'),
-        ('samedi', 'Samedi'),
-        ('dimanche', 'Dimanche'),
+        ('monday', 'Lundi'),
+        ('tuesday', 'Mardi'),
+        ('wednesday', 'Mercredi'),
+        ('thursday', 'Jeudi'),
+        ('friday', 'Vendredi'),
+        ('saturday', 'Samedi'),
+        ('sunday', 'Dimanche'),
         ])
     heure_debut=models.TimeField()
     heure_fin=models.TimeField()
