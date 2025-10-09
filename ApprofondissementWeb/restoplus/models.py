@@ -72,6 +72,12 @@ class User(AbstractUser):
         # Sinon, on peut seulement s'assigner des tâches à soi-même
         return self == target_user
 
+    def can_manage_employees(self):
+        """Vérifier si l'utilisateur peut gérer les employés"""
+        if self.is_superuser:
+            return True
+        return self.has_permission('can_manage_users')
+
 class Availability(models.Model):
     employe=models.ForeignKey(User,on_delete=models.CASCADE)
     day=models.CharField(max_length=10, choices=[
