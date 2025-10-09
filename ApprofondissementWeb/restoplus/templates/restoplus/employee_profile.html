@@ -22,9 +22,10 @@
     <i class="bi bi-info-circle"></i>
     <span class="badge bg-{{ status_class }} ms-3">{{ status_label }}</span>
   </h4>
-
-  <div class="alert alert-{{ status_class }}">{{ status_label }}</div>
-
+  {% if not availabilities %}
+  <div class="alert alert-{{ status_class }}">
+    Disponibilités non complétés.</div>
+  {% endif %}
   <!-- Bouton de demande uniquement si l'employé n'a pas encore soumis -->
   {% if status_class == "secondary" %}
   <form action="{% url 'send_availabilities_form' employe.id %}" method="post">
@@ -34,10 +35,6 @@
     </button>
   </form>
   {% elif status_class == "info" %}
-  <button class="btn btn-outline-secondary btn-sm mb-3" disabled>
-    <i class="bi bi-hourglass-split"></i> Demande déjà envoyée
-  </button>
-  {% elif status_class == "warning" %}
   <button class="btn btn-outline-warning btn-sm mb-3" disabled>
     <i class="bi bi-clock-history"></i> En attente de validation
   </button>
@@ -49,24 +46,33 @@
     </button>
   </form>
   {% endif %}
-  <form method="POST" action="{% url 'fill_availability' employe.id %}">
-    {% csrf_token %}
-    <button type="submit">Accès formulaire Bouton Temporaire</button>
-  </form> {% if availabilities %}
-  <div class="row">
-    {% for a in availabilities %}
-    <div class="col-md-4 mb-3">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h5 class="card-title text-capitalize">{{ a.jour }}</h5>
-          <p class="card-text mb-0">
-            {{ a.heure_debut|time:"H:i" }} → {{ a.heure_fin|time:"H:i" }}
-          </p>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
+  {% if availabilities %}
+  <div class="table-responsive">
+    <table class="table table-bordered text-center align-middle shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Jour</th>
+          <th scope="col">Heure de début</th>
+          <th scope="col">Heure de fin</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in availabilities %}
+        <tr>
+          <td class="text-capitalize">{{ a.get_day_display }}</td>
+          <td>{{ a.heure_debut|time:"H:i" }}</td>
+          <td>{{ a.heure_fin|time:"H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endif %}
+{% else %}
+  <div class="alert alert-{{ status_class }}">
+    <i class="bi bi-exclamation-circle"></i>
+    Aucune disponibilité enregistrée pour le moment.
+  </div>
+{% endif %}
+
 </div>
 {% endblock %}

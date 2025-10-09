@@ -218,7 +218,6 @@ def employee_profile(request, employe_id):
         return redirect('accueil')
     
     availabilities = Availability.objects.filter(employe=employe).order_by('day')
-
     if employe.availability_status == User.AvailabilityStatus.NOT_FILLED:
         status_label = "Aucune disponibilité reçue"
         status_class = "secondary"
