@@ -21,6 +21,6 @@ urlpatterns=[
     path('dashboard/',views.employees_management,name="employees_management"),
     path('employees/<int:employe_id>/', views.employee_profile, name='employee_profile'),
     path('ask_availibilities/<int:employe_id>/', views.ask_availibilities, name='send_availabilities_form'),
-    path('fill_availability/',views.availability_form, name='fill_availability')
+    path('fill_availability/',views.availability_form, name='fill_availability'),
     path('add-employee/', views.add_employee, name='add_employee'),
 ]
