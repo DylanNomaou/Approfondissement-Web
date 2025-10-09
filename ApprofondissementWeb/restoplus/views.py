@@ -1,16 +1,19 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
-from django.contrib.auth import get_user_model
+from .models import User, Role, Task, Notification,Availability, Task
+from .notifications import notify_task_assigned, notify_role_assigned
 from datetime import date
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
 import json
-from .models import User, Role, Task, Notification,Availability, Task
-from .notifications import notify_task_assigned, notify_role_assigned
-from django.utils import timezone
+
 
 # Create your views here.
 def accueil(request):
@@ -158,7 +161,6 @@ def signup_view(request):
         form=UserRegisterForm()
     return render(request, 'registration/signup.html',{'form':form})
 
-
 def login_view(request):
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
@@ -195,17 +197,26 @@ def admin_dashboard(request):
     }
     return render(request, "restoplus/admin_dashboard.html", context)
 
-#SECTION GESTION DES EMPLOYÉS
+# ======================================================================
+# 🧑‍💼 EMPLOYÉS ET DISPONIBILITÉS
+# ======================================================================
 
 @login_required
 def employees_management(request):
-    """Permet d'accéder aux données des emplyés"""
+    """Permet d'accéder aux données des employés"""
     employes = User.objects.all()
     return render(request,"restoplus/employees_management.html",{"employes": employes})
 
 @login_required
 def employee_profile(request, employe_id):
-    employe = get_object_or_404(User, id=employe_id)
+    try:
+        employe = User.objects.get(id=employe_id)
+    except User.DoesNotExist:
+        raise Http404("Aucun employé ne correspond à cet ID.")
+    if not request.user.is_staff and request.user.id != employe.id:
+        messages.error(request, "Accès refusé : vous ne pouvez consulter que votre profil.")
+        return redirect('accueil')
+    
     availabilities = Availability.objects.filter(employe=employe).order_by('day')
 
     if employe.availability_status == User.AvailabilityStatus.NOT_FILLED:
@@ -228,46 +239,43 @@ def employee_profile(request, employe_id):
         "status_class": status_class,
     })
 
-
 @login_required
+@require_POST
 def ask_availibilities(request, employe_id):
     """Permet d'envoyer une demande de disponibilités à un employé, si aucune demande n'est déjà active."""
-    if request.method == "POST":
-        employe = get_object_or_404(User, id=employe_id)
+    if not request.user.is_staff:
+        raise PermissionDenied("Vous n'avez pas l'autorisation d'envoyer une demande.")
+    try:
+        employe = User.objects.get(id=employe_id)
+    except User.DoesNotExist:
+        raise Http404("Aucun employé ne correspond à cet ID")
+    if employe.availability_status in[User.AvailabilityStatus.PENDING,User.AvailabilityStatus.FILLED]:
+        messages.warning(request, f"⚠️ Une demande de disponibilités est déjà en attente pour {employe.username}.")
+        return redirect('employees_management')
 
-        #Si le status est en attente, ou complétée alors message!
-        if employe.availability_status in[User.AvailabilityStatus.PENDING,User.AvailabilityStatus.FILLED]:
-            messages.warning(request, f"⚠️ Une demande de disponibilités est déjà en attente pour {employe.username}.")
-            return redirect('employees_management')
+    if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
+        employe.availability_status = User.AvailabilityStatus.PENDING
+        employe.save()
+        task_description = (
+        "Merci de remplir ton formulaire de disponibilités dès que possible.")
+        task = Task.objects.create(
+        title="Remplir ses disponibilités",
+        estimated_duration=15,
+        description=task_description,
+        priority="moyenne")
 
-        if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
-            employe.availability_status = User.AvailabilityStatus.PENDING
-            employe.save()
-
-            task_description = (
-            "Merci de remplir ton formulaire de disponibilités dès que possible.")
-
-            task = Task.objects.create(
-            title="Remplir ses disponibilités",
-            estimated_duration=15,
-            description=task_description,
-            priority="moyenne")
-
-            task.assigned_to.add(employe)
-            notify_task_assigned(task, [employe], request.user)
-            messages.success(request, f" Une demande de disponibilités a été envoyée à {employe.username}.")
-            return redirect('employees_management')
-        else :
-            messages.warning('La demande n\a pu être complétée')
-            return redirect('employees_management')
-
-    messages.error(request, "Méthode non autorisée.")
-    return redirect('employee_profile', employe_id=employe_id)
+        task.assigned_to.add(employe)
+        notify_task_assigned(task, [employe], request.user)
+        messages.success(request, f" Une demande de disponibilités a été envoyée à {employe.username}.")
+        return redirect('employees_management')
+    else :
+        messages.warning('La demande n\a pu être complétée')
+        return redirect('employees_management')
 
 @login_required
 def availability_form(request):
     """Formulaire pour remplir les disponibilités"""
-    employe = employe = request.user
+    employe = request.user
     if request.method == 'POST':
         form = AvailabilityForm(request.POST)
         if form.is_valid():
@@ -289,6 +297,8 @@ def availability_form(request):
                         day=day_key,
                         defaults={'heure_debut': start, 'heure_fin': end, 'remplie': True}
                     )
+            employe.availability_status = User.AvailabilityStatus.FILLED
+            employe.save()
             messages.success(request, "Disponibilités sauvegardés ✅, merci!")
             return redirect('fill_availability') 
     else:
@@ -301,6 +311,9 @@ def availability_form(request):
         form = AvailabilityForm(initial=initial)
     return render(request, 'restoplus/availability_form.html', {"form": form, "employe": employe})
 
+# ======================================================================
+# ⚙️ ADMINISTRATION
+# ======================================================================
 
 @login_required
 def manage_user_role(request, user_id):
@@ -308,8 +321,10 @@ def manage_user_role(request, user_id):
     if not request.user.has_permission('can_manage_users'):
         messages.error(request, "Permission refusée")
         return redirect('no_access')
-
-    user = get_object_or_404(User, id=user_id)
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise Http404("Aucun employé ne correspond à cet ID.")
 
     if request.method == 'POST':
         role_id = request.POST.get('role_id')
@@ -367,19 +382,16 @@ def create_role(request):
             messages.success(request, f"Nouveau rôle '{name}' créé avec succès ! Permissions : {permissions_text}")
     return redirect('admin_dashboard')
 
-
 @login_required
 def no_access(request):
     """page d'accès refusé"""
     return render(request, 'restoplus/no_acces.html')
-
 
 @login_required
 def get_task_details(request, task_id):
     """Vue pour récupérer les détails d'une tâche"""
     try:
         task = get_object_or_404(Task, id=task_id)
-
         # Vérifier que l'utilisateur peut voir cette tâche
         if request.user not in task.assigned_to.all() and not request.user.is_staff:
             return JsonResponse({'success': False, 'message': 'Permission refusée'})
@@ -422,10 +434,8 @@ def toggle_task_status(request):
         try:
             task_id = request.POST.get('task_id')
             if not task_id:
-                return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
-
+                return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})  
             task = get_object_or_404(Task, id=task_id)
-
             # Vérifier que l'utilisateur peut modifier cette tâche
             if request.user not in task.assigned_to.all() and not request.user.is_staff:
                 return JsonResponse({'success': False, 'message': 'Permission refusée'})
