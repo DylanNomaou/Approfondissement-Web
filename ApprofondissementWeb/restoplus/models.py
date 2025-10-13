@@ -4,8 +4,6 @@ from django.forms import ValidationError
 from django.utils import timezone
 from datetime import date
 
-
-
 class Role(models.Model):
     """Modèle pour définir les rôles"""
 
@@ -26,8 +24,17 @@ class Role(models.Model):
         verbose_name_plural = "Rôles"
         ordering = ['name']
 
-
 class User(AbstractUser):
+    class AvailabilityStatus(models.TextChoices):
+        NOT_FILLED = "not_filled", "Non remplie"
+        PENDING    = "pending",    "En attente"
+        FILLED     = "filled",     "Remplie"
+    availability_status = models.CharField(
+        max_length=20,
+        choices=AvailabilityStatus.choices,
+        default=AvailabilityStatus.NOT_FILLED,
+        verbose_name="Statut des disponibilités"
+        )
     first_name = models.CharField(max_length=150, blank=True, verbose_name="Prénom")
     last_name = models.CharField(max_length=150, blank=True, verbose_name="Nom de famille")
     email = models.EmailField(blank=True, verbose_name="Courriel")
@@ -59,7 +66,6 @@ class User(AbstractUser):
         # Les superusers peuvent tout faire
         if self.is_superuser:
             return True
-
         # Les utilisateurs avec la permission can_distribute_tasks peuvent assigner à tous
         if self.can_distribute_tasks_to_all():
             return True
@@ -72,14 +78,26 @@ class User(AbstractUser):
             return True
         return self.has_permission('can_manage_users')
 
-
+class Availability(models.Model):
+    employe=models.ForeignKey(User,on_delete=models.CASCADE)
+    day=models.CharField(max_length=10, choices=[
+        ('monday', 'Lundi'),
+        ('tuesday', 'Mardi'),
+        ('wednesday', 'Mercredi'),
+        ('thursday', 'Jeudi'),
+        ('friday', 'Vendredi'),
+        ('saturday', 'Samedi'),
+        ('sunday', 'Dimanche'),
+        ])
+    heure_debut=models.TimeField()
+    heure_fin=models.TimeField()
+    remplie = models.BooleanField(default=False)
+    def __str__(self):
+        return f"{self.employe.username} - {self.day} ({self.heure_debut} à {self.heure_fin})"
 
 class Task(models.Model):
     # Titre de la tâche
     title = models.CharField(max_length=255, verbose_name="Titre")
-
-    # Priorité de la tâche
-
     # Choix de priorité
     PRIORITY_CHOICES = [
         ('low', 'Basse'),
@@ -110,20 +128,14 @@ class Task(models.Model):
 
     # Description de la tâche
     description = models.TextField(blank=True, verbose_name="Description")
-
     # Date d'échéance
     due_date = models.DateField(null=True, blank=True, verbose_name="Date d'échéance")
-
-
     # Utilisateur assigné à la tâche
     assigned_to = models.ManyToManyField(User, blank=True, related_name='tasks', verbose_name="Assigné à")
-
     # Durée estimée en minutes
     estimated_duration = models.PositiveIntegerField(null=True, blank=True, verbose_name="Durée estimée (minutes)")
-
     # état de la tâche
     is_completed = models.BooleanField(default=False, verbose_name="Complétée")
-
     # Date de création
     created_at = models.DateTimeField(null=True, blank=True, default=timezone.now, verbose_name="Créé le")
 
