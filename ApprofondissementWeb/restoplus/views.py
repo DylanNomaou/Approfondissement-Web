@@ -292,7 +292,7 @@ def availability_form(request):
             employe.availability_status = User.AvailabilityStatus.FILLED
             employe.save()
             messages.success(request, "Disponibilités sauvegardés ✅, merci!")
-            return redirect('fill_availability') 
+            return redirect('fill_availability')
     else:
         existing = {a.day: a for a in Availability.objects.filter(employe=employe)}
         initial = {}
@@ -424,7 +424,7 @@ def toggle_task_status(request):
             if not task_id:
                 return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
 
-                return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})  
+                return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
             task = get_object_or_404(Task, id=task_id)
             # Vérifier que l'utilisateur peut modifier cette tâche
             if request.user not in task.assigned_to.all() and not request.user.is_staff:
@@ -533,7 +533,6 @@ def mark_notification_as_read(request):
             notification.mark_as_read()
             return JsonResponse({
                 'success': True,
-                'success': True,
                 'message': 'Notification marquée comme lue'
             })
         except Notification.DoesNotExist:
@@ -591,3 +590,78 @@ def add_employee(request):
     return render(request, 'restoplus/add_employee.html',
                   {'form': form,
                    'roles': roles})
+@login_required
+def edit_employee(request, employe_id):
+    """Vue pour éditer le profil de l'utilisateur connecté"""
+    if not request.user.has_permission('can_manage_users'):
+        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
+        return redirect('no_access')
+
+    try:
+        employee = User.objects.get(id=employe_id)
+    except User.DoesNotExist:
+        raise Http404("Aucun employé ne correspond à cet ID.")
+
+    if employee == request.user:
+        messages.warning(request,
+                         """Vous ne pouvez pas modifier votre propre profil ici.
+                         Veuillez utiliser la page de profil.""")
+        return redirect('employees_management')
+
+    if request.method == 'POST':
+        employee.first_name = request.POST.get('first_name', '').strip()
+        employee.last_name = request.POST.get('last_name', '').strip()
+        employee.email = request.POST.get('email', '').strip()
+
+        role_id = request.POST.get('role_id')
+        if role_id:
+            try:
+                role = Role.objects.get(id=role_id)
+                old_role = employee.role.name if employee.role else "Aucun rôle"
+                employee.role = role
+                messages.info(request, f"Rôle mis à jour : {old_role} --> {role.name}")
+            except Role.DoesNotExist:
+                messages.warning(request, "Rôle sélectionné invalide.")
+        else:
+            if employee.role:
+                old_role = employee.role.name
+                messages.info(request, f"Rôle '{old_role}' retiré de l'employé.")
+                employee.role = None
+
+
+        employee.save()
+        employee_display = employee.get_full_name() or employee.username
+        messages.success(request, f"Employé : '{employee_display}' a été modifié avec succès.")
+        return redirect('employees_management')
+
+    roles = Role.objects.all()
+    return render(request, 'restoplus/edit_employee.html', {
+        'employee': employee,
+        'roles': roles
+    })
+
+@login_required
+def delete_employee(request, employe_id):
+    """Vue pour supprimer un employé (utilisateur)"""
+    if not request.user.has_permission('can_manage_users'):
+        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
+        return redirect('no_access')
+
+    try:
+        employee = User.objects.get(id=employe_id)
+    except User.DoesNotExist:
+        raise Http404("Aucun employé ne correspond à cet ID.")
+
+    if employee == request.user:
+        messages.warning(request, "Vous ne pouvez pas supprimer votre propre compte.")
+        return redirect('employees_management')
+
+    if employee.is_superuser and not request.user.is_superuser:
+        messages.error(request, "Vous ne pouvez pas supprimer un Admin.")
+        return redirect('employees_management')
+
+
+    employee_display = employee.get_full_name() or employee.username
+    employee.delete()
+    messages.success(request, f"Employé '{employee_display}' supprimé avec succès.")
+    return redirect('employees_management')

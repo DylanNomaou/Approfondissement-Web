@@ -2,8 +2,10 @@
 {%endblock%} {% block content %}
 <div class="container mt-4">
   <h2 class="mb-4">
-    {{employe.username}}{{ employe.prenom}} {{ employe.nom }}
-    <small class="text-muted">({{ employe.poste }})</small>
+    {{employe.username}}{{ employe.first_name}} {{ employe.last_name }}
+    <small class="text-muted">({%if employe.poste%}{{employe.poste}}
+        {%else%}<span class="badge bg-danger">Aucun poste</span>{%endif%})
+    </small>
   </h2>
 
   <div class="card shadow-sm mb-4">
