@@ -23,4 +23,6 @@ urlpatterns=[
     path('ask_availibilities/<int:employe_id>/', views.ask_availibilities, name='send_availabilities_form'),
     path('fill_availability/',views.availability_form, name='fill_availability'),
     path('add-employee/', views.add_employee, name='add_employee'),
+    path('edit-employee/<int:employe_id>/', views.edit_employee, name='edit_employee'),
+    path('delete-employee/<int:employe_id>/', views.delete_employee, name='delete_employee'),
 ]
