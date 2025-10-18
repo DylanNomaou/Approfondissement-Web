@@ -1404,3 +1404,650 @@ $admin-badge-size: 0.75rem;
         animation-delay: 0.3s;
     }
 }
+
+// ===========================
+// PAGE CRÉATION HORAIRE
+// ===========================
+
+.page-creation-horaire {
+    background-color: $light-color;
+    min-height: 100vh;
+    
+    .horaire-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    // ===========================
+    // HEADER DE LA PAGE
+    // ===========================
+    .horaire-header {
+        background: white;
+        border-radius: $border-radius;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            
+            h1 {
+                color: $dark-color;
+                font-weight: 600;
+                margin: 0;
+                font-size: 2rem;
+                display: flex;
+                align-items: center;
+                
+                i {
+                    margin-right: 0.75rem;
+                    color: $primary-color;
+                    font-size: 1.8rem;
+                }
+            }
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        // Sélecteur de semaine
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: $light-color;
+            padding: 0.75rem 1rem;
+            border-radius: $border-radius;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            
+            .btn-week {
+                background: $primary-color;
+                border: none;
+                color: white;
+                padding: 0.5rem 0.75rem;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: $transition;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                
+                &:hover {
+                    background: darken($primary-color, 10%);
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba($primary-color, 0.3);
+                }
+                
+                i {
+                    font-size: 0.9rem;
+                }
+            }
+            
+            .current-week {
+                padding: 0.5rem 1rem;
+                font-weight: 600;
+                color: $dark-color;
+                min-width: 200px;
+                text-align: center;
+                font-size: 0.95rem;
+            }
+        }
+        
+        // Boutons d'actions
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            
+            .btn {
+                padding: 0.75rem 1.5rem;
+                font-weight: 600;
+                border-radius: $border-radius;
+                transition: $transition;
+                border: none;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                
+                &.btn-secondary {
+                    background: $secondary-color;
+                    color: white;
+                    
+                    &:hover {
+                        background: darken($secondary-color, 10%);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba($secondary-color, 0.3);
+                    }
+                }
+                
+                &.btn-primary {
+                    background: $success-color;
+                    color: white;
+                    
+                    &:hover {
+                        background: darken($success-color, 10%);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba($success-color, 0.3);
+                    }
+                }
+                
+                i {
+                    font-size: 0.9rem;
+                }
+            }
+        }
+    }
+    
+    // ===========================
+    // OUTILS DE PLANIFICATION
+    // ===========================
+    .planning-tools {
+        background: white;
+        border-radius: $border-radius;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0,0,0,0.05);
+        
+        .tools-section {
+            margin-bottom: 2rem;
+            
+            h3 {
+                color: $dark-color;
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                display: flex;
+                align-items: center;
+                
+                i {
+                    margin-right: 0.75rem;
+                    color: $primary-color;
+                }
+            }
+            
+            .tools-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+            
+            .tool-button {
+                background: white;
+                border: 2px solid rgba(0, 0, 0, 0.08);
+                border-radius: $border-radius;
+                padding: 1.25rem;
+                cursor: pointer;
+                transition: $transition;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                text-align: left;
+                
+                &:hover {
+                    border-color: $primary-color;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                    background: rgba($primary-color, 0.02);
+                }
+                
+                i {
+                    font-size: 1.25rem;
+                    color: $primary-color;
+                    width: 24px;
+                    text-align: center;
+                }
+                
+                span {
+                    font-weight: 500;
+                    color: $dark-color;
+                }
+            }
+        }
+        
+        .quick-stats {
+            display: flex;
+            gap: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            
+            .stat-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                
+                i {
+                    font-size: 1.25rem;
+                    color: $primary-color;
+                }
+                
+                .stat-value {
+                    font-weight: 600;
+                    color: $dark-color;
+                    font-size: 1.1rem;
+                }
+                
+                .stat-label {
+                    color: $secondary-color;
+                    font-size: 0.9rem;
+                    display: none; // Caché car déjà dans stat-value
+                }
+            }
+        }
+    }
+    
+    // ===========================
+    // GRILLE D'HORAIRE
+    // ===========================
+    .schedule-grid-container {
+        background: white;
+        border-radius: $border-radius;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .schedule-grid {
+        .grid-header {
+            display: grid;
+            grid-template-columns: 220px repeat(7, 1fr);
+            background: linear-gradient(135deg, $dark-color 0%, #2c3e50 100%);
+            color: white;
+            
+            .employee-header,
+            .day-header {
+                padding: 1.25rem 1rem;
+                text-align: center;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-size: 0.85rem;
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+                
+                &:last-child {
+                    border-right: none;
+                }
+            }
+            
+            .employee-header {
+                text-align: left;
+                padding-left: 1.5rem;
+            }
+            
+            .day-header {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                justify-content: center;
+                
+                .day-name {
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                }
+                
+                .day-date {
+                    font-size: 0.75rem;
+                    opacity: 0.8;
+                }
+            }
+        }
+        
+        .grid-body {
+            .employee-row {
+                display: grid;
+                grid-template-columns: 220px repeat(7, 1fr);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+                transition: all 0.3s ease;
+                
+                &:nth-child(even) {
+                    background-color: rgba($light-color, 0.5);
+                }
+                
+                &:hover {
+                    background-color: rgba($primary-color, 0.05);
+                    transform: scale(1.005);
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+                    z-index: 5;
+                    position: relative;
+                }
+                
+                .employee-info {
+                    padding: 1.25rem 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    border-right: 1px solid rgba(0, 0, 0, 0.08);
+                    
+                    .employee-name {
+                        font-weight: 600;
+                        color: $dark-color;
+                        font-size: 1rem;
+                        margin-bottom: 0.25rem;
+                    }
+                    
+                    .employee-role {
+                        font-size: 0.8rem;
+                        color: $secondary-color;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                        margin-bottom: 0.5rem;
+                    }
+                    
+                    .employee-color {
+                        width: 24px;
+                        height: 4px;
+                        border-radius: 2px;
+                        background: $primary-color;
+                        
+                        &[data-color] {
+                            background: attr(data-color);
+                        }
+                    }
+                }
+                
+                .schedule-cell {
+                    padding: 1.25rem 1rem;
+                    text-align: center;
+                    border-right: 1px solid rgba(0, 0, 0, 0.08);
+                    position: relative;
+                    min-height: 90px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    
+                    &:last-child {
+                        border-right: none;
+                    }
+                    
+                    .time-slot {
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 0.5rem;
+                        
+                        .time-display {
+                            font-size: 0.9rem;
+                            font-weight: 500;
+                            color: $secondary-color;
+                            background: rgba($light-color, 0.8);
+                            padding: 0.5rem 1rem;
+                            border-radius: 8px;
+                            border: 2px solid transparent;
+                            transition: all 0.3s ease;
+                            min-width: 80px;
+                            cursor: pointer;
+                            
+                            &:hover {
+                                border-color: rgba($primary-color, 0.3);
+                                background: rgba($primary-color, 0.1);
+                            }
+                            
+                            &:not(:empty):not([data-empty]) {
+                                background: linear-gradient(135deg, rgba($success-color, 0.15), rgba($success-color, 0.1));
+                                border-color: rgba($success-color, 0.4);
+                                color: $success-color;
+                                font-weight: 600;
+                            }
+                        }
+                        
+                        .edit-time-btn {
+                            background: $primary-color;
+                            border: none;
+                            color: white;
+                            padding: 0.375rem;
+                            border-radius: 50%;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            opacity: 0;
+                            transform: scale(0.8);
+                            
+                            &:hover {
+                                background: darken($primary-color, 10%);
+                                transform: scale(1.1);
+                            }
+                            
+                            i {
+                                font-size: 0.8rem;
+                            }
+                        }
+                    }
+                    
+                    &:hover .edit-time-btn {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    
+                    // Indicateur de statut
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        top: 0.5rem;
+                        right: 0.5rem;
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background: $secondary-color;
+                        opacity: 0.3;
+                    }
+                    
+                    &[data-assigned="true"]::after {
+                        background: $success-color;
+                        opacity: 1;
+                        box-shadow: 0 0 6px rgba($success-color, 0.4);
+                    }
+                    
+                    &[data-pending="true"]::after {
+                        background: $warning-color;
+                        opacity: 1;
+                        box-shadow: 0 0 6px rgba($warning-color, 0.4);
+                    }
+                }
+            }
+        }
+    }
+    
+    // ===========================
+    // RESPONSIVE DESIGN
+    // ===========================
+    @media (max-width: 1200px) {
+        .horaire-container {
+            padding: 1.5rem;
+        }
+        
+        .schedule-grid {
+            .grid-header,
+            .employee-row {
+                grid-template-columns: 180px repeat(7, 1fr);
+            }
+            
+            .grid-header {
+                .employee-header,
+                .day-header {
+                    padding: 1rem 0.75rem;
+                    font-size: 0.8rem;
+                }
+            }
+            
+            .employee-row {
+                .employee-info {
+                    padding: 1rem;
+                    
+                    .employee-name {
+                        font-size: 0.9rem;
+                    }
+                    
+                    .employee-role {
+                        font-size: 0.75rem;
+                    }
+                }
+                
+                .schedule-cell {
+                    padding: 1rem 0.75rem;
+                    min-height: 80px;
+                    
+                    .time-slot {
+                        .time-display {
+                            font-size: 0.85rem;
+                            padding: 0.4rem 0.8rem;
+                            min-width: 70px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .horaire-container {
+            padding: 1rem;
+        }
+        
+        .horaire-header {
+            padding: 1.5rem;
+            
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                
+                h1 {
+                    font-size: 1.5rem;
+                    justify-content: center;
+                    margin-bottom: 1rem;
+                }
+            }
+            
+            .header-actions {
+                justify-content: center;
+                flex-direction: column;
+                
+                .week-selector {
+                    order: 1;
+                    width: 100%;
+                    justify-content: center;
+                }
+                
+                .action-buttons {
+                    order: 2;
+                    width: 100%;
+                    justify-content: center;
+                    
+                    .btn {
+                        flex: 1;
+                        max-width: 200px;
+                    }
+                }
+            }
+        }
+        
+        .planning-tools {
+            padding: 1.5rem;
+            
+            .tools-section {
+                .tools-grid {
+                    grid-template-columns: 1fr;
+                    gap: 0.75rem;
+                }
+                
+                .tool-button {
+                    padding: 1rem;
+                    
+                    i {
+                        font-size: 1.1rem;
+                    }
+                    
+                    span {
+                        font-size: 0.9rem;
+                    }
+                }
+            }
+            
+            .quick-stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+        
+        .schedule-grid-container {
+            overflow-x: auto;
+        }
+        
+        .schedule-grid {
+            min-width: 800px;
+            
+            .grid-header,
+            .employee-row {
+                grid-template-columns: 150px repeat(7, 110px);
+            }
+            
+            .grid-header {
+                .employee-header,
+                .day-header {
+                    padding: 0.75rem 0.5rem;
+                    font-size: 0.75rem;
+                }
+                
+                .day-header {
+                    .day-name {
+                        font-size: 0.8rem;
+                    }
+                    
+                    .day-date {
+                        font-size: 0.7rem;
+                    }
+                }
+            }
+            
+            .employee-row {
+                .employee-info {
+                    padding: 0.75rem 1rem;
+                    
+                    .employee-name {
+                        font-size: 0.85rem;
+                    }
+                    
+                    .employee-role {
+                        font-size: 0.7rem;
+                    }
+                    
+                    .employee-color {
+                        width: 20px;
+                        height: 3px;
+                    }
+                }
+                
+                .schedule-cell {
+                    padding: 0.75rem 0.5rem;
+                    min-height: 70px;
+                    
+                    .time-slot {
+                        .time-display {
+                            font-size: 0.8rem;
+                            padding: 0.35rem 0.6rem;
+                            min-width: 60px;
+                        }
+                        
+                        .edit-time-btn {
+                            padding: 0.3rem;
+                            
+                            i {
+                                font-size: 0.7rem;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
