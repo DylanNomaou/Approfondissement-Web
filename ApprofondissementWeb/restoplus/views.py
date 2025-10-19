@@ -281,6 +281,8 @@ def availability_form(request):
                         day=day,
                         defaults={'heure_debut': start, 'heure_fin': end, 'remplie': True}
                     )
+                elif start is None and end is None:
+                    Availability.objects.filter(employe=employe, day=day).delete()
             employe.availability_status = User.AvailabilityStatus.FILLED
             employe.save()
             messages.success(request, "Disponibilités sauvegardés ✅, merci!")
