@@ -68,7 +68,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body">
@@ -84,7 +84,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body">
@@ -100,7 +100,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body">
@@ -178,7 +178,7 @@
                 </td>
                 <td>
                   {% if user.role %}
-                    <span class="badge admin-dashboard__badge--{{ user.role.name|lower|slugify }}">
+                    <span class="badge bg-primary">
                       {{ user.role.name }}
                     </span>
                   {% else %}
@@ -270,7 +270,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="form-section">
             <h6><i class="bi bi-shield-check me-2"></i>Permissions</h6>
             <div class="row">
@@ -338,7 +338,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Sélectionner tous les messages avec la classe auto-dismiss-alert
     const alerts = document.querySelectorAll('.auto-dismiss-alert');
-    
+
     alerts.forEach(function(alert) {
         // Ajouter une barre de progression visuelle
         const progressBar = document.createElement('div');
@@ -353,12 +353,12 @@ document.addEventListener('DOMContentLoaded', function() {
             transform-origin: left;
             animation: progressBarShrink 3s linear forwards;
         `;
-        
+
         // Positionner l'alerte en relatif pour la barre de progression
         alert.style.position = 'relative';
         alert.style.overflow = 'hidden';
         alert.appendChild(progressBar);
-        
+
         // Auto-fermeture après 3 secondes
         setTimeout(function() {
             // Utiliser Bootstrap pour fermer l'alerte avec animation

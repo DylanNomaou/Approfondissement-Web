@@ -49,7 +49,7 @@ class UserRegisterForm(forms.ModelForm):
         if commit:
             user.save()
         return user
-    
+
 
 class UserLoginForm(forms.Form):
     username = forms.CharField(
@@ -77,7 +77,60 @@ class UserLoginForm(forms.Form):
     def get_user(self):
         return getattr(self, "user", None)
 
+class AvailabilityForm(forms.Form):
+    DAYS = [
+        ('monday', 'Lundi'),
+        ('tuesday', 'Mardi'),
+        ('wednesday', 'Mercredi'),
+        ('thursday', 'Jeudi'),
+        ('friday', 'Vendredi'),
+        ('saturday', 'Samedi'),
+        ('sunday', 'Dimanche'),
+    ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        time_widget = forms.TimeInput(
+        format='%H:%M',
+        attrs={
+            'type': 'time',
+            'class': 'form-control',
+            'step': '60',
+        }
+    )
+        for key, label in self.DAYS:
+            self.fields[f"{key}_start"] = forms.TimeField(
+                required=False,
+                label=f"{label} - Début",
+                widget=time_widget,
+                input_formats=['%H:%M'],
+
+            )
+            self.fields[f"{key}_end"] = forms.TimeField(
+                required=False,
+                label=f"{label} - Fin",
+                widget=time_widget,
+                input_formats=['%H:%M'],
+            )
+
+    def clean(self):
+        """Validation logique des heures de début/fin"""
+        cleaned_data = super().clean()
+        for key, label in self.DAYS:
+            start = cleaned_data.get(f"{key}_start")
+            end = cleaned_data.get(f"{key}_end")
+            # Cas 1 : un seul champ rempli
+            if (end and not start):
+                msg = f"veuillez remplir l'heure de début."
+                self.add_error(f"{key}_start", msg)
+            if(start and not end):
+                msg = f"veuillez remplir l'heure de fin."
+                self.add_error(f"{key}_end", msg)
+            # Cas 2 : incohérence logique (début >= fin)
+            elif start and end and start >= end:
+                msg = f"l'heure de fin doit être après l'heure de début."
+                self.add_error(f"{key}_end", msg)
+        return cleaned_data
 
 class TaskForm(forms.ModelForm):
     DURATION_CHOICES = [
@@ -89,7 +142,7 @@ class TaskForm(forms.ModelForm):
         (240, '4 heures'),
         (480, '8 heures (journée complète)'),
     ]
-    
+
     estimated_duration = forms.ChoiceField(
         choices=DURATION_CHOICES,
         required=False,
@@ -98,7 +151,7 @@ class TaskForm(forms.ModelForm):
             'id': 'taskDuration'
         })
     )
-    
+
     def clean_estimated_duration(self):
         """Convertir la durée estimée en entier ou None"""
         duration = self.cleaned_data.get('estimated_duration')
@@ -108,7 +161,9 @@ class TaskForm(forms.ModelForm):
             return int(duration)
         except (ValueError, TypeError):
             return None
-    
+
+
+
     assigned_to = forms.ModelMultipleChoiceField(
         queryset=User.objects.all(),
         required=False,
@@ -119,11 +174,11 @@ class TaskForm(forms.ModelForm):
         }),
         label="Assigné à"
     )
-    
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
+
         # Configurer le queryset selon les permissions de l'utilisateur
         if user:
             if user.can_distribute_tasks_to_all():
@@ -139,7 +194,7 @@ class TaskForm(forms.ModelForm):
         else:
             # Par défaut, si aucun utilisateur n'est fourni
             self.fields['assigned_to'].queryset = User.objects.all().order_by('username')
-        
+
         # Marquer tous les champs comme obligatoires sauf estimated_duration
         required_fields = ['title', 'priority', 'category', 'description', 'due_date', 'assigned_to']
         for field_name in required_fields:
@@ -148,16 +203,16 @@ class TaskForm(forms.ModelForm):
                 # Ajouter une classe CSS pour les champs obligatoires
                 current_classes = self.fields[field_name].widget.attrs.get('class', '')
                 self.fields[field_name].widget.attrs['class'] = current_classes + ' required-field'
-        
+
         # Marquer estimated_duration comme optionnel
         self.fields['estimated_duration'].required = False
-    
+
     class Meta:
         model = Task
         fields = ['title', 'priority', 'category', 'description', 'due_date', 'assigned_to', 'estimated_duration']
         widgets = {
             'title': forms.TextInput(attrs={
-                'class': 'form-control form-control-lg', 
+                'class': 'form-control form-control-lg',
                 'placeholder': 'Ex: Vérifier les stocks frigo...',
                 'id': 'taskTitle',
                 'maxlength': '100'
@@ -171,14 +226,14 @@ class TaskForm(forms.ModelForm):
                 'id': 'taskCategory'
             }),
             'description': forms.Textarea(attrs={
-                'class': 'form-control', 
-                'rows': 4, 
+                'class': 'form-control',
+                'rows': 4,
                 'placeholder': 'Décrivez la tâche en détail, les étapes à suivre, les ressources nécessaires...',
                 'id': 'taskDescription',
                 'maxlength': '500'
             }),
             'due_date': forms.DateInput(attrs={
-                'class': 'form-control form-control-lg', 
+                'class': 'form-control form-control-lg',
                 'type': 'date',
                 'id': 'taskDueDate'
             }),

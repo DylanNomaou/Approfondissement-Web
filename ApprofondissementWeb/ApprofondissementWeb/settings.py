@@ -22,8 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-dy3$n2w_on5961#j2&!5l2qgu9zl=sk31c)a8!%zg5$vm&=ha!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Forcer DEBUG=True pour le développement local
-DEBUG = True
+# En développement local, DEBUG sera True
+# En production (PythonAnywhere), DEBUG sera False
+DEBUG = 'True'
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -183,3 +184,5 @@ if not DEBUG:
         'django.contrib.staticfiles.finders.FileSystemFinder',
         'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     ]
+
+    DEBUG = True

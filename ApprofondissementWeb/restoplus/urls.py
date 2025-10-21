@@ -18,9 +18,11 @@ urlpatterns=[
     path('notifications/', views.get_user_notifications, name='get_user_notifications'),
     path('mark-notification-read/', views.mark_notification_as_read, name='mark_notification_as_read'),
     path('test-notification/', views.create_test_notification, name='create_test_notification'),
-
-    #--- SPRINT DEUX ----
-
-    #Url pour Gestion des employés
-    path('creation-horaire/', views.horaire_creation, name='horaire_creation'),
+    path('dashboard/',views.employees_management,name="employees_management"),
+    path('employees/<int:employe_id>/', views.employee_profile, name='employee_profile'),
+    path('ask_availibilities/<int:employe_id>/', views.ask_availibilities, name='send_availabilities_form'),
+    path('fill_availability/',views.availability_form, name='fill_availability'),
+    path('add-employee/', views.add_employee, name='add_employee'),
+    path('edit-employee/<int:employe_id>/', views.edit_employee, name='edit_employee'),
+    path('delete-employee/<int:employe_id>/', views.delete_employee, name='delete_employee'),
 ]

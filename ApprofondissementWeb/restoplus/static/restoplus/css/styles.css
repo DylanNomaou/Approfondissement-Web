@@ -150,7 +150,8 @@ body {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
 }
-.main-wrapper .main-content .dashboard-section .dashboard-container .dashboard-card .card-header h3, .main-wrapper .main-content .dashboard-section .dashboard-container .dashboard-card .card-header h5 {
+.main-wrapper .main-content .dashboard-section .dashboard-container .dashboard-card .card-header h3,
+.main-wrapper .main-content .dashboard-section .dashboard-container .dashboard-card .card-header h5 {
   font-weight: 600;
   margin: 0;
 }
@@ -687,7 +688,8 @@ body {
 .modal-content .modal-body .form-label i {
   font-size: 1rem;
 }
-.modal-content .modal-body .form-control, .modal-content .modal-body .form-select {
+.modal-content .modal-body .form-control,
+.modal-content .modal-body .form-select {
   border: 2px solid #e9ecef;
   border-radius: 8px;
   padding: 0.75rem 1rem;
@@ -695,18 +697,21 @@ body {
   -webkit-transition: all 0.3s ease;
   transition: all 0.3s ease;
 }
-.modal-content .modal-body .form-control:focus, .modal-content .modal-body .form-select:focus {
+.modal-content .modal-body .form-control:focus,
+.modal-content .modal-body .form-select:focus {
   border-color: #0d6efd;
   -webkit-box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
           box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
   -webkit-transform: translateY(-1px);
           transform: translateY(-1px);
 }
-.modal-content .modal-body .form-control.is-valid, .modal-content .modal-body .form-select.is-valid {
+.modal-content .modal-body .form-control.is-valid,
+.modal-content .modal-body .form-select.is-valid {
   border-color: #198754;
   background-image: none;
 }
-.modal-content .modal-body .form-control.is-invalid, .modal-content .modal-body .form-select.is-invalid {
+.modal-content .modal-body .form-control.is-invalid,
+.modal-content .modal-body .form-select.is-invalid {
   border-color: #dc3545;
   background-image: none;
 }
