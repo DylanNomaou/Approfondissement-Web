@@ -271,24 +271,18 @@ def availability_form(request):
     if request.method == 'POST':
         form = AvailabilityForm(request.POST)
         if form.is_valid():
-            days = [
-                ('monday', 'Lundi'),
-                ('tuesday', 'Mardi'),
-                ('wednesday', 'Mercredi'),
-                ('thursday', 'Jeudi'),
-                ('friday', 'Vendredi'),
-                ('saturday', 'Samedi'),
-                ('sunday', 'Dimanche'),
-            ]
-            for day_key, day_label in days:
-                start = form.cleaned_data.get(f"{day_key}_start")
-                end = form.cleaned_data.get(f"{day_key}_end")
+            days = AvailabilityForm.DAYS
+            for day,_label in days:
+                start = form.cleaned_data.get(f"{day}_start")
+                end = form.cleaned_data.get(f"{day}_end")
                 if start and end:
                     Availability.objects.update_or_create(
                         employe=employe,
-                        day=day_key,
+                        day=day,
                         defaults={'heure_debut': start, 'heure_fin': end, 'remplie': True}
                     )
+                elif start is None and end is None:
+                    Availability.objects.filter(employe=employe, day=day).delete()
             employe.availability_status = User.AvailabilityStatus.FILLED
             employe.save()
             messages.success(request, "Disponibilités sauvegardés ✅, merci!")
@@ -296,7 +290,7 @@ def availability_form(request):
     else:
         existing = {a.day: a for a in Availability.objects.filter(employe=employe)}
         initial = {}
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        for day,_label in AvailabilityForm.DAYS:
             if day in existing:
                 initial[f"{day}_start"] = existing[day].heure_debut
                 initial[f"{day}_end"] = existing[day].heure_fin
