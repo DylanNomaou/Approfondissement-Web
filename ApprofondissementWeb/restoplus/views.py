@@ -1,17 +1,17 @@
+from datetime import date
+import json
+from django.http import JsonResponse
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
-from .models import User, Role, Task, Notification,Availability, Task
-from .notifications import notify_task_assigned, notify_role_assigned
-from datetime import date
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-import json
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
+from .models import User, Role, Task, Notification,Availability
+from .notifications import notify_task_assigned, notify_role_assigned
 
 # Create your views here.
 def accueil(request):
@@ -94,20 +94,16 @@ def accueil(request):
                 for error in field_errors:
                     field_label = task_form.fields[field_name].label if field_name in task_form.fields else field_name
                     errors_list.append(f"{field_label}: {error}")
-
             if errors_list:
                 error_message = "Erreurs dans le formulaire : " + " | ".join(errors_list[:3])
                 if len(errors_list) > 3:
                     error_message += f" (et {len(errors_list) - 3} autre(s) erreur(s))"
                 messages.error(request, error_message)
-
         # Pas de redirection en cas d'erreur - on reste sur la page avec le formulaire invalide
     else:
         task_form = TaskForm(user=request.user)
-
     # Récupérer les tâches assignées à l'utilisateur connecté
     today = date.today()
-
     # Pour déboguer : récupérer TOUTES les tâches assignées à l'utilisateur (terminées et non terminées)
     user_tasks_today = Task.objects.filter(
         assigned_to=request.user
@@ -241,11 +237,10 @@ def ask_availibilities(request, employe_id):
         employe = User.objects.get(id=employe_id)
     except User.DoesNotExist:
         raise Http404("Aucun employé ne correspond à cet ID")
-    if employe.availability_status in[User.AvailabilityStatus.PENDING,User.AvailabilityStatus.FILLED]:
+    if employe.availability_status in[User.AvailabilityStatus.PENDING]:
         messages.warning(request, f"⚠️ Une demande de disponibilités est déjà en attente pour {employe.username}.")
         return redirect('employees_management')
-
-    if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
+    if employe.availability_status in[User.AvailabilityStatus.NOT_FILLED,User.AvailabilityStatus.FILLED]:
         employe.availability_status = User.AvailabilityStatus.PENDING
         employe.save()
         task_description = (
@@ -255,7 +250,6 @@ def ask_availibilities(request, employe_id):
         estimated_duration=15,
         description=task_description,
         priority="moyenne")
-
         task.assigned_to.add(employe)
         notify_task_assigned(task, [employe], request.user)
         messages.success(request, f" Une demande de disponibilités a été envoyée à {employe.username}.")
@@ -568,7 +562,6 @@ def add_employee(request):
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             new_user = form.save()
-
             role_id = request.POST.get('role_id')
             if role_id:
                 role = Role.objects.get(id=role_id)

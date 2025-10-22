@@ -7,8 +7,7 @@
     {% for message in messages %}
     <div
       class="alert alert-{{ message.tags }} alert-dismissible fade show"
-      role="alert"
-    >
+      role="alert">
       {{ message }}
       <button
         type="button"
@@ -46,15 +45,13 @@
             <!-- Profil de l'employé -->
             <a
               href="{% url 'employee_profile' employe.id %}"
-              class="btn btn-outline-info btn-sm"
-            >
+              class="btn btn-outline-info btn-sm">
               <i class="bi bi-person-lines-fill"></i> Voir profil
             </a>
             {% if user.can_manage_employees and employe != user %}
             <a
               href="{% url 'edit_employee' employe.id %}"
-              class="btn btn-outline-warning btn-sm flex-fill"
-            >
+              class="btn btn-outline-warning btn-sm flex-fill">
               <i class="bi bi-pencil"></i> Modifier
             </a>
             <form action="{% url 'delete_employee' employe.id %}">
@@ -62,8 +59,7 @@
               <button
                 type="submit"
                 class="btn btn-outline-danger btn-sm flex-fill"
-                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')"
-              >
+                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')">
                 <i class="bi bi-trash"></i> Supprimer
               </button>
             </form>
