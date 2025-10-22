@@ -40,7 +40,6 @@ class User(AbstractUser):
     email = models.EmailField(blank=True, verbose_name="Courriel")
     is_manager = models.BooleanField(default=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-
     def __str__(self):
         if self.first_name and self.last_name:
             return f"{self.first_name} {self.last_name} ({self.username})"
