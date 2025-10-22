@@ -625,7 +625,7 @@ def edit_employee(request, employe_id):
 
         employee.save()
         employee_display = employee.get_full_name() or employee.username
-        messages.success(request, f"'{employee_display}' a été modifié avec succès.")
+        messages.success(request, f"{employee_display} a été modifié avec succès.")
         return redirect('employees_management')
 
     roles = Role.objects.all()

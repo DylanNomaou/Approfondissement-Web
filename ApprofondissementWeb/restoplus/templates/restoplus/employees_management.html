@@ -27,15 +27,12 @@
         <div class="card-body">
           <!--ALERTE Doit compléter fiches détails employés pour que ceci fonctionne -->
           <h5 class="card-title">
-            {%if employe.first_name or employe.last_name%}
-              {{ employe.first_name }} {{ employe.last_name }}
-            {%else%}
-              {{employe.username}}
-            {%endif%}
-            {% if employe.is_superuser %}
-                <span class="badge bg-danger">Admin</span>
+            {%if employe.first_name or employe.last_name%} {{
+            employe.first_name}} {{ employe.last_name }} {%else%}
+            {{employe.username}} {%endif%} {% if employe.is_superuser %}
+            <span class="badge bg-danger">Admin</span>
             {% elif employe.role %}
-                <span class="badge bg-primary">{{ employe.role.name }}</span>
+            <span class="badge bg-primary">{{ employe.role.name }}</span>
             {% endif %}
           </h5>
           <h6 class="card-subtitle mb-2 text-muted">{{ employe.poste }}</h6>
@@ -48,22 +45,28 @@
             <!-- Profil de l'employé -->
             <a
               href="{% url 'employee_profile' employe.id %}"
-              class="btn btn-outline-info btn-sm">
+              class="btn btn-outline-info btn-sm"
+            >
               <i class="bi bi-person-lines-fill"></i> Voir profil
             </a>
             {% if user.can_manage_employees and employe != user %}
-                <a href="{% url 'edit_employee' employe.id %}"
-                    class="btn btn-outline-warning btn-sm flex-fill">
-                    <i class="bi bi-pencil"></i> Modifier
-                </a>
-                <form action="{% url 'delete_employee' employe.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger btn-sm flex-fill"
-                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')">
-                        <i class="bi bi-trash"></i> Supprimer
-                    </button>
-                </form>
-                {% endif %}
+            <a
+              href="{% url 'edit_employee' employe.id %}"
+              class="btn btn-outline-warning btn-sm flex-fill"
+            >
+              <i class="bi bi-pencil"></i> Modifier
+            </a>
+            <form action="{% url 'delete_employee' employe.id %}">
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="btn btn-outline-danger btn-sm flex-fill"
+                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')"
+              >
+                <i class="bi bi-trash"></i> Supprimer
+              </button>
+            </form>
+            {% endif %}
           </div>
         </div>
       </div>
