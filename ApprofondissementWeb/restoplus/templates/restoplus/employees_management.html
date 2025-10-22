@@ -27,9 +27,10 @@
         <div class="card-body">
           <!--ALERTE Doit compléter fiches détails employés pour que ceci fonctionne -->
           <h5 class="card-title">
-            {%if employe.first_name or employe.last_name%} {{
-            employe.first_name}} {{ employe.last_name }} {%else%}
-            {{employe.username}} {%endif%} {% if employe.is_superuser %}
+            {%if employe.first_name or employe.last_name%}
+              {{employe.first_name}} {{ employe.last_name }}
+            {%else%}
+              {{employe.username}} {%endif%} {% if employe.is_superuser %}
             <span class="badge bg-danger">Admin</span>
             {% elif employe.role %}
             <span class="badge bg-primary">{{ employe.role.name }}</span>
