@@ -36,9 +36,11 @@
             {% endif %}
           </h5>
           <h6 class="card-subtitle mb-2 text-muted">{{ employe.poste }}</h6>
-          <p class="card-text">
+          {% if employe.email %}
+          <p class="card-text fs-6 fst-italic">
             <i class="bi bi-envelope"></i> {{ employe.email }}
           </p>
+          {%endif%}
         </div>
         <div class="card-footer bg-white">
           <div class="d-flex justify-content-between">
