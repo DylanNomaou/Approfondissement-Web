@@ -1,0 +1,220 @@
+<!-- Modal élégant d'édition d'horaire -->
+<div class="modal fade" id="timeEditModal" tabindex="-1" aria-labelledby="timeEditModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content elegant-modal">
+            <!-- Header avec design élégant -->
+            <div class="modal-header elegant-header">
+                <div class="header-content">
+                    <div class="modal-icon">
+                        <i class="fas fa-calendar-plus"></i>
+                    </div>
+                    <div class="header-text">
+                        <h4 class="modal-title" id="timeEditModalLabel">Planifier un quart</h4>
+                        <p class="modal-subtitle">Définissez les horaires de travail</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close elegant-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body elegant-body">
+                <!-- Carte informations employé -->
+                <div id="modal-employee-info" class="employee-card">
+                    <!-- Contenu ajouté dynamiquement -->
+                </div>
+
+                <!-- Formulaire principal -->
+                <form id="workShiftForm" class="elegant-form" novalidate>
+                    
+                    <!-- Section Horaires -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fas fa-clock section-icon"></i>
+                            <h6 class="section-title">Horaires de travail</h6>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="elegant-input-group">
+                                    <label for="heure_debut" class="elegant-label">
+                                        <span class="label-icon start-icon">
+                                            <i class="fas fa-play"></i>
+                                        </span>
+                                        Heure de début
+                                    </label>
+                                    <input type="time" 
+                                           class="form-control elegant-input" 
+                                           id="heure_debut" 
+                                           name="heure_debut" 
+                                           step="900" 
+                                           required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="elegant-input-group">
+                                    <label for="heure_fin" class="elegant-label">
+                                        <span class="label-icon end-icon">
+                                            <i class="fas fa-stop"></i>
+                                        </span>
+                                        Heure de fin
+                                    </label>
+                                    <input type="time" 
+                                           class="form-control elegant-input" 
+                                           id="heure_fin" 
+                                           name="heure_fin" 
+                                           step="900" 
+                                           required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Pause -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fas fa-coffee section-icon"></i>
+                            <h6 class="section-title">Gestion des pauses</h6>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="elegant-input-group">
+                                    <label class="elegant-label">
+                                        <span class="label-icon pause-icon">
+                                            <i class="fas fa-pause"></i>
+                                        </span>
+                                        Prendre une pause
+                                    </label>
+                                    <div class="pause-toggle">
+                                        <input type="checkbox" 
+                                               class="form-check-input elegant-checkbox" 
+                                               id="has_break" 
+                                               name="has_break" 
+                                               checked>
+                                        <label for="has_break" class="form-check-label toggle-label">
+                                            <span class="toggle-text">Pause activée</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="elegant-input-group pause-duration" id="pause-controls">
+                                    <label for="pause_duree" class="elegant-label">
+                                        Durée (minutes)
+                                    </label>
+                                    <div class="pause-input-group">
+                                        <button type="button" class="btn btn-outline-secondary btn-pause-decrease">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        <input type="number" 
+                                               class="form-control elegant-input text-center" 
+                                               id="pause_duree" 
+                                               name="pause_duree" 
+                                               min="0" 
+                                               max="120" 
+                                               step="15" 
+                                               value="30">
+                                        <button type="button" class="btn btn-outline-secondary btn-pause-increase">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="pause-presets">
+                                        <button type="button" class="btn btn-sm btn-outline-warning pause-preset" data-duration="15">15min</button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning pause-preset" data-duration="30">30min</button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning pause-preset" data-duration="45">45min</button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning pause-preset" data-duration="60">1h</button>
+                                    </div>
+                                    <div class="input-help">0 à 120 minutes</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- Résumé des durées -->
+                                <div class="duration-card">
+                                    <div class="duration-header">
+                                        <i class="fas fa-calculator"></i>
+                                        <span>Durées calculées</span>
+                                    </div>
+                                    <div class="duration-content">
+                                        <div class="duration-row">
+                                            <span class="duration-label">Durée totale</span>
+                                            <span class="duration-value total" id="duree-totale">--:--</span>
+                                        </div>
+                                        <div class="duration-row">
+                                            <span class="duration-label">Pause</span>
+                                            <span class="duration-value pause" id="pause-display">-- min</span>
+                                        </div>
+                                        <div class="duration-row main">
+                                            <span class="duration-label">Travail effectif</span>
+                                            <span class="duration-value effective" id="duree-effective">--:--</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compliance-indicator" id="compliance-indicator">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Conforme</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Note -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fas fa-sticky-note section-icon"></i>
+                            <h6 class="section-title">Note additionnelle</h6>
+                        </div>
+                        
+                        <div class="elegant-input-group">
+                            <label for="note" class="elegant-label">
+                                Informations complémentaires (optionnel)
+                            </label>
+                            <textarea class="form-control elegant-textarea" 
+                                      id="note" 
+                                      name="note" 
+                                      rows="3" 
+                                      maxlength="500"
+                                      placeholder="Ajoutez des informations supplémentaires sur ce quart de travail..."></textarea>
+                            <div class="input-help">
+                                <span id="note-counter">0</span>/500 caractères
+                            </div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+
+                    <!-- Messages d'erreur -->
+                    <div id="form-errors" class="alert elegant-alert alert-danger d-none" role="alert">
+                        <div class="alert-content">
+                            <i class="fas fa-exclamation-triangle alert-icon"></i>
+                            <div class="alert-text">
+                                <h6>Veuillez corriger les erreurs suivantes :</h6>
+                                <ul id="error-list" class="error-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer élégant -->
+            <div class="modal-footer elegant-footer">
+                <button type="button" class="btn btn-outline-secondary elegant-btn-cancel" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-primary elegant-btn-save" id="saveWorkShiftBtn">
+                    <i class="fas fa-check me-2"></i>
+                    Enregistrer le quart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -181,7 +181,6 @@ def admin_dashboard(request):
     context = {
     'title': 'Tableau de bord administrateur',
     'users' : users,  # Utilisateurs sans l'utilisateur connecté
-    'roles' : roles,
     'users_without_role_count': users_without_role.count(),
     'active_users_count': active_users.count(),
     'total_users_count': all_users.count(),  # Nombre total pour les statistiques
@@ -659,3 +658,46 @@ def delete_employee(request, employe_id):
     employee.delete()
     messages.success(request, f"Employé '{employee_display}' supprimé avec succès.")
     return redirect('employees_management')
+
+# ======================================================================
+# 📅 CRÉATION D'HORAIRES
+# ======================================================================
+
+@login_required
+def create_schedule(request):
+    """Vue pour créer des horaires"""
+    from datetime import datetime, timedelta
+    import json
+    
+    # Récupérer tous les employés
+    employes = User.objects.all()
+    
+    # Créer les jours de la semaine (lundi à dimanche)
+    today = datetime.now().date()
+    # Trouver le lundi de cette semaine
+    monday = today - timedelta(days=today.weekday())
+    
+    week_days = []
+    days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+    days_keys = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+    
+    for i in range(7):
+        day = monday + timedelta(days=i)
+        week_days.append({
+            'jour_name': days_names[i],
+            'jour_key': days_keys[i],
+            'date_short': day.strftime('%d/%m'),
+            'date_str': day.strftime('%Y-%m-%d'),
+            'date_formatted': day.strftime('%d %B %Y')
+        })
+    
+    # Convertir en JSON pour JavaScript
+    week_days_json = json.dumps(week_days)
+    
+    context = {
+        'employes': employes,
+        'week_days': week_days,
+        'week_days_json': week_days_json,
+    }
+    
+    return render(request, 'restoplus/horaire_creation.html', context)

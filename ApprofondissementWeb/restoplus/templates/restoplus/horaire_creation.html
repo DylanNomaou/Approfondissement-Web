@@ -40,18 +40,52 @@
 
                     <!--Actions de publication-->
                     <div class="action-buttons">
+                        <!-- Badge de statut -->
+                        <span class="week-status-badge {{ week_schedule.status }}">
+                            {% if week_schedule.status == 'draft' %}
+                                 Brouillon
+                            {% elif week_schedule.status == 'published' %}
+                                Publié
+                            {% else %}
+                                 Archivé
+                            {% endif %}
+                        </span>
 
                         <!--Sauvgarder l'horaire-->
-                        <button class="btn btn-secondary">
-                            <i class="fas fa-save"></i>
-                            Enregistrer le brouillon
-                        </button>
+                        {% if week_schedule.can_be_edited %}
+                        <form method="post" action="" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="draft">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-save"></i>
+                                Enregistrer le brouillon
+                            </button>
+                        </form>
+                        {% endif %}
 
                         <!--publier les horaires-->
-                        <button class="btn btn-primary">
-                            <i class="fas fa-check"></i>
-                            Publier les horaires
-                        </button>
+                        {% if week_schedule.status != 'published' %}
+                        <form method="post" action="" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="published">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i>
+                                Publier les horaires
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <!--Archiver-->
+                        {% if week_schedule.status == 'published' %}
+                        <form method="post" action="" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="archived">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-archive"></i>
+                                Archiver
+                            </button>
+                        </form>
+                        {% endif %}
 
                     </div>
                     <!--Fin des actions de publication-->
@@ -112,9 +146,8 @@
                     <div class="employee-row" data-employee-id="{{ employee.id }}">
                         <!-- Nom de l'employé -->
                         <div class="employee-info">
-                            <div class="employee-name">{{ employee.nom }}</div>
-                            <div class="employee-role">{{ employee.poste }}</div>
-                            <div class="employee-color" data-color="{{ employee.couleur }}"></div>
+                            <div class="employee-name">{{ employee.get_full_name|default:employee.username }}</div>
+                            <div class="employee-color" data-color="#007bff"></div>
                         </div>
 
                         <!-- Cellules d'horaire pour chaque jour -->
@@ -124,9 +157,6 @@
                             <div class="time-slot">
                                 <!-- Zone où l'horaire sera affiché/édité -->
                                 <span class="time-display">-</span>
-                                <button class="edit-time-btn" title="Modifier l'horaire">
-                                    <i class="fas fa-edit"></i>
-                                </button>
                             </div>
                         </div>
                         {% endfor %}
@@ -143,15 +173,13 @@
 {% endblock content %}
 
 {% block extra_js %}
-<!-- Debug: Affichage des données -->
-<!-- week_days premier élément: {{ week_days.0 }} -->
-<!-- week_days_json: {{ week_days_json|safe }} -->
 
 <!-- Données pour JavaScript -->
 {{ week_days_json|json_script:"week-days-data" }}
 
-<!-- Script pour la gestion des horaires -->
-<script src="{% static 'RestoPlus/js/horaire.js' %}"></script>
+<!-- Script de la page -->
+<script defer src="{% static 'restoplus/js/horaire.js' %}"></script>
+
 
 <!-- Debug script -->
 <script>
@@ -167,4 +195,8 @@
         }
     }
 </script>
+
+<!-- Include du modal d'édition d'horaire -->
+{% include 'restoplus/partials/time_edit_modal.html' %}
+
 {% endblock extra_js %}
