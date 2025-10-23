@@ -147,6 +147,7 @@
                         <!-- Nom de l'employé -->
                         <div class="employee-info">
                             <div class="employee-name">{{ employee.get_full_name|default:employee.username }}</div>
+                            <div class="employee-disponibilite">{{ employee.availability_status }}</div>
                             <div class="employee-color" data-color="#007bff"></div>
                         </div>
 
