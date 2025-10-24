@@ -3,14 +3,26 @@
 {% block title %}RestoPlus - Section Employés{% endblock %}
 
 {% block content %}
-  <!-- Liste style “Guests” -->
+<div class="container mt-4">
+
+  <!-- En-têtes alignés sur 4 colonnes -->
+  <div class="d-none d-md-grid px-3 mb-1"
+       style="display:grid;grid-template-columns:1.2fr 1fr 1fr 300px;column-gap:12px;font-size:.9rem;color:var(--bs-secondary-color);">
+    <div>Employé</div>
+    <div>Courriel</div>
+    <div>Mobile</div>
+    <div class="text-end pe-1">Actions</div>
+  </div>
+
   <div class="list-group list-group-flush border rounded-3">
     {% for employe in employes %}
     <div class="list-group-item employee-row py-3"
          data-name="{{ employe.first_name }} {{ employe.last_name }} {{ employe.username }}"
          data-email="{{ employe.email }}">
+
+      <!-- Ligne en 4 colonnes (même grille que l’entête) -->
       <div class="d-grid align-items-center"
-           style="grid-template-columns: 1.2fr 1fr 1fr 240px; column-gap: 12px;">
+           style="grid-template-columns:1.2fr 1fr 1fr 300px;column-gap:12px;">
 
         <!-- Col 1: Avatar + nom + badge -->
         <div class="d-flex align-items-center gap-3">
@@ -53,20 +65,28 @@
         <!-- Col 3: Mobile (placeholder) -->
         <div class="text-secondary">—</div>
 
-        <!-- Col 4: Actions -->
-        <div class="d-flex justify-content-end gap-2">
-          <a href="{% url 'employee_profile' employe.id %}" class="btn btn-outline-info btn-sm">
-            <i class="bi bi-person-lines-fill"></i> Voir profil
+        <!-- Col 4: Actions (fix alignement, tailles cohérentes) -->
+        <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+          <a href="{% url 'employee_profile' employe.id %}"
+             class="btn btn-outline-info btn-sm flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-person-lines-fill"></i>
+            <span class="d-none d-lg-inline">Voir profil</span>
           </a>
+
           {% if user.can_manage_employees and employe != user %}
-            <a href="{% url 'edit_employee' employe.id %}" class="btn btn-outline-warning btn-sm">
-              <i class="bi bi-pencil"></i> Modifier
+            <a href="{% url 'edit_employee' employe.id %}"
+               class="btn btn-outline-warning btn-sm flex-grow-1 flex-md-grow-0">
+              <i class="bi bi-pencil"></i>
+              <span class="d-none d-lg-inline">Modifier</span>
             </a>
-            <form action="{% url 'delete_employee' employe.id %}" method="post" class="d-inline">
+
+            <form action="{% url 'delete_employee' employe.id %}" method="post" class="d-inline m-0">
               {% csrf_token %}
-              <button type="submit" class="btn btn-outline-danger btn-sm"
+              <button type="submit"
+                      class="btn btn-outline-danger btn-sm flex-grow-1 flex-md-grow-0"
                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')">
-                <i class="bi bi-trash"></i> Supprimer
+                <i class="bi bi-trash"></i>
+                <span class="d-none d-lg-inline">Supprimer</span>
               </button>
             </form>
           {% endif %}
@@ -74,11 +94,12 @@
 
       </div>
     </div>
+
     {% empty %}
     <div class="list-group-item py-4 text-center text-secondary">
       Aucun employé trouvé.
     </div>
     {% endfor %}
   </div>
-  {%endblock%}
-
+</div>
+{% endblock %}

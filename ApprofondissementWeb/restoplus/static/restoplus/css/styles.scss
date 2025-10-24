@@ -1,22 +1,22 @@
 // ===========================
 // VARIABLES & CONFIGURATION
 // ===========================
-$primary-color: #0d6efd;
+$primary-color  : #0d6efd;
 $secondary-color: #6c757d;
-$success-color: #198754;
-$warning-color: #ffc107;
-$danger-color: #dc3545;
-$info-color: #0dcaf0;
-$light-color: #f8f9fa;
-$dark-color: #212529;
+$success-color  : #198754;
+$warning-color  : #ffc107;
+$danger-color   : #dc3545;
+$info-color     : #0dcaf0;
+$light-color    : #f8f9fa;
+$dark-color     : #212529;
 
 $sidebar-width: 280px;
 $header-height: 80px;
 $footer-height: 60px;
 
 $border-radius: 12px;
-$box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-$transition: all 0.3s ease;
+$box-shadow   : 0 4px 6px rgba(0, 0, 0, 0.1);
+$transition   : all 0.3s ease;
 
 // ===========================
 // MIXINS
@@ -25,7 +25,7 @@ $transition: all 0.3s ease;
     transition: $transition;
 
     &:hover {
-        transform: translateY(-5px);
+        transform : translateY(-5px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 }
@@ -34,7 +34,7 @@ $transition: all 0.3s ease;
     transition: $transition;
 
     &:hover {
-        transform: translateY(-2px);
+        transform : translateY(-2px);
         box-shadow: $box-shadow;
     }
 
@@ -55,42 +55,42 @@ $transition: all 0.3s ease;
 // BASE STYLES
 // ===========================
 body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family     : "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: $light-color;
-    overflow-x: hidden;
+    overflow-x      : hidden;
 }
 
 // ===========================
 // SIDEBAR COMPONENT
 // ===========================
 .sidebar {
-    width: $sidebar-width;
-    height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 1000;
+    width     : $sidebar-width;
+    height    : 100vh;
+    position  : fixed;
+    left      : 0;
+    top       : 0;
+    z-index   : 1000;
     background: linear-gradient(180deg, $dark-color 0%, #1a1e21 100%);
     box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     transition: $transition;
 
     .sidebar-header {
-        padding: 1.5rem;
+        padding      : 1.5rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
         .logo-container {
             .logo {
-                width: 40px;
-                height: 40px;
-                background: linear-gradient(135deg, $primary-color 0%, #4d94ff 100%);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
+                width          : 40px;
+                height         : 40px;
+                background     : linear-gradient(135deg, $primary-color 0%, #4d94ff 100%);
+                border-radius  : 50%;
+                display        : flex;
+                align-items    : center;
                 justify-content: center;
-                font-size: 12px;
-                font-weight: bold;
-                color: white;
-                box-shadow: 0 4px 8px rgba($primary-color, 0.3);
+                font-size      : 12px;
+                font-weight    : bold;
+                color          : white;
+                box-shadow     : 0 4px 8px rgba($primary-color, 0.3);
             }
         }
     }
@@ -99,26 +99,26 @@ body {
         padding: 1rem 0;
 
         .nav-link {
-            padding: 0.75rem 1.5rem;
-            color: rgba(255, 255, 255, 0.8);
+            padding    : 0.75rem 1.5rem;
+            color      : rgba(255, 255, 255, 0.8);
             border-left: 3px solid transparent;
-            transition: $transition;
+            transition : $transition;
 
             &:hover {
-                color: white;
-                background-color: rgba(255, 255, 255, 0.1);
+                color            : white;
+                background-color : rgba(255, 255, 255, 0.1);
                 border-left-color: $primary-color;
-                transform: translateX(5px);
+                transform        : translateX(5px);
             }
 
             &.active {
-                color: white;
-                background-color: rgba($primary-color, 0.2);
+                color            : white;
+                background-color : rgba($primary-color, 0.2);
                 border-left-color: $primary-color;
             }
 
             i {
-                width: 20px;
+                width     : 20px;
                 text-align: center;
             }
         }
@@ -127,9 +127,9 @@ body {
             @extend .nav-link;
 
             &:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color : rgba(255, 255, 255, 0.1);
                 border-left-color: $primary-color;
-                transform: translateX(5px);
+                transform        : translateX(5px);
             }
         }
     }
@@ -139,17 +139,17 @@ body {
 // MAIN LAYOUT
 // ===========================
 .main-wrapper {
-    margin-left: $sidebar-width;
-    min-height: 100vh;
-    display: flex;
+    margin-left   : $sidebar-width;
+    min-height    : 100vh;
+    display       : flex;
     flex-direction: column;
-    transition: margin-left 0.3s ease;
+    transition    : margin-left 0.3s ease;
 
     // HEADER SECTION
     .main-header {
         background: white;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 999;
+        z-index   : 999;
 
         .badge {
             animation: pulse 2s infinite;
@@ -165,43 +165,44 @@ body {
         // DASHBOARD SECTION
         .dashboard-section {
             .dashboard-container {
+
                 // Date Service Card
                 .date-service-card {
-                    background: linear-gradient(135deg, white 0%, $light-color 100%);
+                    background : linear-gradient(135deg, white 0%, $light-color 100%);
                     border-left: 4px solid $primary-color;
 
                     .badge {
                         font-size: 0.9rem;
-                        padding: 0.5rem 1rem;
+                        padding  : 0.5rem 1rem;
                     }
                 }
 
                 // Dashboard Cards
                 .dashboard-card {
                     @include card-hover;
-                    border: none;
+                    border       : none;
                     border-radius: $border-radius;
-                    background: white;
-                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-                    transition:
+                    background   : white;
+                    box-shadow   : 0 2px 10px rgba(0, 0, 0, 0.08);
+                    transition   :
                         transform 0.2s ease,
                         box-shadow 0.2s ease;
                     border: 1px solid rgba(0, 0, 0, 0.05);
 
                     &:hover {
-                        transform: translateY(-2px);
+                        transform : translateY(-2px);
                         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
                     }
 
                     .card-header {
-                        background: transparent;
+                        background   : transparent;
                         border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-                        padding: 1.5rem;
+                        padding      : 1.5rem;
 
                         h3,
                         h5 {
                             font-weight: 600;
-                            margin: 0;
+                            margin     : 0;
                         }
                     }
 
@@ -216,18 +217,19 @@ body {
                 }
 
                 .task-list {
+
                     // Styles pour la liste horizontale défilante
                     &.horizontal-scroll {
-                        display: flex;
-                        gap: 1rem;
-                        overflow-x: auto;
-                        overflow-y: hidden;
-                        padding: 0.5rem 0;
-                        scroll-behavior: smooth;
+                        display                   : flex;
+                        gap                       : 1rem;
+                        overflow-x                : auto;
+                        overflow-y                : hidden;
+                        padding                   : 0.5rem 0;
+                        scroll-behavior           : smooth;
                         -webkit-overflow-scrolling: touch; // Support mobile
 
                         // Masquer la scrollbar par défaut mais garder la fonctionnalité
-                        scrollbar-width: none; // Firefox
+                        scrollbar-width   : none; // Firefox
                         -ms-overflow-style: none; // IE/Edge
 
                         &::-webkit-scrollbar {
@@ -237,16 +239,16 @@ body {
                         // Afficher une scrollbar subtile au hover sur desktop
                         &:hover::-webkit-scrollbar {
                             display: block;
-                            height: 4px;
+                            height : 4px;
                         }
 
                         &:hover::-webkit-scrollbar-track {
-                            background: rgba(0, 0, 0, 0.1);
+                            background   : rgba(0, 0, 0, 0.1);
                             border-radius: 2px;
                         }
 
                         &:hover::-webkit-scrollbar-thumb {
-                            background: rgba(0, 0, 0, 0.3);
+                            background   : rgba(0, 0, 0, 0.3);
                             border-radius: 2px;
 
                             &:hover {
@@ -256,20 +258,20 @@ body {
                     }
 
                     .task-item {
-                        padding: 1rem;
+                        padding      : 1rem;
                         border-radius: 8px;
                         margin-bottom: 0.5rem;
-                        transition: $transition;
-                        cursor: pointer;
+                        transition   : $transition;
+                        cursor       : pointer;
 
                         &:hover {
-                            transform: translateX(5px);
+                            transform : translateX(5px);
                             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                         }
 
                         .task-checkbox {
                             i {
-                                font-size: 1.25rem;
+                                font-size : 1.25rem;
                                 transition: $transition;
 
                                 &:hover {
@@ -283,47 +285,47 @@ body {
 
                             .task-content span {
                                 text-decoration: line-through;
-                                color: $secondary-color;
+                                color          : $secondary-color;
                             }
                         }
 
                         &.pending {
                             background-color: rgba($warning-color, 0.1);
-                            border: 1px solid rgba($warning-color, 0.3);
+                            border          : 1px solid rgba($warning-color, 0.3);
                         }
                     }
 
                     // Styles pour les tâches horizontales
                     .task-item-horizontal {
-                        min-width: 220px;
-                        max-width: 250px;
-                        height: 160px;
+                        min-width  : 220px;
+                        max-width  : 250px;
+                        height     : 160px;
                         flex-shrink: 0;
-                        background: white;
-                        border: 2px solid #e9ecef;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                        transition: all 0.3s ease;
-                        cursor: pointer;
-                        position: relative;
-                        overflow: hidden;
+                        background : white;
+                        border     : 2px solid #e9ecef;
+                        box-shadow : 0 2px 8px rgba(0, 0, 0, 0.08);
+                        transition : all 0.3s ease;
+                        cursor     : pointer;
+                        position   : relative;
+                        overflow   : hidden;
 
                         &:hover {
-                            transform: translateY(-4px) scale(1.02);
-                            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                            transform   : translateY(-4px) scale(1.02);
+                            box-shadow  : 0 8px 25px rgba(0, 0, 0, 0.15);
                             border-color: #007bff;
                         }
 
                         &.task-completed {
-                            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                            background  : linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
                             border-color: #28a745;
 
                             &::before {
-                                content: "";
-                                position: absolute;
-                                top: 0;
-                                left: 0;
-                                right: 0;
-                                height: 4px;
+                                content   : "";
+                                position  : absolute;
+                                top       : 0;
+                                left      : 0;
+                                right     : 0;
+                                height    : 4px;
                                 background: linear-gradient(90deg, #28a745, #20c997);
                             }
                         }
@@ -332,30 +334,30 @@ body {
                             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 
                             &::before {
-                                content: "";
-                                position: absolute;
-                                top: 0;
-                                left: 0;
-                                right: 0;
-                                height: 4px;
+                                content   : "";
+                                position  : absolute;
+                                top       : 0;
+                                left      : 0;
+                                right     : 0;
+                                height    : 4px;
                                 background: linear-gradient(90deg, #ffc107, #fd7e14);
                             }
                         }
 
                         .task-content-horizontal {
                             position: relative;
-                            z-index: 2;
+                            z-index : 2;
                         }
 
                         .task-title-horizontal {
-                            font-size: 0.95rem;
-                            font-weight: 600;
-                            line-height: 1.3;
+                            font-size    : 0.95rem;
+                            font-weight  : 600;
+                            line-height  : 1.3;
                             margin-bottom: 0.5rem;
                         }
 
                         .task-actions-horizontal {
-                            opacity: 0;
+                            opacity   : 0;
                             transition: opacity 0.2s ease;
                         }
 
@@ -365,8 +367,8 @@ body {
 
                         // Indicateurs de priorité
                         .priority-indicator {
-                            width: 12px;
-                            height: 12px;
+                            width        : 12px;
+                            height       : 12px;
                             border-radius: 50%;
 
                             &.priority-haute {
@@ -388,9 +390,9 @@ body {
 
                     // Styles pour la liste défilante verticale (backup)
                     &.scrollable-task-list {
-                        max-height: 400px;
-                        overflow-y: auto;
-                        overflow-x: hidden;
+                        max-height   : 400px;
+                        overflow-y   : auto;
+                        overflow-x   : hidden;
                         padding-right: 8px;
 
                         &::-webkit-scrollbar {
@@ -398,14 +400,14 @@ body {
                         }
 
                         &::-webkit-scrollbar-track {
-                            background: #f1f1f1;
+                            background   : #f1f1f1;
                             border-radius: 10px;
                         }
 
                         &::-webkit-scrollbar-thumb {
-                            background: #c1c1c1;
+                            background   : #c1c1c1;
                             border-radius: 10px;
-                            transition: background 0.3s ease;
+                            transition   : background 0.3s ease;
 
                             &:hover {
                                 background: #a8a8a8;
@@ -420,7 +422,7 @@ body {
 
                 // Indicateur de scroll horizontal
                 .scroll-indicator-horizontal {
-                    opacity: 0.7;
+                    opacity  : 0.7;
                     animation: swipeIndicator 3s ease-in-out infinite;
 
                     &:hover {
@@ -429,10 +431,12 @@ body {
                 }
 
                 @keyframes swipeIndicator {
+
                     0%,
                     100% {
                         transform: translateX(0);
                     }
+
                     50% {
                         transform: translateX(5px);
                     }
@@ -440,7 +444,7 @@ body {
 
                 // Indicateur de scroll vertical (backup)
                 .scroll-indicator {
-                    opacity: 0.7;
+                    opacity  : 0.7;
                     animation: bounce 2s infinite;
 
                     &:hover {
@@ -449,6 +453,7 @@ body {
                 }
 
                 @keyframes bounce {
+
                     0%,
                     20%,
                     50%,
@@ -456,9 +461,11 @@ body {
                     100% {
                         transform: translateY(0);
                     }
+
                     40% {
                         transform: translateY(-5px);
                     }
+
                     60% {
                         transform: translateY(-3px);
                     }
@@ -466,14 +473,14 @@ body {
 
                 // Notification Styles
                 .notification-item {
-                    padding: 1rem;
-                    margin: 0.5rem 0;
+                    padding      : 1rem;
+                    margin       : 0.5rem 0;
                     border-radius: 8px;
-                    transition: $transition;
+                    transition   : $transition;
                     border-radius: 8px;
-                    margin: -8px -12px;
-                    padding: 12px;
-                    animation: slideInRight 0.5s ease forwards;
+                    margin       : -8px -12px;
+                    padding      : 12px;
+                    animation    : slideInRight 0.5s ease forwards;
 
                     &:nth-child(2) {
                         animation-delay: 0.1s;
@@ -485,7 +492,7 @@ body {
 
                     &:hover {
                         background-color: rgba(0, 0, 0, 0.02);
-                        transform: translateX(3px);
+                        transform       : translateX(3px);
                     }
 
                     &.warning {
@@ -504,24 +511,24 @@ body {
                 // Action Buttons
                 .action-btn {
                     @include button-animation;
-                    border-radius: $border-radius;
-                    height: 100px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
+                    border-radius  : $border-radius;
+                    height         : 100px;
+                    display        : flex;
+                    flex-direction : column;
+                    align-items    : center;
                     justify-content: center;
-                    border: 2px solid transparent;
-                    transition: all 0.3s ease;
-                    border-radius: 12px;
+                    border         : 2px solid transparent;
+                    transition     : all 0.3s ease;
+                    border-radius  : 12px;
 
                     &:hover {
                         border-color: currentColor;
-                        transform: translateY(-5px);
-                        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                        transform   : translateY(-5px);
+                        box-shadow  : 0 8px 25px rgba(0, 0, 0, 0.15);
                     }
 
                     i {
-                        font-size: 2rem;
+                        font-size    : 2rem;
                         margin-bottom: 0.5rem;
                     }
                 }
@@ -531,13 +538,13 @@ body {
 
     // FOOTER SECTION
     .main-footer {
-        background: white;
-        border-top: 1px solid rgba(0, 0, 0, 0.1);
-        margin-top: auto;
-        padding: 1rem 0;
-        color: $secondary-color;
+        background : white;
+        border-top : 1px solid rgba(0, 0, 0, 0.1);
+        margin-top : auto;
+        padding    : 1rem 0;
+        color      : $secondary-color;
         margin-left: 280px;
-        transition: margin-left 0.3s ease;
+        transition : margin-left 0.3s ease;
 
         .container-fluid {
             font-size: 0.9rem;
@@ -587,9 +594,11 @@ body {
     0% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.7;
     }
+
     100% {
         opacity: 1;
     }
@@ -597,22 +606,24 @@ body {
 
 @keyframes slideInRight {
     from {
-        opacity: 0;
+        opacity  : 0;
         transform: translateX(30px);
     }
+
     to {
-        opacity: 1;
+        opacity  : 1;
         transform: translateX(0);
     }
 }
 
 @keyframes fadeInUp {
     from {
-        opacity: 0;
+        opacity  : 0;
         transform: translateY(30px);
     }
+
     to {
-        opacity: 1;
+        opacity  : 1;
         transform: translateY(0);
     }
 }
@@ -630,7 +641,7 @@ body {
 .btn:focus,
 .nav-link:focus,
 .task-item:focus {
-    outline: 2px solid $primary-color;
+    outline       : 2px solid $primary-color;
     outline-offset: 2px;
 }
 
@@ -650,9 +661,9 @@ body {
 // Reduced motion support
 @media (prefers-reduced-motion: reduce) {
     * {
-        animation-duration: 0.01ms !important;
+        animation-duration       : 0.01ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+        transition-duration      : 0.01ms !important;
     }
 }
 
@@ -677,6 +688,7 @@ body {
 
 // Print styles
 @media print {
+
     .sidebar,
     .main-header,
     .main-footer {
@@ -691,7 +703,7 @@ body {
                 .dashboard-container {
                     .dashboard-card {
                         box-shadow: none;
-                        border: 1px solid $dark-color;
+                        border    : 1px solid $dark-color;
                     }
                 }
             }
@@ -705,7 +717,7 @@ body {
 .modal {
     &.fade .modal-dialog {
         transition: transform 0.4s ease-out;
-        transform: translate(0, -50px);
+        transform : translate(0, -50px);
     }
 
     &.show .modal-dialog {
@@ -714,9 +726,9 @@ body {
 }
 
 .modal-content {
-    border: none;
+    border       : none;
     border-radius: $border-radius;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    box-shadow   : 0 10px 40px rgba(0, 0, 0, 0.2);
 
     .modal-header {
         border-bottom: 2px solid rgba(255, 255, 255, 0.2);
@@ -724,7 +736,7 @@ body {
 
         .modal-title {
             font-weight: 600;
-            font-size: 1.25rem;
+            font-size  : 1.25rem;
         }
     }
 
@@ -732,8 +744,8 @@ body {
         background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
 
         .form-label {
-            color: $dark-color;
-            font-size: 0.95rem;
+            color        : $dark-color;
+            font-size    : 0.95rem;
             margin-bottom: 0.5rem;
 
             i {
@@ -743,43 +755,43 @@ body {
 
         .form-control,
         .form-select {
-            border: 2px solid #e9ecef;
+            border       : 2px solid #e9ecef;
             border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            transition: $transition;
+            padding      : 0.75rem 1rem;
+            font-size    : 0.95rem;
+            transition   : $transition;
 
             &:focus {
                 border-color: $primary-color;
-                box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-                transform: translateY(-1px);
+                box-shadow  : 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+                transform   : translateY(-1px);
             }
 
             &.is-valid {
-                border-color: $success-color;
+                border-color    : $success-color;
                 background-image: none;
             }
 
             &.is-invalid {
-                border-color: $danger-color;
+                border-color    : $danger-color;
                 background-image: none;
             }
         }
 
         .form-check-container {
-            background: rgba(13, 110, 253, 0.05);
+            background   : rgba(13, 110, 253, 0.05);
             border-radius: 8px;
-            padding: 1rem;
-            border-left: 4px solid $primary-color;
+            padding      : 1rem;
+            border-left  : 4px solid $primary-color;
 
             .form-check {
                 .form-check-input {
-                    border: 2px solid #dee2e6;
+                    border       : 2px solid #dee2e6;
                     border-radius: 4px;
 
                     &:checked {
                         background-color: $primary-color;
-                        border-color: $primary-color;
+                        border-color    : $primary-color;
                     }
 
                     &:focus {
@@ -788,7 +800,7 @@ body {
                 }
 
                 .form-check-label {
-                    color: $dark-color;
+                    color : $dark-color;
                     cursor: pointer;
 
                     &:hover {
@@ -799,7 +811,7 @@ body {
         }
 
         .invalid-feedback {
-            font-size: 0.875rem;
+            font-size  : 0.875rem;
             font-weight: 500;
         }
 
@@ -809,18 +821,18 @@ body {
     }
 
     .modal-footer {
-        border-top: 1px solid #dee2e6;
+        border-top   : 1px solid #dee2e6;
         border-radius: 0 0 $border-radius $border-radius;
 
         .btn {
             @include button-animation;
-            font-weight: 500;
-            padding: 0.75rem 1.5rem;
+            font-weight  : 500;
+            padding      : 0.75rem 1.5rem;
             border-radius: 8px;
 
             &.btn-primary {
                 background: linear-gradient(135deg, $primary-color 0%, #0056b3 100%);
-                border: none;
+                border    : none;
 
                 &:hover {
                     background: linear-gradient(135deg, #0056b3 0%, $primary-color 100%);
@@ -833,7 +845,7 @@ body {
 // Animation pour les toasts
 .toast {
     border-radius: 8px;
-    border: none;
+    border       : none;
 
     &.bg-success {
         background: linear-gradient(135deg, $success-color 0%, #146c43 100%) !important;
@@ -849,59 +861,60 @@ body {
 // ===========================
 
 // Variables spécifiques au dashboard
-$admin-primary: #4e73df;
-$admin-success: #1cc88a;
-$admin-warning: #f6c23e;
-$admin-danger: #e74a3b;
-$admin-secondary: #858796;
+$admin-primary    : #4e73df;
+$admin-success    : #1cc88a;
+$admin-warning    : #f6c23e;
+$admin-danger     : #e74a3b;
+$admin-secondary  : #858796;
 $admin-card-radius: 0.75rem;
 $admin-table-hover: rgba($admin-primary, 0.05);
-$admin-badge-size: 0.75rem;
+$admin-badge-size : 0.75rem;
 
 // Mixins pour l'admin dashboard
 @mixin admin-card-shadow {
     box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-    border: 1px solid #e3e6f0;
+    border    : 1px solid #e3e6f0;
 }
 
 @mixin admin-status-badge($bg-color) {
     background-color: $bg-color !important;
-    color: white;
-    font-weight: 600;
-    font-size: $admin-badge-size;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.5rem;
-    border: none;
+    color           : white;
+    font-weight     : 600;
+    font-size       : $admin-badge-size;
+    padding         : 0.375rem 0.75rem;
+    border-radius   : 0.5rem;
+    border          : none;
 }
 
 @mixin admin-action-button($bg-color, $hover-color) {
     background-color: $bg-color;
-    border-color: $bg-color;
-    transition: $transition;
+    border-color    : $bg-color;
+    transition      : $transition;
 
     &:hover {
         background-color: $hover-color;
-        border-color: $hover-color;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba($bg-color, 0.3);
+        border-color    : $hover-color;
+        transform       : translateY(-1px);
+        box-shadow      : 0 4px 8px rgba($bg-color, 0.3);
     }
 }
 
 // Structure principale du dashboard admin
 .admin-dashboard {
+
     // ===========================
     // MESSAGES SECTION
     // ===========================
     .alert {
         border-radius: $admin-card-radius;
-        border: none;
-        padding: 1rem 1.5rem;
+        border       : none;
+        padding      : 1rem 1.5rem;
         margin-bottom: 1rem;
-        font-weight: 500;
+        font-weight  : 500;
 
         &.alert-success {
             background: linear-gradient(135deg, $admin-success 0%, lighten($admin-success, 10%) 100%);
-            color: white;
+            color     : white;
 
             .btn-close {
                 filter: brightness(0) invert(1);
@@ -911,7 +924,7 @@ $admin-badge-size: 0.75rem;
         &.alert-error,
         &.alert-danger {
             background: linear-gradient(135deg, $admin-danger 0%, lighten($admin-danger, 10%) 100%);
-            color: white;
+            color     : white;
 
             .btn-close {
                 filter: brightness(0) invert(1);
@@ -920,12 +933,12 @@ $admin-badge-size: 0.75rem;
 
         &.alert-warning {
             background: linear-gradient(135deg, $admin-warning 0%, lighten($admin-warning, 10%) 100%);
-            color: #333;
+            color     : #333;
         }
 
         &.alert-info {
             background: linear-gradient(135deg, $admin-primary 0%, lighten($admin-primary, 10%) 100%);
-            color: white;
+            color     : white;
 
             .btn-close {
                 filter: brightness(0) invert(1);
@@ -941,20 +954,21 @@ $admin-badge-size: 0.75rem;
         }
     }
 
+
     // ===========================
     // HEADER SECTION
     // ===========================
     &__header {
-        background: linear-gradient(135deg, $admin-primary 0%, lighten($admin-primary, 10%) 100%);
-        color: white;
-        padding: 2rem 0;
+        background   : linear-gradient(135deg, $admin-primary 0%, lighten($admin-primary, 10%) 100%);
+        color        : white;
+        padding      : 2rem 0;
         margin-bottom: 2rem;
         border-radius: $admin-card-radius;
 
         h1 {
-            font-weight: 700;
+            font-weight  : 700;
             margin-bottom: 0.5rem;
-            font-size: 2.5rem;
+            font-size    : 2.5rem;
 
             i {
                 margin-right: 1rem;
@@ -962,14 +976,14 @@ $admin-badge-size: 0.75rem;
         }
 
         p {
-            opacity: 0.9;
-            font-size: 1.1rem;
+            opacity      : 0.9;
+            font-size    : 1.1rem;
             margin-bottom: 0;
         }
 
         // Breadcrumb personnalisé
         .breadcrumb {
-            background: transparent;
+            background   : transparent;
             margin-bottom: 0;
 
             .breadcrumb-item {
@@ -980,7 +994,7 @@ $admin-badge-size: 0.75rem;
                 }
 
                 a {
-                    color: white;
+                    color          : white;
                     text-decoration: none;
 
                     &:hover {
@@ -998,20 +1012,20 @@ $admin-badge-size: 0.75rem;
         @include admin-card-shadow;
         border-radius: $admin-card-radius;
         margin-bottom: 2rem;
-        background: white;
-        border: none;
+        background   : white;
+        border       : none;
 
         .card-header {
-            background: white;
+            background   : white;
             border-bottom: 1px solid #e3e6f0;
             border-radius: $admin-card-radius $admin-card-radius 0 0;
-            padding: 1.5rem;
+            padding      : 1.5rem;
 
             h5 {
-                color: $admin-secondary;
-                font-weight: 700;
+                color        : $admin-secondary;
+                font-weight  : 700;
                 margin-bottom: 0;
-                font-size: 1.25rem;
+                font-size    : 1.25rem;
 
                 i {
                     margin-right: 0.5rem;
@@ -1021,8 +1035,8 @@ $admin-badge-size: 0.75rem;
             .card-tools {
                 .btn {
                     @include admin-action-button($admin-primary, darken($admin-primary, 10%));
-                    padding: 0.75rem 1.5rem;
-                    font-weight: 600;
+                    padding      : 0.75rem 1.5rem;
+                    font-weight  : 600;
                     border-radius: 0.5rem;
 
                     i {
@@ -1042,7 +1056,7 @@ $admin-badge-size: 0.75rem;
             // Style pour la section des rôles existants
             .badge {
                 &.fs-6 {
-                    font-size: 0.9rem !important;
+                    font-size  : 0.9rem !important;
                     font-weight: 500;
 
                     i {
@@ -1066,14 +1080,14 @@ $admin-badge-size: 0.75rem;
         // En-têtes de tableau
         thead th {
             background-color: #f8f9fc;
-            border-top: none;
-            border-bottom: 1px solid #e3e6f0;
-            color: $admin-secondary;
-            font-weight: 700;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 1rem;
+            border-top      : none;
+            border-bottom   : 1px solid #e3e6f0;
+            color           : $admin-secondary;
+            font-weight     : 700;
+            font-size       : 0.875rem;
+            text-transform  : uppercase;
+            letter-spacing  : 0.05em;
+            padding         : 1rem;
         }
 
         // Corps du tableau
@@ -1083,13 +1097,13 @@ $admin-badge-size: 0.75rem;
 
                 &:hover {
                     background-color: $admin-table-hover;
-                    transform: scale(1.01);
-                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+                    transform       : scale(1.01);
+                    box-shadow      : 0 2px 10px rgba(0, 0, 0, 0.08);
                 }
 
                 td {
-                    padding: 1rem;
-                    border-top: 1px solid #e3e6f0;
+                    padding       : 1rem;
+                    border-top    : 1px solid #e3e6f0;
                     vertical-align: middle;
                 }
             }
@@ -1097,36 +1111,36 @@ $admin-badge-size: 0.75rem;
 
         // Information utilisateur dans le tableau
         .user-info {
-            display: flex;
+            display    : flex;
             align-items: center;
 
             .user-avatar {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, $admin-primary, lighten($admin-primary, 20%));
-                display: flex;
-                align-items: center;
+                width          : 40px;
+                height         : 40px;
+                border-radius  : 50%;
+                background     : linear-gradient(135deg, $admin-primary, lighten($admin-primary, 20%));
+                display        : flex;
+                align-items    : center;
                 justify-content: center;
-                color: white;
-                font-weight: 700;
-                margin-right: 0.75rem;
-                font-size: 0.875rem;
-                text-transform: uppercase;
+                color          : white;
+                font-weight    : 700;
+                margin-right   : 0.75rem;
+                font-size      : 0.875rem;
+                text-transform : uppercase;
             }
 
             .user-details {
                 .user-name {
-                    font-weight: 600;
-                    color: #2e2e2e;
+                    font-weight  : 600;
+                    color        : #2e2e2e;
                     margin-bottom: 0.25rem;
-                    font-size: 0.95rem;
+                    font-size    : 0.95rem;
                 }
 
                 .user-email {
-                    color: $admin-secondary;
+                    color    : $admin-secondary;
                     font-size: 0.875rem;
-                    margin: 0;
+                    margin   : 0;
                 }
             }
         }
@@ -1136,6 +1150,7 @@ $admin-badge-size: 0.75rem;
     // BADGES DE STATUT
     // ===========================
     &__badge {
+
         // Badges de statut d'activité
         &--active {
             @include admin-status-badge($admin-success);
@@ -1158,9 +1173,7 @@ $admin-badge-size: 0.75rem;
         }
 
         // Badges pour les rôles personnalisés
-        &[class*="admin-dashboard__badge--"]:not(.admin-dashboard__badge--active):not(
-                .admin-dashboard__badge--inactive
-            ):not(.admin-dashboard__badge--no-role) {
+        &[class*="admin-dashboard__badge--"]:not(.admin-dashboard__badge--active):not(.admin-dashboard__badge--inactive):not(.admin-dashboard__badge--no-role) {
             @include admin-status-badge($admin-primary);
         }
 
@@ -1199,17 +1212,17 @@ $admin-badge-size: 0.75rem;
     // ===========================
     &__form {
         .form-section {
-            background: #f8f9fc;
+            background   : #f8f9fc;
             border-radius: $admin-card-radius;
-            padding: 1.5rem;
+            padding      : 1.5rem;
             margin-bottom: 1.5rem;
-            border: 1px solid #e3e6f0;
+            border       : 1px solid #e3e6f0;
 
             h6 {
-                color: $admin-secondary;
-                font-weight: 700;
-                margin-bottom: 1rem;
-                font-size: 1rem;
+                color         : $admin-secondary;
+                font-weight   : 700;
+                margin-bottom : 1rem;
+                font-size     : 1rem;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
 
@@ -1220,29 +1233,29 @@ $admin-badge-size: 0.75rem;
         }
 
         .form-label {
-            color: $admin-secondary;
-            font-weight: 600;
+            color        : $admin-secondary;
+            font-weight  : 600;
             margin-bottom: 0.5rem;
         }
 
         .form-control,
         .form-select {
-            border: 1px solid #d1d3e2;
+            border       : 1px solid #d1d3e2;
             border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
-            transition: $transition;
+            padding      : 0.75rem 1rem;
+            transition   : $transition;
 
             &:focus {
                 border-color: $admin-primary;
-                box-shadow: 0 0 0 0.2rem rgba($admin-primary, 0.25);
+                box-shadow  : 0 0 0 0.2rem rgba($admin-primary, 0.25);
             }
         }
 
         // Cases à cocher personnalisées
         .form-check {
-            padding: 0.75rem;
+            padding      : 0.75rem;
             border-radius: 0.5rem;
-            transition: $transition;
+            transition   : $transition;
 
             &:hover {
                 background-color: rgba($admin-primary, 0.05);
@@ -1251,7 +1264,7 @@ $admin-badge-size: 0.75rem;
             .form-check-input {
                 &:checked {
                     background-color: $admin-primary;
-                    border-color: $admin-primary;
+                    border-color    : $admin-primary;
                 }
 
                 &:focus {
@@ -1260,9 +1273,9 @@ $admin-badge-size: 0.75rem;
             }
 
             .form-check-label {
-                color: #2e2e2e;
+                color      : #2e2e2e;
                 font-weight: 500;
-                cursor: pointer;
+                cursor     : pointer;
 
                 i {
                     margin-right: 0.5rem;
@@ -1276,7 +1289,7 @@ $admin-badge-size: 0.75rem;
     // ===========================
     &__actions {
         .btn {
-            margin-right: 0.5rem;
+            margin-right : 0.5rem;
             margin-bottom: 0.5rem;
 
             &.btn-primary {
@@ -1306,9 +1319,9 @@ $admin-badge-size: 0.75rem;
     // ===========================
     &__role-selector {
         .form-select {
-            border: 1px solid #d1d3e2;
+            border          : 1px solid #d1d3e2;
             background-color: white;
-            transition: $transition;
+            transition      : $transition;
 
             &:hover {
                 border-color: $admin-primary;
@@ -1316,7 +1329,7 @@ $admin-badge-size: 0.75rem;
 
             &:focus {
                 border-color: $admin-primary;
-                box-shadow: 0 0 0 0.2rem rgba($admin-primary, 0.25);
+                box-shadow  : 0 0 0 0.2rem rgba($admin-primary, 0.25);
             }
         }
     }
@@ -1326,23 +1339,23 @@ $admin-badge-size: 0.75rem;
     // ===========================
     &__empty-state {
         text-align: center;
-        padding: 3rem 1rem;
-        color: $admin-secondary;
+        padding   : 3rem 1rem;
+        color     : $admin-secondary;
 
         .empty-icon {
-            font-size: 4rem;
+            font-size    : 4rem;
             margin-bottom: 1rem;
-            opacity: 0.5;
+            opacity      : 0.5;
         }
 
         h5 {
             margin-bottom: 0.5rem;
-            font-weight: 600;
+            font-weight  : 600;
         }
 
         p {
             margin-bottom: 0;
-            font-size: 0.95rem;
+            font-size    : 0.95rem;
         }
     }
 
@@ -1368,8 +1381,8 @@ $admin-badge-size: 0.75rem;
 
             .user-info {
                 .user-avatar {
-                    width: 35px;
-                    height: 35px;
+                    width    : 35px;
+                    height   : 35px;
                     font-size: 0.8rem;
                 }
             }
@@ -1390,11 +1403,12 @@ $admin-badge-size: 0.75rem;
 // ===========================
 @keyframes fadeInUp {
     from {
-        opacity: 0;
+        opacity  : 0;
         transform: translateY(20px);
     }
+
     to {
-        opacity: 1;
+        opacity  : 1;
         transform: translateY(0);
     }
 }

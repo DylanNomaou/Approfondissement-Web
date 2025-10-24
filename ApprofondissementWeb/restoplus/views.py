@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied,ValidationError
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -411,8 +411,6 @@ def toggle_task_status(request):
             task_id = request.POST.get('task_id')
             if not task_id:
                 return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
-
-                return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
             task = get_object_or_404(Task, id=task_id)
             # Vérifier que l'utilisateur peut modifier cette tâche
             if request.user not in task.assigned_to.all() and not request.user.is_staff:
@@ -577,6 +575,8 @@ def add_employee(request):
     return render(request, 'restoplus/add_employee.html',
                   {'form': form,
                    'roles': roles})
+from django.core.exceptions import ValidationError  # assure-toi d'avoir ça
+
 @login_required
 def edit_employee(request, employe_id):
     """Vue pour éditer le profil de l'utilisateur connecté"""
@@ -591,14 +591,14 @@ def edit_employee(request, employe_id):
 
     if employee == request.user:
         messages.warning(request,
-                         """Vous ne pouvez pas modifier votre propre profil ici.
-                         Veuillez utiliser la page de profil.""")
+                         "Vous ne pouvez pas modifier votre propre profil ici. Veuillez utiliser la page de profil.")
         return redirect('employees_management')
 
     if request.method == 'POST':
         employee.first_name = request.POST.get('first_name', '').strip()
-        employee.last_name = request.POST.get('last_name', '').strip()
-        employee.email = request.POST.get('email', '').strip()
+        employee.last_name  = request.POST.get('last_name', '').strip()
+        employee.email      = request.POST.get('email', '').strip()
+        employee.mobile     = request.POST.get('mobile', '').strip()
 
         role_id = request.POST.get('role_id')
         if role_id:
@@ -614,18 +614,23 @@ def edit_employee(request, employe_id):
                 old_role = employee.role.name
                 messages.info(request, f"Rôle '{old_role}' retiré de l'employé.")
                 employee.role = None
-
-
-        employee.save()
-        employee_display = employee.get_full_name() or employee.username
-        messages.success(request, f"{employee_display} a été modifié avec succès.")
-        return redirect('employees_management')
+        try:
+            employee.full_clean(validate_unique=False)
+            employee.save()
+            employee_display = employee.get_full_name() or employee.username
+            messages.success(request, f"{employee_display} a été modifié avec succès.")
+            return redirect('employees_management')
+        except ValidationError as e:
+            for field, errs in e.message_dict.items():
+                for err in errs:
+                    messages.error(request, f"{field}: {err}")
 
     roles = Role.objects.all()
     return render(request, 'restoplus/edit_employee.html', {
         'employee': employee,
         'roles': roles
     })
+
 
 @login_required
 def delete_employee(request, employe_id):

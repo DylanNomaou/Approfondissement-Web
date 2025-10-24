@@ -50,6 +50,14 @@
                                    value="{{ employee.email }}" placeholder="exemple@restoplus.com">
                         </div>
 
+                        {# >>> AJOUT SEULLEMENT ICI : Téléphone #}
+                        <div class="mb-3">
+                            <label for="mobile" class="form-label">Téléphone</label>
+                            <input type="tel" class="form-control" id="mobile" name="mobile"
+                                   value="{{ employee.mobile }}" placeholder="418-555-1234">
+                        </div>
+                        {# <<< FIN DE L’AJOUT #}
+
                         <div class="mb-3">
                              <small class="text-muted">
                                 Rôle actuel :
@@ -58,7 +66,6 @@
                                 {% else %}
                                    <span class="badge bg-secondary">Aucun</span>
                                 {% endif %}
-
                             </small>
                             <select class="form-select" id="role_id" name="role_id">
                                 <option value="">-- Aucun rôle --</option>
@@ -69,7 +76,6 @@
                                     </option>
                                 {% endfor %}
                             </select>
-
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
