@@ -358,6 +358,7 @@ def create_role(request):
 
             permissions_text = ", ".join(permissions_list) if permissions_list else "Aucune permission spéciale"
             messages.success(request, f"Nouveau rôle '{name}' créé avec succès ! Permissions : {permissions_text}")
+    messages.success(request, "Modifications effectuées avec succès.")
     return redirect('admin_dashboard')
 
 @login_required
