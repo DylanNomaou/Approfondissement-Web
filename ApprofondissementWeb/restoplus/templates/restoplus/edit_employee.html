@@ -20,40 +20,45 @@
 
                         <div class="mb-3">
                             <label for="username" class="form-label">Nom d'utilisateur</label>
-                            <input type="text" class="form-control" id="username" value="{{ employee.username }}" disabled>
+                            <input type="text" class="form-control" id="username" value="{{ employee.username }}"
+                                disabled>
                             <small class="text-muted">Le nom d'utilisateur ne peut pas être modifié</small>
                         </div>
 
                         <div class="mb-3">
                             <label for="first_name" class="form-label">Prénom</label>
                             <input type="text" class="form-control" id="first_name" name="first_name"
-                                   value="{{ employee.first_name }}" placeholder="Prénom">
+                                value="{{ employee.first_name }}" placeholder="Prénom">
                         </div>
 
                         <div class="mb-3">
                             <label for="last_name" class="form-label">Nom de famille</label>
                             <input type="text" class="form-control" id="last_name" name="last_name"
-                                   value="{{ employee.last_name }}" placeholder="Nom de famille">
+                                value="{{ employee.last_name }}" placeholder="Nom de famille">
                         </div>
+
 
                         <div class="mb-3">
                             <label for="email" class="form-label">Courriel</label>
                             <input type="email" class="form-control" id="email" name="email"
-                                   value="{{ employee.email }}" placeholder="exemple@restoplus.com">
+                                value="{{ employee.email }}" placeholder="exemple@restoplus.com">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="poste" class="form-label">Poste</label>
+                            <input type="text" class="form-control" id="poste" name="poste" value="{{ employee.poste }}"
+                                placeholder="Poste (ex: Serveur, Gérant...)">
                         </div>
 
                         <div class="mb-3">
                             <label for="mobile" class="form-label">Téléphone</label>
                             {% if form_errors.mobile %}
-                                <div class="text-danger mb-1">
-                                    {{ form_errors.mobile|join:", " }}
-                                </div>
+                            <div class="text-danger mb-1">
+                                {{ form_errors.mobile|join:", " }}
+                            </div>
                             {% endif %}
-                            <input type="tel"
-                                   class="form-control{% if form_errors.mobile %} is-invalid{% endif %}"
-                                   id="mobile" name="mobile"
-                                   value="{{ employee.mobile }}"
-                                   placeholder="444-555-1234">
+                            <input type="tel" class="form-control{% if form_errors.mobile %} is-invalid{% endif %}"
+                                id="mobile" name="mobile" value="{{ employee.mobile }}" placeholder="444-555-1234">
                         </div>
 
                         <div class="mb-3">
@@ -68,8 +73,7 @@
                             <select class="form-select" id="role_id" name="role_id">
                                 <option value="">-- Aucun rôle --</option>
                                 {% for role in roles %}
-                                    <option value="{{ role.id }}"
-                                        {% if employee.role and employee.role.id == role.id %}selected{% endif %}>
+                                    <option value="{{ role.id }}" {% if employee.role and employee.role.id == role.id %}selected{% endif %}>
                                         {{ role.name }}
                                     </option>
                                 {% endfor %}

@@ -573,8 +573,9 @@ def add_employee(request):
         form = UserRegisterForm()
     roles = Role.objects.all()
     return render(request, 'restoplus/add_employee.html',
-                  {'form': form, 'roles': roles})
-from django.core.exceptions import ValidationError
+                  {'form': form,
+                   'roles': roles})
+from django.core.exceptions import ValidationError 
 
 @login_required
 def edit_employee(request, employe_id):
@@ -603,6 +604,7 @@ def edit_employee(request, employe_id):
         employee.last_name = request.POST.get('last_name', '').strip()
         employee.email = request.POST.get('email', '').strip()
         employee.mobile = request.POST.get('mobile', '').strip()
+        employee.poste = request.POST.get('poste', '').strip()
         role_id = request.POST.get('role_id')
         if role_id:
             try:

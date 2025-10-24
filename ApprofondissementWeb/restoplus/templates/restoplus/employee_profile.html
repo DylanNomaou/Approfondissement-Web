@@ -1,92 +1,185 @@
-{% extends "restoplus/base.html" %} {% block title %} Employee Profile
-{%endblock%} {% block content %}
+
+{% extends "restoplus/base.html" %}
+{% load static %}
+{% block title %}Profil employé{% endblock %}
+
+{% block content %}
 <div class="container mt-4">
-  <h2 class="mb-4">
-    {%if employe.first_name or employe.last_name%} {{ employe.first_name }}
-      {{employe.last_name }}
-    {%else%}
-     {{employe.username}}
-    {%endif%}
-    <small class="text-muted">
-      ({%if employe.poste%}
-        {{employe.poste}}
-      {%else%}<span
-        class="badge bg-danger"
-        >Aucun poste</span>
-      {%endif%})
-    </small>
-  </h2>
-  {% if employe.email %}
+
+  {# ===== Entête du profil ===== #}
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="text-secondary">
-          <i class="bi bi-envelope"></i> {{ employe.email }}</span>
-        <a
-          href="{% url 'employees_management' %}"
-          class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-arrow-left"></i> Retour aux portail d'employés
-        </a>
+      <div class="d-flex align-items-center gap-3">
+
+        {# Avatar initiales — inline pour éviter dépendance SCSS #}
+  <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold avatar-initiales">
+          {% if employe.first_name or employe.last_name %}
+            {{ employe.first_name|default:''|first }}{{ employe.last_name|default:''|first }}
+          {% else %}
+            {{ employe.username|first|upper }}
+          {% endif %}
+        </div>
+
+        <div class="flex-grow-1 min-w-0">
+          <h3 class="h4 mb-1 text-truncate">
+            {% if employe.first_name or employe.last_name %}
+              {{ employe.first_name }} {{ employe.last_name }}
+            {% else %}
+              {{ employe.username }}
+            {% endif %}
+            {% if employe.is_superuser %}
+              <span class="badge bg-danger align-middle ms-1">Admin</span>
+            {% elif employe.role %}
+              <span class="badge bg-primary align-middle ms-1">{{ employe.role.name }}</span>
+            {% endif %}
+          </h3>
+
+          <div class="text-secondary small">
+            Poste :
+            {% if employe.poste %}
+              <span class="fw-semibold text-body">{{ employe.poste }}</span>
+            {% else %}
+              <span class="badge bg-danger">Aucun poste</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-none d-md-flex gap-2">
+          <a href="{% url 'employees_management' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Retour
+          </a>
+          {% if user.can_manage_employees and employe != user %}
+          <a href="{% url 'edit_employee' employe.id %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-pencil-square"></i> Modifier
+          </a>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
-  {% endif %}
 
-  <h4 class="mb-3">
-    <i class="bi bi-calendar-week"></i> Disponibilités
-    <i class="bi bi-info-circle"></i>
-    <span class="badge bg-{{ status_class }} ms-3">{{ status_label }}</span>
-  </h4>
-  {% if not availabilities %}
-  <div class="alert alert-{{ status_class }}">
-    Disponibilités non complétés.
+  <div class="row g-3 mb-4">
+
+    {# ---- Coordonnées ---- #}
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Coordonnées</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-secondary small">Mobile</div>
+                {% if employe.mobile %}
+                  <a href="tel:{{ employe.mobile|urlencode }}" class="text-decoration-none">
+                    {{ employe.mobile }}
+                  </a>
+                {% else %}
+                  <span class="text-secondary">—</span>
+                {% endif %}
+              </div>
+              {% if employe.mobile %}
+              <a href="tel:{{ employe.mobile|urlencode }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-telephone"></i>
+              </a>
+              {% endif %}
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-secondary small">Courriel</div>
+                {% if employe.email %}
+                  <a href="mailto:{{ employe.email }}" class="text-decoration-none">
+                    {{ employe.email }}
+                  </a>
+                {% else %}
+                  <span class="text-secondary">—</span>
+                {% endif %}
+              </div>
+              {% if employe.email %}
+              <a href="mailto:{{ employe.email }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-envelope-open"></i>
+              </a>
+              {% endif %}
+            </li>
+
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="text-secondary small">Nom d’utilisateur</div>
+                <span class="fw-semibold">{{ employe.username }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between">
+          <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Disponibilités</h5>
+          <span class="badge bg-{{ status_class }}">
+            {% if status_class == "secondary" %} Non complétées
+            {% elif status_class == "info" %} Demandées
+            {% elif status_class == "success" %} Validées
+            {% else %} —
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="card-body">
+          {% if status_class == "secondary" %}
+            <form action="{% url 'send_availabilities_form' employe.id %}" method="post" class="mb-3">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                <i class="bi bi-calendar-plus"></i> Demander disponibilités
+              </button>
+            </form>
+          {% elif status_class == "info" %}
+            {# Alerte jaune supprimée, le badge suffit #}
+          {% elif status_class == "success" %}
+            <form action="{% url 'send_availabilities_form' employe.id %}" method="post" class="mb-3">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                <i class="bi bi-arrow-repeat"></i> Redemander disponibilités
+              </button>
+            </form>
+          {% endif %}
+
+          {% if availabilities %}
+            <ul class="list-group list-group-flush">
+              {% for a in availabilities %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span class="fw-semibold">{{ a.get_day_display|title }}</span>
+                  <span class="text-monospace">
+                    {{ a.heure_debut|time:"H\hi" }}
+                    &ndash;
+                    {{ a.heure_fin|time:"H\hi" }}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="alert alert-{{ status_class }} mb-0">
+              Aucune disponibilité enregistrée pour le moment.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
-  {% endif %}
-  <!-- Bouton de demande uniquement si l'employé n'a pas encore soumis -->
-  {% if status_class == "secondary" %}
-  <form action="{% url 'send_availabilities_form' employe.id %}" method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline-primary btn-sm mb-3">
-      <i class="bi bi-calendar-plus"></i> Demander disponibilités
-    </button>
-  </form>
-  {% elif status_class == "info" %}
-  <button class="btn btn-outline-warning btn-sm mb-3" disabled>
-    <i class="bi bi-clock-history"></i> En attente de validation
-  </button>
-  {% elif status_class == "success" %}
-  <form action="{% url 'send_availabilities_form' employe.id %}" method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline-success btn-sm mb-3">
-      <i class="bi bi-arrow-repeat"></i> Redemander disponibilités
-    </button>
-  </form>
-  {% endif %} {% if availabilities %}
-  <div class="table-responsive">
-    <table class="table table-bordered text-center align-middle shadow-sm">
-      <thead class="table-light">
-        <tr>
-          <th scope="col">Jour</th>
-          <th scope="col">Heure de début</th>
-          <th scope="col">Heure de fin</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in availabilities %}
-        <tr>
-          <td class="text-capitalize">{{ a.get_day_display }}</td>
-          <td>{{ a.heure_debut|time:"H:i" }}</td>
-          <td>{{ a.heure_fin|time:"H:i" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+  <div class="d-flex d-md-none gap-2 mt-3">
+    <a href="{% url 'employees_management' %}" class="btn btn-outline-secondary btn-sm w-50">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+    {% if user.can_manage_employees and employe != user %}
+    <a href="{% url 'edit_employee' employe.id %}" class="btn btn-primary btn-sm w-50">
+      <i class="bi bi-pencil-square"></i> Modifier
+    </a>
+    {% endif %}
   </div>
-  {% else %}
-  <div class="alert alert-{{ status_class }}">
-    <i class="bi bi-exclamation-circle"></i>
-    Aucune disponibilité enregistrée pour le moment.
-  </div>
-  {% endif %}
+
 </div>
 {% endblock %}
