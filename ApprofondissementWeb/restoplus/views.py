@@ -14,11 +14,10 @@ from .models import User, Role, Task, Notification,Availability
 from .notifications import notify_task_assigned, notify_role_assigned
 
 # Create your views here.
+
+@login_required
 def accueil(request):
     """Vue pour la page d'accueil."""
-    if not request.user.is_authenticated:
-        messages.info(request, "Vous devez être connecté pour accéder à cette page.")
-        return redirect('login')
     # Gestion du formulaire de tâche
     if request.method == 'POST':
         task_form = TaskForm(request.POST, user=request.user)
