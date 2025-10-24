@@ -573,13 +573,12 @@ def add_employee(request):
         form = UserRegisterForm()
     roles = Role.objects.all()
     return render(request, 'restoplus/add_employee.html',
-                  {'form': form,
-                   'roles': roles})
-from django.core.exceptions import ValidationError  # assure-toi d'avoir ça
+                  {'form': form, 'roles': roles})
+from django.core.exceptions import ValidationError
 
 @login_required
 def edit_employee(request, employe_id):
-    """Vue pour éditer le profil de l'utilisateur connecté"""
+    """Vue pour éditer un employé"""
     if not request.user.has_permission('can_manage_users'):
         messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
         return redirect('no_access')
@@ -589,17 +588,21 @@ def edit_employee(request, employe_id):
     except User.DoesNotExist:
         raise Http404("Aucun employé ne correspond à cet ID.")
 
+    # Interdiction de se modifier soi-même ici
     if employee == request.user:
-        messages.warning(request,
-                         "Vous ne pouvez pas modifier votre propre profil ici. Veuillez utiliser la page de profil.")
+        messages.warning(
+            request,
+            "Vous ne pouvez pas modifier votre propre profil ici. Veuillez utiliser la page de profil."
+        )
         return redirect('employees_management')
+
+    form_errors = {}
 
     if request.method == 'POST':
         employee.first_name = request.POST.get('first_name', '').strip()
-        employee.last_name  = request.POST.get('last_name', '').strip()
-        employee.email      = request.POST.get('email', '').strip()
-        employee.mobile     = request.POST.get('mobile', '').strip()
-
+        employee.last_name = request.POST.get('last_name', '').strip()
+        employee.email = request.POST.get('email', '').strip()
+        employee.mobile = request.POST.get('mobile', '').strip()
         role_id = request.POST.get('role_id')
         if role_id:
             try:
@@ -614,6 +617,7 @@ def edit_employee(request, employe_id):
                 old_role = employee.role.name
                 messages.info(request, f"Rôle '{old_role}' retiré de l'employé.")
                 employee.role = None
+
         try:
             employee.full_clean(validate_unique=False)
             employee.save()
@@ -621,14 +625,13 @@ def edit_employee(request, employe_id):
             messages.success(request, f"{employee_display} a été modifié avec succès.")
             return redirect('employees_management')
         except ValidationError as e:
-            for field, errs in e.message_dict.items():
-                for err in errs:
-                    messages.error(request, f"{field}: {err}")
+            form_errors = e.message_dict
 
     roles = Role.objects.all()
     return render(request, 'restoplus/edit_employee.html', {
         'employee': employee,
-        'roles': roles
+        'roles': roles,
+        'form_errors': form_errors
     })
 
 

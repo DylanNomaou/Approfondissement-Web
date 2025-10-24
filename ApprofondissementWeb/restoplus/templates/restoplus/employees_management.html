@@ -3,52 +3,47 @@
 {% block title %}RestoPlus - Section Employés{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4 abcdefghijklm">
 
   <!-- En-têtes alignés sur 4 colonnes -->
-  <div class="d-none d-md-grid px-3 mb-1"
-       style="display:grid;grid-template-columns:1.2fr 1fr 1fr 300px;column-gap:12px;font-size:.9rem;color:var(--bs-secondary-color);">
-    <div>Employé</div>
+  <div class="d-none d-md-grid px-3 mb-1 employee-grid-header">
+    <div>Membre</div>
     <div>Courriel</div>
     <div>Mobile</div>
     <div class="text-end pe-1">Actions</div>
   </div>
-
   <div class="list-group list-group-flush border rounded-3">
     {% for employe in employes %}
     <div class="list-group-item employee-row py-3"
-         data-name="{{ employe.first_name }} {{ employe.last_name }} {{ employe.username }}"
-         data-email="{{ employe.email }}">
+      data-name="{{ employe.first_name }} {{ employe.last_name }} {{ employe.username }}"
+      data-email="{{ employe.email }}">
 
       <!-- Ligne en 4 colonnes (même grille que l’entête) -->
-      <div class="d-grid align-items-center"
-           style="grid-template-columns:1.2fr 1fr 1fr 300px;column-gap:12px;">
-
+      <div class="d-grid align-items-center employee-grid-row">
         <!-- Col 1: Avatar + nom + badge -->
         <div class="d-flex align-items-center gap-3">
-          <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
-               style="width:40px;height:40px;background:#6f42c1;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white employee-avatar">
             {% if employe.first_name or employe.last_name %}
-              {{ employe.first_name|default:''|first }}{{ employe.last_name|default:''|first }}
+            {{ employe.first_name|default:''|first }}{{ employe.last_name|default:''|first }}
             {% else %}
-              {{ employe.username|first }}
+            {{ employe.username|first }}
             {% endif %}
           </div>
           <div class="min-w-0">
             <div class="fw-semibold text-truncate">
               {% if employe.first_name or employe.last_name %}
-                {{ employe.first_name }} {{ employe.last_name }}
+              {{ employe.first_name }} {{ employe.last_name }}
               {% else %}
-                {{ employe.username }}
+              {{ employe.username }}
               {% endif %}
               {% if employe.is_superuser %}
-                <span class="badge bg-danger ms-1">Admin</span>
+              <span class="badge bg-danger ms-1">Admin</span>
               {% elif employe.role %}
-                <span class="badge bg-primary ms-1">{{ employe.role.name }}</span>
+              <span class="badge bg-primary ms-1">{{ employe.role.name }}</span>
               {% endif %}
             </div>
             {% if employe.poste %}
-              <div class="text-secondary small text-truncate">{{ employe.poste }}</div>
+            <div class="text-secondary small text-truncate">{{ employe.poste }}</div>
             {% endif %}
           </div>
         </div>
@@ -56,9 +51,9 @@
         <!-- Col 2: Email -->
         <div class="text-break">
           {% if employe.email %}
-            <a href="mailto:{{ employe.email }}" class="link-body-emphasis">{{ employe.email }}</a>
+          <a href="mailto:{{ employe.email }}" class="link-body-emphasis">{{ employe.email }}</a>
           {% else %}
-            <span class="text-secondary">—</span>
+          <span class="text-secondary">—</span>
           {% endif %}
         </div>
 
@@ -68,30 +63,28 @@
         <!-- Col 4: Actions (fix alignement, tailles cohérentes) -->
         <div class="d-flex justify-content-md-end gap-2 flex-wrap">
           <a href="{% url 'employee_profile' employe.id %}"
-             class="btn btn-outline-info btn-sm flex-grow-1 flex-md-grow-0">
+            class="btn btn-outline-info btn-sm flex-grow-1 flex-md-grow-0">
             <i class="bi bi-person-lines-fill"></i>
             <span class="d-none d-lg-inline">Voir profil</span>
           </a>
 
           {% if user.can_manage_employees and employe != user %}
-            <a href="{% url 'edit_employee' employe.id %}"
-               class="btn btn-outline-warning btn-sm flex-grow-1 flex-md-grow-0">
-              <i class="bi bi-pencil"></i>
-              <span class="d-none d-lg-inline">Modifier</span>
-            </a>
+          <a href="{% url 'edit_employee' employe.id %}"
+            class="btn btn-outline-warning btn-sm flex-grow-1 flex-md-grow-0">
+            <i class="bi bi-pencil"></i>
+            <span class="d-none d-lg-inline">Modifier</span>
+          </a>
 
-            <form action="{% url 'delete_employee' employe.id %}" method="post" class="d-inline m-0">
-              {% csrf_token %}
-              <button type="submit"
-                      class="btn btn-outline-danger btn-sm flex-grow-1 flex-md-grow-0"
-                      onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')">
-                <i class="bi bi-trash"></i>
-                <span class="d-none d-lg-inline">Supprimer</span>
-              </button>
-            </form>
+          <form action="{% url 'delete_employee' employe.id %}" method="post" class="d-inline m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm flex-grow-1 flex-md-grow-0"
+              onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')">
+              <i class="bi bi-trash"></i>
+              <span class="d-none d-lg-inline">Supprimer</span>
+            </button>
+          </form>
           {% endif %}
         </div>
-
       </div>
     </div>
 
