@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 from django.forms import ValidationError
 from django.utils import timezone
@@ -24,7 +25,15 @@ class Role(models.Model):
         verbose_name_plural = "Rôles"
         ordering = ['name']
 
+phone_validator = RegexValidator(
+    regex=r'^\+?1?\s*(?:\([2-9]\d{2}\)|[2-9]\d{2})[-.\s]?\d{3}[-.\s]?\d{4}$',
+    message="Numéro invalide.Il doit être au format 444-555-1234"
+)
+
 class User(AbstractUser):
+    @property
+    def mobile_display(self):
+        return self.mobile if self.mobile else '—'
     class AvailabilityStatus(models.TextChoices):
         NOT_FILLED = "not_filled", "Non remplie"
         PENDING    = "pending",    "En attente"
@@ -37,10 +46,11 @@ class User(AbstractUser):
         )
     first_name = models.CharField(max_length=150, blank=True, verbose_name="Prénom")
     last_name = models.CharField(max_length=150, blank=True, verbose_name="Nom de famille")
+    poste = models.CharField(max_length=100, blank=True, verbose_name="Poste")
+    mobile = models.CharField(max_length=20,blank=True,validators=[phone_validator], verbose_name="Téléphone")
     email = models.EmailField(blank=True, verbose_name="Courriel")
     is_manager = models.BooleanField(default=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-
     def __str__(self):
         if self.first_name and self.last_name:
             return f"{self.first_name} {self.last_name} ({self.username})"
