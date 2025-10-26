@@ -90,16 +90,27 @@ class AvailabilityForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        time_widget = forms.TimeInput(
+        format='%H:%M',
+        attrs={
+            'type': 'time',
+            'class': 'form-control',
+            'step': '60',
+        }
+    )
         for key, label in self.DAYS:
             self.fields[f"{key}_start"] = forms.TimeField(
                 required=False,
                 label=f"{label} - Début",
-                widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+                widget=time_widget,
+                input_formats=['%H:%M'],
+
             )
             self.fields[f"{key}_end"] = forms.TimeField(
                 required=False,
                 label=f"{label} - Fin",
-                widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+                widget=time_widget,
+                input_formats=['%H:%M'],
             )
 
     def clean(self):

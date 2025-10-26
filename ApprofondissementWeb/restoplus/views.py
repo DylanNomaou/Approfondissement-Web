@@ -4,7 +4,7 @@ from datetime import date
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied,ValidationError
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,11 +17,10 @@ from .notifications import notify_task_assigned, notify_role_assigned
 
 
 # Create your views here.
+
+@login_required
 def accueil(request):
     """Vue pour la page d'accueil."""
-    if not request.user.is_authenticated:
-        messages.info(request, "Vous devez être connecté pour accéder à cette page.")
-        return redirect('login')
     # Gestion du formulaire de tâche
     if request.method == 'POST':
         task_form = TaskForm(request.POST, user=request.user)
@@ -97,20 +96,16 @@ def accueil(request):
                 for error in field_errors:
                     field_label = task_form.fields[field_name].label if field_name in task_form.fields else field_name
                     errors_list.append(f"{field_label}: {error}")
-
             if errors_list:
                 error_message = "Erreurs dans le formulaire : " + " | ".join(errors_list[:3])
                 if len(errors_list) > 3:
                     error_message += f" (et {len(errors_list) - 3} autre(s) erreur(s))"
                 messages.error(request, error_message)
-
         # Pas de redirection en cas d'erreur - on reste sur la page avec le formulaire invalide
     else:
         task_form = TaskForm(user=request.user)
-
     # Récupérer les tâches assignées à l'utilisateur connecté
     today = date.today()
-
     # Pour déboguer : récupérer TOUTES les tâches assignées à l'utilisateur (terminées et non terminées)
     user_tasks_today = Task.objects.filter(
         assigned_to=request.user
@@ -244,11 +239,10 @@ def ask_availibilities(request, employe_id):
         employe = User.objects.get(id=employe_id)
     except User.DoesNotExist:
         raise Http404("Aucun employé ne correspond à cet ID")
-    if employe.availability_status in[User.AvailabilityStatus.PENDING,User.AvailabilityStatus.FILLED]:
+    if employe.availability_status in[User.AvailabilityStatus.PENDING]:
         messages.warning(request, f"⚠️ Une demande de disponibilités est déjà en attente pour {employe.username}.")
         return redirect('employees_management')
-
-    if employe.availability_status==User.AvailabilityStatus.NOT_FILLED:
+    if employe.availability_status in[User.AvailabilityStatus.NOT_FILLED,User.AvailabilityStatus.FILLED]:
         employe.availability_status = User.AvailabilityStatus.PENDING
         employe.save()
         task_description = (
@@ -258,7 +252,6 @@ def ask_availibilities(request, employe_id):
         estimated_duration=15,
         description=task_description,
         priority="moyenne")
-
         task.assigned_to.add(employe)
         notify_task_assigned(task, [employe], request.user)
         messages.success(request, f" Une demande de disponibilités a été envoyée à {employe.username}.")
@@ -274,24 +267,18 @@ def availability_form(request):
     if request.method == 'POST':
         form = AvailabilityForm(request.POST)
         if form.is_valid():
-            days = [
-                ('monday', 'Lundi'),
-                ('tuesday', 'Mardi'),
-                ('wednesday', 'Mercredi'),
-                ('thursday', 'Jeudi'),
-                ('friday', 'Vendredi'),
-                ('saturday', 'Samedi'),
-                ('sunday', 'Dimanche'),
-            ]
-            for day_key, day_label in days:
-                start = form.cleaned_data.get(f"{day_key}_start")
-                end = form.cleaned_data.get(f"{day_key}_end")
+            days = AvailabilityForm.DAYS
+            for day,_label in days:
+                start = form.cleaned_data.get(f"{day}_start")
+                end = form.cleaned_data.get(f"{day}_end")
                 if start and end:
                     Availability.objects.update_or_create(
                         employe=employe,
-                        day=day_key,
+                        day=day,
                         defaults={'heure_debut': start, 'heure_fin': end, 'remplie': True}
                     )
+                elif start is None and end is None:
+                    Availability.objects.filter(employe=employe, day=day).delete()
             employe.availability_status = User.AvailabilityStatus.FILLED
             employe.save()
             messages.success(request, "Disponibilités sauvegardés ✅, merci!")
@@ -299,7 +286,7 @@ def availability_form(request):
     else:
         existing = {a.day: a for a in Availability.objects.filter(employe=employe)}
         initial = {}
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        for day,_label in AvailabilityForm.DAYS:
             if day in existing:
                 initial[f"{day}_start"] = existing[day].heure_debut
                 initial[f"{day}_end"] = existing[day].heure_fin
@@ -374,6 +361,7 @@ def create_role(request):
 
             permissions_text = ", ".join(permissions_list) if permissions_list else "Aucune permission spéciale"
             messages.success(request, f"Nouveau rôle '{name}' créé avec succès ! Permissions : {permissions_text}")
+    messages.success(request, "Modifications effectuées avec succès.")
     return redirect('admin_dashboard')
 
 @login_required
@@ -426,8 +414,11 @@ def toggle_task_status(request):
             task_id = request.POST.get('task_id')
             if not task_id:
                 return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
+<<<<<<< HEAD
 
                 return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
+=======
+>>>>>>> origin/main
             task = get_object_or_404(Task, id=task_id)
             # Vérifier que l'utilisateur peut modifier cette tâche
             if request.user not in task.assigned_to.all() and not request.user.is_staff:
@@ -576,7 +567,6 @@ def add_employee(request):
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             new_user = form.save()
-
             role_id = request.POST.get('role_id')
             if role_id:
                 role = Role.objects.get(id=role_id)
@@ -592,27 +582,57 @@ def add_employee(request):
     return render(request, 'restoplus/add_employee.html',
                   {'form': form,
                    'roles': roles})
+<<<<<<< HEAD
 @login_required
 def edit_employee(request, employe_id):
     """Vue pour éditer le profil de l'utilisateur connecté"""
     if not request.user.has_permission('can_manage_users'):
         return render(request, 'restoplus/403.html', status=403)
+=======
+from django.core.exceptions import ValidationError
+
+@login_required
+def edit_employee(request, employe_id):
+    """Vue pour éditer un employé"""
+    if not request.user.has_permission('can_manage_users'):
+        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
+        return redirect('no_access')
+
+>>>>>>> origin/main
     try:
         employee = User.objects.get(id=employe_id)
     except User.DoesNotExist:
         raise Http404("Aucun employé ne correspond à cet ID.")
 
+<<<<<<< HEAD
     if employee == request.user:
         messages.warning(request,
                          """Vous ne pouvez pas modifier votre propre profil ici.
                          Veuillez utiliser la page de profil.""")
         return redirect('employees_management')
 
+=======
+    # Interdiction de se modifier soi-même ici
+    if employee == request.user:
+        messages.warning(
+            request,
+            "Vous ne pouvez pas modifier votre propre profil ici. Veuillez utiliser la page de profil."
+        )
+        return redirect('employees_management')
+
+    form_errors = {}
+
+>>>>>>> origin/main
     if request.method == 'POST':
         employee.first_name = request.POST.get('first_name', '').strip()
         employee.last_name = request.POST.get('last_name', '').strip()
         employee.email = request.POST.get('email', '').strip()
+<<<<<<< HEAD
 
+=======
+        employee.mobile = request.POST.get('mobile', '').strip()
+        employee.poste = request.POST.get('poste', '').strip()
+>>>>>>> origin/main
         role_id = request.POST.get('role_id')
         if role_id:
             try:
@@ -628,18 +648,21 @@ def edit_employee(request, employe_id):
                 messages.info(request, f"Rôle '{old_role}' retiré de l'employé.")
                 employee.role = None
 
-
-        employee.save()
-        employee_display = employee.get_full_name() or employee.username
-        messages.success(request, f"Employé : '{employee_display}' a été modifié avec succès.")
-        return redirect('employees_management')
+        try:
+            employee.full_clean(validate_unique=False)
+            employee.save()
+            employee_display = employee.get_full_name() or employee.username
+            messages.success(request, f"{employee_display} a été modifié avec succès.")
+            return redirect('employees_management')
+        except ValidationError as e:
+            form_errors = e.message_dict
 
     roles = Role.objects.all()
     return render(request, 'restoplus/edit_employee.html', {
         'employee': employee,
-        'roles': roles
+        'roles': roles,
+        'form_errors': form_errors
     })
-
 
 
 @login_required
@@ -674,3 +697,4 @@ def custom_403_view(request, exception=None):
 def custom_404_view(request, exception=None):
     """Vue personnalisée pour les erreurs 404 de page non trouvée"""
     return render(request, 'restoplus/404.html', status=404)
+    return redirect('employees_management')
