@@ -1,17 +1,20 @@
+"""Views pour l'application RestoPlus"""
+import json
+from datetime import date
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
 from .models import User, Role, Task, Notification,Availability, Task
 from .notifications import notify_task_assigned, notify_role_assigned
-from datetime import date
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-import json
+
 
 # Create your views here.
 def accueil(request):
@@ -168,8 +171,8 @@ def admin_dashboard(request):
     """Vue pour le tableau de bord administrateur."""
 
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
+        return render(request, 'restoplus/403.html', status=403)
+
     # Exclure l'utilisateur connecté de la liste pour éviter qu'il modifie ses propres permissions
     users = User.objects.exclude(id=request.user.id).select_related('role')
     all_users = User.objects.all().select_related('role')  # Pour les statistiques générales
@@ -567,8 +570,7 @@ def create_test_notification(request):
 def add_employee(request):
     """Vue pour ajouter un employé (utilisateur)"""
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
+        return render(request, 'restoplus/403.html', status=403)
 
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -594,9 +596,7 @@ def add_employee(request):
 def edit_employee(request, employe_id):
     """Vue pour éditer le profil de l'utilisateur connecté"""
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
-
+        return render(request, 'restoplus/403.html', status=403)
     try:
         employee = User.objects.get(id=employe_id)
     except User.DoesNotExist:
@@ -640,12 +640,13 @@ def edit_employee(request, employe_id):
         'roles': roles
     })
 
+
+
 @login_required
 def delete_employee(request, employe_id):
     """Vue pour supprimer un employé (utilisateur)"""
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
+        return render(request, 'restoplus/403.html', status=403)
 
     try:
         employee = User.objects.get(id=employe_id)
@@ -665,3 +666,11 @@ def delete_employee(request, employe_id):
     employee.delete()
     messages.success(request, f"Employé '{employee_display}' supprimé avec succès.")
     return redirect('employees_management')
+
+def custom_403_view(request, exception=None):
+    """Vue personnalisée pour les erreurs 403 de permission refusée"""
+    return render(request, 'restoplus/403.html', status=403)
+
+def custom_404_view(request, exception=None):
+    """Vue personnalisée pour les erreurs 404 de page non trouvée"""
+    return render(request, 'restoplus/404.html', status=404)
