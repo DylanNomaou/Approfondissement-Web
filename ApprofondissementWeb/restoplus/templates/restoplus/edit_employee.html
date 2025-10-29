@@ -14,8 +14,7 @@
                     </h3>
                 </div>
                 <div class="card-body">
-
-                    <form method="POST" action="{% url 'edit_employee' employee.id %}">
+                    <form method="POST" action="{% url 'edit_employee' employee.id %}" novalidate>
                         {% csrf_token %}
 
                         <div class="mb-3">
@@ -36,7 +35,6 @@
                             <input type="text" class="form-control" id="last_name" name="last_name"
                                 value="{{ employee.last_name }}" placeholder="Nom de famille">
                         </div>
-
 
                         <div class="mb-3">
                             <label for="email" class="form-label">Courriel</label>
