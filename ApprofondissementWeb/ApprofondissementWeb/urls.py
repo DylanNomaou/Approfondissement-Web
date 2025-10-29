@@ -21,6 +21,9 @@ from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from restoplus import views
 
+handler404 = 'restoplus.views.custom_404_view'
+handler403 = 'restoplus.views.custom_403_view'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',include('restoplus.urls')),

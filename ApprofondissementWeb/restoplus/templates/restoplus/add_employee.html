@@ -48,11 +48,9 @@
                         <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Retour
                         </a>
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-success" id="submitBtn">
                             <i class="bi bi-person-plus"></i> Ajouter
                         </button>
-
-
                     </div>
                 </form>
             </div>
@@ -60,5 +58,7 @@
         </div>
     </div>
 </div>
+<script src="{% static 'restoplus/js/utils_ajax.js' %}"></script>
+<script src="{% static 'restoplus/js/add_employee.js' %}"></script>
 
 {% endblock %}
