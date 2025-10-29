@@ -29,6 +29,10 @@ phone_validator = RegexValidator(
     regex=r'^\+?1?\s*(?:\([2-9]\d{2}\)|[2-9]\d{2})[-.\s]?\d{3}[-.\s]?\d{4}$',
     message="Numéro invalide.Il doit être au format 444-555-1234"
 )
+email_validator = RegexValidator(
+    regex=r'^((?!\.)[\w\-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$',
+    message="Format de l'adresse courriel invalide."
+)
 
 class User(AbstractUser):
     @property
@@ -48,7 +52,15 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=150, blank=True, verbose_name="Nom de famille")
     poste = models.CharField(max_length=100, blank=True, verbose_name="Poste")
     mobile = models.CharField(max_length=20,blank=True,validators=[phone_validator], verbose_name="Téléphone")
-    email = models.EmailField(blank=True, verbose_name="Courriel")
+    # Utiliser CharField avec le RegexValidator personnalisé pour n'avoir QUE
+    # la validation définie par le regex (évite l'EmailValidator par défaut
+    # de Django qui produit le message en anglais).
+    email = models.CharField(
+        max_length=254,
+        blank=True,
+        verbose_name="Courriel",
+        validators=[email_validator]
+    )
     is_manager = models.BooleanField(default=False)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
@@ -173,7 +185,7 @@ class Quart(models.Model):
 
     def __str__(self):
         return f"{self.employe.username} - {self.date} ({self.heure_debut} à {self.heure_fin})"
-    
+
     def clean(self):
         # Validation personnalisée pour s'assurer que l'heure de fin est après l'heure de début
         if self.heure_fin <= self.heure_debut:
@@ -306,20 +318,20 @@ class WorkShift(models.Model):
 
     # Relations
     employee = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE, 
+        User,
+        on_delete=models.CASCADE,
         related_name='work_shifts',
         verbose_name="Employé"
     )
-    
+
     # Informations de base
     date = models.DateField(verbose_name="Date du quart")
     heure_debut = models.TimeField(verbose_name="Heure de début")
     heure_fin = models.TimeField(verbose_name="Heure de fin")
-    
+
     # Gestion des pauses
     has_break = models.BooleanField(
-        default=True, 
+        default=True,
         verbose_name="A une pause"
     )
     pause_duree = models.PositiveIntegerField(
@@ -328,24 +340,24 @@ class WorkShift(models.Model):
         help_text="Durée de la pause en minutes (0-120)"
     )
     pause_debut = models.TimeField(
-        null=True, 
+        null=True,
         blank=True,
         verbose_name="Début de pause"
     )
     pause_fin = models.TimeField(
-        null=True, 
+        null=True,
         blank=True,
         verbose_name="Fin de pause"
     )
-    
+
     # Informations complémentaires
     note = models.TextField(
-        max_length=500, 
+        max_length=500,
         blank=True,
         verbose_name="Note",
         help_text="Informations supplémentaires sur ce quart"
     )
-    
+
     # Statut et gestion
     status = models.CharField(
         max_length=20,
@@ -353,7 +365,7 @@ class WorkShift(models.Model):
         default=ShiftStatus.DRAFT,
         verbose_name="Statut"
     )
-    
+
     # Métadonnées
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
@@ -383,9 +395,9 @@ class WorkShift(models.Model):
         """Validation personnalisée du modèle"""
         from django.core.exceptions import ValidationError
         from datetime import datetime, timedelta
-        
+
         errors = {}
-        
+
         # Vérifier que l'heure de fin est après l'heure de début
         if self.heure_debut and self.heure_fin:
             if self.heure_fin <= self.heure_debut:
@@ -394,26 +406,26 @@ class WorkShift(models.Model):
                 fin = datetime.combine(self.date, self.heure_fin)
                 if fin <= debut:
                     fin += timedelta(days=1)
-                
+
                 duree_totale = (fin - debut).total_seconds() / 3600
                 if duree_totale > 12:
                     errors['heure_fin'] = "Un quart ne peut pas dépasser 12 heures."
-        
+
         # Validation des pauses
         if self.has_break:
             if self.pause_duree is None or self.pause_duree < 0:
                 errors['pause_duree'] = "La durée de pause doit être positive."
             elif self.pause_duree > 120:
                 errors['pause_duree'] = "La durée de pause ne peut pas dépasser 120 minutes."
-            
+
             # Vérifier les heures de pause si elles sont définies
             if self.pause_debut and self.pause_fin:
                 if self.pause_fin <= self.pause_debut:
                     errors['pause_fin'] = "L'heure de fin de pause doit être après l'heure de début."
-                
+
                 # Vérifier que la pause est dans les heures de travail
                 if self.heure_debut and self.heure_fin:
-                    if (self.pause_debut < self.heure_debut or 
+                    if (self.pause_debut < self.heure_debut or
                         self.pause_fin > self.heure_fin):
                         errors['pause_debut'] = "La pause doit être dans les heures de travail."
         else:
@@ -421,7 +433,7 @@ class WorkShift(models.Model):
             self.pause_duree = 0
             self.pause_debut = None
             self.pause_fin = None
-        
+
         if errors:
             raise ValidationError(errors)
 
@@ -435,15 +447,15 @@ class WorkShift(models.Model):
         """Durée totale du quart en minutes"""
         if not self.heure_debut or not self.heure_fin:
             return 0
-        
+
         from datetime import datetime, timedelta
         debut = datetime.combine(self.date, self.heure_debut)
         fin = datetime.combine(self.date, self.heure_fin)
-        
+
         # Gérer le cas où le quart se termine le lendemain
         if fin <= debut:
             fin += timedelta(days=1)
-        
+
         return int((fin - debut).total_seconds() / 60)
 
     @property
@@ -495,15 +507,15 @@ class WorkShift(models.Model):
         # L'employé peut éditer son propre quart si c'est un brouillon
         if self.employee == user and self.status == self.ShiftStatus.DRAFT:
             return True
-        
+
         # Les managers peuvent toujours éditer
         if user.is_manager or user.is_superuser:
             return True
-        
+
         # Les utilisateurs avec permission de distribuer des tâches
         if hasattr(user, 'role') and user.role and user.role.can_distribute_tasks:
             return True
-            
+
         return False
 
     def can_delete(self, user):
@@ -511,25 +523,25 @@ class WorkShift(models.Model):
         # Seuls les managers et créateurs peuvent supprimer
         if user.is_manager or user.is_superuser:
             return True
-            
+
         if self.created_by == user and self.status == self.ShiftStatus.DRAFT:
             return True
-            
+
         return False
 
     @classmethod
     def get_shifts_for_week(cls, start_date, employee=None):
         """Récupère les quarts pour une semaine donnée"""
         from datetime import timedelta
-        
+
         end_date = start_date + timedelta(days=6)
         queryset = cls.objects.filter(
             date__range=[start_date, end_date]
         ).select_related('employee', 'employee__role')
-        
+
         if employee:
             queryset = queryset.filter(employee=employee)
-            
+
         return queryset.order_by('date', 'heure_debut')
 
     @classmethod
