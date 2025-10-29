@@ -33,7 +33,8 @@
                     <span>Employés</span>
                     <i class="bi bi-chevron-right ms-auto"></i>
                 </a>
-                <div class="collapse {% if request.resolver_match.url_name == 'create_schedule' or request.resolver_match.url_name == 'view_schedule' %}show{% endif %}" id="employeesSubmenu">
+                <div class="collapse {% if request.resolver_match.url_name == 'create_schedule' or request.resolver_match.url_name == 'view_schedule' %}show{% endif %}"
+                    id="employeesSubmenu">
                     <ul class="nav flex-column ms-4">
                         {% if user.is_staff or user.is_superuser %}
                         <li class="nav-item">
@@ -49,17 +50,21 @@
                                 <i class="bi bi-calendar-check me-2"></i>Affichage horaires
                             </a>
                         </li>
+                        {% if user.is_staff or user.is_superuser %}
                         <li class="nav-item">
                             <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'add_employee' %}active{% endif %}"
                                 href="{% url 'add_employee' %}">
                                 <i class="bi bi-person-plus me-2"></i>Ajouter Employé
                             </a>
                         </li>
+                        {% endif %}
+                        {% if user.is_staff or user.is_superuser %}
                         <li class="nav-item">
                             <a class="nav-link text-light-50 py-2" href="{% url 'employees_management' %}">
                                 <i class="bi bi-list-ul me-2"></i>Liste Employés
                             </a>
                         </li>
+                        {% endif %}
                     </ul>
                 </div>
             </li>
@@ -209,7 +214,8 @@
                         <span>Employés</span>
                         <i class="bi bi-chevron-right ms-auto"></i>
                     </a>
-                    <div class="collapse {% if request.resolver_match.url_name == 'create_schedule' or request.resolver_match.url_name == 'view_schedule' %}show{% endif %}" id="mobileEmployeesSubmenu">
+                    <div class="collapse {% if request.resolver_match.url_name == 'create_schedule' or request.resolver_match.url_name == 'view_schedule' %}show{% endif %}"
+                        id="mobileEmployeesSubmenu">
                         <ul class="nav flex-column ms-4">
                             <li class="nav-item">
                                 <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'view_schedule' %}active{% endif %}"
@@ -219,12 +225,14 @@
                             </li>
                             {% if user.is_staff or user.is_superuser %}
                             <li class="nav-item">
-                                <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'create_schedule' %}active{% endif %}" href="{% url 'create_schedule' %}">
+                                <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'create_schedule' %}active{% endif %}"
+                                    href="{% url 'create_schedule' %}">
                                     <i class="bi bi-calendar-week me-2"></i>Création d'horaire
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'add_employee' %}active{% endif %}" href="{% url 'add_employee' %}">
+                                <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'add_employee' %}active{% endif %}"
+                                    href="{% url 'add_employee' %}">
                                     <i class="bi bi-person-plus me-2"></i>Ajouter Employé
                                 </a>
                             </li>
