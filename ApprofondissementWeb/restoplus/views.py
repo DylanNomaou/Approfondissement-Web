@@ -1,17 +1,20 @@
-from datetime import date
+"""Views pour l'application RestoPlus"""
 import json
-from django.http import JsonResponse
+from datetime import date
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
 from django.core.exceptions import PermissionDenied,ValidationError
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
-from .models import User, Role, Task, Notification,Availability
+from .models import User, Role, Task, Notification,Availability, Task
 from .notifications import notify_task_assigned, notify_role_assigned
+
 
 # Create your views here.
 
@@ -163,8 +166,8 @@ def admin_dashboard(request):
     """Vue pour le tableau de bord administrateur."""
 
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
+        return render(request, 'restoplus/403.html', status=403)
+
     # Exclure l'utilisateur connecté de la liste pour éviter qu'il modifie ses propres permissions
     users = User.objects.exclude(id=request.user.id).select_related('role')
     all_users = User.objects.all().select_related('role')  # Pour les statistiques générales
@@ -411,6 +414,11 @@ def toggle_task_status(request):
             task_id = request.POST.get('task_id')
             if not task_id:
                 return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
+<<<<<<< HEAD
+
+                return JsonResponse({'success': False, 'message': 'ID de tâche manquant'})
+=======
+>>>>>>> origin/main
             task = get_object_or_404(Task, id=task_id)
             # Vérifier que l'utilisateur peut modifier cette tâche
             if request.user not in task.assigned_to.all() and not request.user.is_staff:
@@ -553,8 +561,7 @@ def create_test_notification(request):
 def add_employee(request):
     """Vue pour ajouter un employé (utilisateur)"""
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
+        return render(request, 'restoplus/403.html', status=403)
 
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -575,7 +582,14 @@ def add_employee(request):
     return render(request, 'restoplus/add_employee.html',
                   {'form': form,
                    'roles': roles})
-from django.core.exceptions import ValidationError 
+<<<<<<< HEAD
+@login_required
+def edit_employee(request, employe_id):
+    """Vue pour éditer le profil de l'utilisateur connecté"""
+    if not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+=======
+from django.core.exceptions import ValidationError
 
 @login_required
 def edit_employee(request, employe_id):
@@ -584,11 +598,20 @@ def edit_employee(request, employe_id):
         messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
         return redirect('no_access')
 
+>>>>>>> origin/main
     try:
         employee = User.objects.get(id=employe_id)
     except User.DoesNotExist:
         raise Http404("Aucun employé ne correspond à cet ID.")
 
+<<<<<<< HEAD
+    if employee == request.user:
+        messages.warning(request,
+                         """Vous ne pouvez pas modifier votre propre profil ici.
+                         Veuillez utiliser la page de profil.""")
+        return redirect('employees_management')
+
+=======
     # Interdiction de se modifier soi-même ici
     if employee == request.user:
         messages.warning(
@@ -599,12 +622,17 @@ def edit_employee(request, employe_id):
 
     form_errors = {}
 
+>>>>>>> origin/main
     if request.method == 'POST':
         employee.first_name = request.POST.get('first_name', '').strip()
         employee.last_name = request.POST.get('last_name', '').strip()
         employee.email = request.POST.get('email', '').strip()
+<<<<<<< HEAD
+
+=======
         employee.mobile = request.POST.get('mobile', '').strip()
         employee.poste = request.POST.get('poste', '').strip()
+>>>>>>> origin/main
         role_id = request.POST.get('role_id')
         if role_id:
             try:
@@ -641,8 +669,7 @@ def edit_employee(request, employe_id):
 def delete_employee(request, employe_id):
     """Vue pour supprimer un employé (utilisateur)"""
     if not request.user.has_permission('can_manage_users'):
-        messages.error(request, "Vous n'avez pas les permissions d'accéder à cette page")
-        return redirect('no_access')
+        return render(request, 'restoplus/403.html', status=403)
 
     try:
         employee = User.objects.get(id=employe_id)
@@ -661,4 +688,13 @@ def delete_employee(request, employe_id):
     employee_display = employee.get_full_name() or employee.username
     employee.delete()
     messages.success(request, f"Employé '{employee_display}' supprimé avec succès.")
+    return redirect('employees_management')
+
+def custom_403_view(request, exception=None):
+    """Vue personnalisée pour les erreurs 403 de permission refusée"""
+    return render(request, 'restoplus/403.html', status=403)
+
+def custom_404_view(request, exception=None):
+    """Vue personnalisée pour les erreurs 404 de page non trouvée"""
+    return render(request, 'restoplus/404.html', status=404)
     return redirect('employees_management')
