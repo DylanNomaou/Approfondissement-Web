@@ -29,6 +29,8 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
+    '0.0.0.0',
+    '*',  # Permettre tous les hosts en développement
     'www.hasanaldulaimi.com',
     'hasanaldulaimi.com',
     'hasansyria15.pythonanywhere.com',
@@ -41,6 +43,10 @@ CSRF_TRUSTED_ORIGINS = [
     'https://hasansyria15.pythonanywhere.com',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
+    'http://0.0.0.0:8000',
+    'http://192.168.1.1:8000',  # Pour l'accès réseau local
+    'http://192.168.1.100:8000',
+    'http://10.0.0.1:8000',
 ]
 # Application definition
 
@@ -148,12 +154,11 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login/'
 
-# Configuration pour la production
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Paramètres de sécurité pour la production
+# Configuration pour la production uniquement
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False
+    # Configuration SSL pour production seulement
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
@@ -161,6 +166,11 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
+else:
+    # En développement : AUCUNE redirection HTTPS
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Configuration des fichiers statiques pour la production
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

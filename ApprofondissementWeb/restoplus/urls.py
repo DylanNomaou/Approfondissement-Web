@@ -25,5 +25,10 @@ urlpatterns=[
     path('add-employee/', views.add_employee, name='add_employee'),
     path('edit-employee/<int:employe_id>/', views.edit_employee, name='edit_employee'),
     path('delete-employee/<int:employe_id>/', views.delete_employee, name='delete_employee'),
-    path('add-employee/', views.add_employee, name='add_employee'),
+    path('create-schedule/', views.create_schedule, name='create_schedule'),
+    path('view-schedule/', views.view_schedule, name='view_schedule'),
+    path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
 ]
+
+
+

@@ -1,9 +1,9 @@
 from django import forms
-from .models import User, Task
+from .models import User, Task, WorkShift
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.utils import timezone
-from datetime import date
+from datetime import date, datetime, timedelta
 
 class UserRegisterForm(forms.ModelForm):
     password = forms.CharField(
@@ -322,3 +322,231 @@ class TaskForm(forms.ModelForm):
         if commit:
             task.save()
         return task
+
+
+class WorkShiftForm(forms.ModelForm):
+    """
+    Formulaire pour créer/éditer un quart de travail basé sur le modèle WorkShift
+    """
+    
+    class Meta:
+        model = WorkShift
+        fields = [
+            'heure_debut', 'heure_fin', 'has_break', 'pause_duree', 
+            'pause_debut', 'pause_fin', 'note'
+        ]
+        
+        widgets = {
+            'heure_debut': forms.TimeInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'time',
+                    'step': '900'  # Pas de 15 minutes
+                }
+            ),
+            'heure_fin': forms.TimeInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'time',
+                    'step': '900'  # Pas de 15 minutes
+                }
+            ),
+            'has_break': forms.CheckboxInput(
+                attrs={
+                    'class': 'form-check-input'
+                }
+            ),
+            'pause_duree': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': '0',
+                    'max': '120',
+                    'step': '15',
+                    'placeholder': '30'
+                }
+            ),
+            'pause_debut': forms.TimeInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'time',
+                    'step': '900'
+                }
+            ),
+            'pause_fin': forms.TimeInput(
+                attrs={
+                    'class': 'form-control',
+                    'type': 'time',
+                    'step': '900'
+                }
+            ),
+            'note': forms.Textarea(
+                attrs={
+                    'class': 'form-control',
+                    'rows': '3',
+                    'placeholder': 'Informations supplémentaires sur ce quart...',
+                    'maxlength': '500'
+                }
+            ),
+        }
+        
+        labels = {
+            'heure_debut': 'Heure de début',
+            'heure_fin': 'Heure de fin',
+            'has_break': 'Prendre une pause',
+            'pause_duree': 'Durée de pause (minutes)',
+            'pause_debut': 'Début de pause',
+            'pause_fin': 'Fin de pause',
+            'note': 'Note (optionnelle)',
+        }
+        
+        error_messages = {
+            'heure_debut': {
+                'required': 'L\'heure de début est obligatoire.',
+                'invalid': 'Format d\'heure invalide.'
+            },
+            'heure_fin': {
+                'required': 'l\'heure de fin est obligatoire.',
+                'invalid': 'Format d\'heure invalide.'
+            },
+            'pause_duree': {
+                'invalid': 'La durée de pause doit être un nombre entier.'
+            }
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Récupérer les données du contexte
+        self.employee = kwargs.pop('employee', None)
+        self.shift_date = kwargs.pop('date', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configuration conditionnelle des champs de pause
+        if not self.instance.pk or not self.instance.has_break:
+            self.fields['pause_debut'].required = False
+            self.fields['pause_fin'].required = False
+            self.fields['pause_duree'].initial = 30
+
+    def clean(self):
+        cleaned_data = super().clean()
+        heure_debut = cleaned_data.get('heure_debut')
+        heure_fin = cleaned_data.get('heure_fin')
+        has_break = cleaned_data.get('has_break', True)
+        pause_duree = cleaned_data.get('pause_duree', 0)
+        pause_debut = cleaned_data.get('pause_debut')
+        pause_fin = cleaned_data.get('pause_fin')
+        
+        # Validation des heures de base
+        if heure_debut and heure_fin:
+            # Calculer la durée totale du quart
+            debut = datetime.combine(date.today(), heure_debut)
+            fin = datetime.combine(date.today(), heure_fin)
+            
+            # Gérer le cas où le quart se termine le lendemain
+            if fin <= debut:
+                fin += timedelta(days=1)
+            
+            duree_totale = (fin - debut).total_seconds() / 3600  # en heures
+            
+            # Vérifications de durée
+            if duree_totale > 12:
+                raise ValidationError(
+                    "Un quart ne peut pas dépasser 12 heures."
+                )
+            
+            # Validation spécifique des pauses
+            if has_break:
+                if pause_duree is None:
+                    cleaned_data['pause_duree'] = 30
+                    pause_duree = 30
+                elif pause_duree < 0:
+                    raise ValidationError({
+                        'pause_duree': 'La durée de pause ne peut pas être négative.'
+                    })
+                elif pause_duree > 120:
+                    raise ValidationError({
+                        'pause_duree': 'La durée de pause ne peut pas dépasser 120 minutes.'
+                    })
+                
+                # Calculer la durée effective
+                duree_effective = duree_totale - (pause_duree / 60)
+                
+                if duree_effective < 1:
+                    raise ValidationError(
+                        "La durée effective de travail doit être d'au moins 1 heure."
+                    )
+                
+                # Validation des heures de pause spécifiques
+                if pause_debut and pause_fin:
+                    if pause_fin <= pause_debut:
+                        raise ValidationError({
+                            'pause_fin': 'L\'heure de fin de pause doit être après l\'heure de début.'
+                        })
+                    
+                    # Vérifier que la pause est dans les heures de travail
+                    if (pause_debut < heure_debut or pause_fin > heure_fin):
+                        raise ValidationError({
+                            'pause_debut': 'La pause doit être comprise dans les heures de travail.'
+                        })
+                    
+                    # Calculer la durée réelle de la pause
+                    pause_debut_dt = datetime.combine(date.today(), pause_debut)
+                    pause_fin_dt = datetime.combine(date.today(), pause_fin)
+                    duree_pause_reelle = (pause_fin_dt - pause_debut_dt).total_seconds() / 60
+                    
+                    # Vérifier la cohérence avec pause_duree
+                    if abs(duree_pause_reelle - pause_duree) > 5:  # Tolérance de 5 minutes
+                        raise ValidationError({
+                            'pause_duree': f'La durée de pause ({pause_duree} min) ne correspond pas aux heures définies ({duree_pause_reelle:.0f} min).'
+                        })
+            else:
+                # Si pas de pause, nettoyer les champs de pause
+                cleaned_data['pause_duree'] = 0
+                cleaned_data['pause_debut'] = None
+                cleaned_data['pause_fin'] = None
+                
+                # Vérifier la durée minimale sans pause
+                if duree_totale < 1:
+                    raise ValidationError(
+                        "La durée totale de travail doit être d'au moins 1 heure."
+                    )
+        
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Assigner l'employé et la date si fournis
+        if self.employee:
+            instance.employee = self.employee
+        if self.shift_date:
+            instance.date = self.shift_date
+            
+        if commit:
+            instance.save()
+        return instance
+
+    def get_duration_info(self):
+        """
+        Retourne les informations de durée calculées
+        """
+        if self.is_valid():
+            heure_debut = self.cleaned_data['heure_debut']
+            heure_fin = self.cleaned_data['heure_fin']
+            has_break = self.cleaned_data.get('has_break', True)
+            pause_duree = self.cleaned_data.get('pause_duree', 0) if has_break else 0
+            
+            debut = datetime.combine(date.today(), heure_debut)
+            fin = datetime.combine(date.today(), heure_fin)
+            
+            if fin <= debut:
+                fin += timedelta(days=1)
+            
+            duree_totale = (fin - debut).total_seconds() / 3600
+            duree_effective = duree_totale - (pause_duree / 60) if has_break else duree_totale
+            
+            return {
+                'duree_totale': round(duree_totale, 2),
+                'duree_effective': round(duree_effective, 2),
+                'pause_duree': pause_duree if has_break else 0,
+                'has_break': has_break
+            }
+        return None

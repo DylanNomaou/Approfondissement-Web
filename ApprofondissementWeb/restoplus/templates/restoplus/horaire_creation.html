@@ -1,0 +1,360 @@
+{% extends 'restoplus/base.html' %}
+{% load static %}
+
+
+{% block content %}
+<section class="page-creation-horaire">
+    <div class="horaire-container">
+        <!--En tete-->
+        <div class="horaire-header">
+            <div class="header-content">
+                <!--Titre-->
+                <h1>
+                    <i class="fas fa-calendar-alt"></i>
+                    Création des horaires
+                </h1>
+
+                <!-- Message d'information si l'horaire est publié -->
+                {% if week_schedule.is_published %}
+                <div class="alert alert-warning mt-3 mb-3" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Attention :</strong> Cet horaire est déjà publié. Les modifications ne sont plus autorisées.
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="header-actions">
+
+                    <!--Sélecteur de semaine-->
+                    <div class="week-selector">
+                        <!--Semaine Précédente-->
+                        <button class="btn-week" id="prev-week-btn" onclick="changeWeek(-1)"><i class="fas fa-chevron-left"></i></button>
+
+                        <!--Semaine actuelle-->
+                        <span class="current-week" id="current-week-display">
+                            {{ week_schedule.week_start }} - {{ week_schedule.week_end }}
+                        </span>
+
+                        <!--Semaine Suivante-->
+                        <button class="btn-week" id="next-week-btn" onclick="changeWeek(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <!--Fin du sélecteur de semaine-->
+
+                    <!--Actions de publication-->
+                    <div class="action-buttons">
+                        <!-- Badge de statut -->
+                        <span class="week-status-badge {{ week_schedule.status }}">
+                            {% if week_schedule.status == 'draft' %}
+                                 Brouillon
+                            {% elif week_schedule.status == 'published' %}
+                                Publié
+                            {% else %}
+                                 Archivé
+                            {% endif %}
+                        </span>
+
+                        <!--Publier les horaires avec JavaScript-->
+                        {% if week_schedule.can_be_edited %}
+                        <button type="button" class="btn btn-success" id="publishScheduleBtn" onclick="publishSchedule()">
+                            <i class="fas fa-upload"></i>
+                            Publier l'horaire
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-secondary" disabled title="Cette semaine ne peut plus être modifiée">
+                            <i class="fas fa-lock"></i>
+                            Semaine passée
+                        </button>
+                        {% endif %}
+
+                        <!--Archiver-->
+                        {% if week_schedule.status == 'published' %}
+                        <form method="post" action="" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="archived">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-archive"></i>
+                                Archiver
+                            </button>
+                        </form>
+                        {% endif %}
+
+                    </div>
+                    <!--Fin des actions de publication-->
+
+                </div>
+            </div>
+        </div>
+
+        <!--Outils de planificaition-->
+        <div class="planning-tools">
+            <div class="tools-section">
+                <h3><i class="fas fa-tools"></i> Outils de planification</h3>
+                <div class="tools-grid">
+                    <!--Button pour Générer un horaire automatique-->
+                    <button class="tool-button"><i class="fas fa-magic"></i> <span>Générer un horaire</span> </button>
+                    <!--Button pour Copier l'horaire de la semaine précédente-->
+                    <button class="tool-button"><i class="fas fa-copy"></i> <span>Copier sem.précédente</span> </button>
+                    <!--Button pour Effacer tout l'horaire-->
+                    <button class="tool-button"><i class="fas fa-eraser"></i> <span>Tout effacer</span> </button>
+                </div>
+            </div>
+
+            <!--Statistiques rapides-->
+            <div class="quick-stats">
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <!--Voir le temps total des employés-->
+                    <span class="stat-value">Temps total : 0h 00m</span>
+                    <span class="stat-label">Temps total</span>
+                </div>
+
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <!--Voir le nombre total des employés sélectionnés-->
+                    <span class="stat-value">0/5</span>
+                    <span class="stat-label">Employés total</span>
+                </div>
+            </div>
+        </div>
+
+        <!--Grille d'horaire-->
+        <div class="schedule-grid-container">
+            <div class="schedule-grid">
+                <!--En-tête avec les jours de la semaine-->
+                <div class="grid-header">
+                    <div class="employee-header">Employés</div>
+                    {% for day in week_days %}
+                    <div class="day-header">
+                        <div class="day-name">{{ day.jour_name }}</div>
+                        <div class="day-date">{{ day.date_short }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!--Corps de la grille avec les employés-->
+                <div class="grid-body">
+                    {% for employee in employes %}
+                    <div class="employee-row" data-employee-id="{{ employee.id }}">
+                        <!-- Nom de l'employé -->
+                        <div class="employee-info">
+                            <div class="employee-name">{{ employee.get_full_name|default:employee.username }}</div>
+                            <div class="employee-color" data-color="#007bff"></div>
+                        </div>
+
+                        <!-- Cellules d'horaire pour chaque jour -->
+                        {% for day in week_days %}
+                            <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}" data-date="{{ day.date_str }}">
+
+                            <div class="time-slot">
+                                <!-- Zone où l'horaire sera affiché/édité -->
+                                <span class="time-display">-</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+</section>
+
+{% endblock content %}
+
+{% block extra_js %}
+
+<!-- Données pour JavaScript -->
+{{ week_days_json|json_script:"week-days-data" }}
+{{ availabilities_json|json_script:"availability-data" }}
+
+<!-- Script de la page -->
+<script defer src="{% static 'restoplus/js/horaire.js' %}"></script>
+
+
+<!-- Debug script -->
+<script>
+    console.log('🔥 Template loaded');
+    console.log('🔍 Week days element:', document.getElementById('week-days-data'));
+    console.log('🔍 Availability element:', document.getElementById('availability-data'));
+    
+    // Test simple de clic
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            const cells = document.querySelectorAll('.schedule-cell');
+            console.log('📊 Cellules trouvées:', cells.length);
+            
+            cells.forEach((cell, index) => {
+                console.log(`📋 Cellule ${index}:`, {
+                    employeeId: cell.dataset.employeeId,
+                    day: cell.dataset.day,
+                    date: cell.dataset.date
+                });
+            });
+        }, 1000);
+    });
+    
+    if (document.getElementById('week-days-data')) {
+        console.log('📅 Week days content:', document.getElementById('week-days-data').textContent);
+        try {
+            const data = JSON.parse(document.getElementById('week-days-data').textContent);
+            console.log('✅ Parsed week days data:', data);
+        } catch (e) {
+            console.error('❌ Error parsing week days data:', e);
+        }
+    }
+    
+    if (document.getElementById('availability-data')) {
+        console.log('⚠️ Availability content:', document.getElementById('availability-data').textContent);
+        try {
+            const data = JSON.parse(document.getElementById('availability-data').textContent);
+            console.log('✅ Parsed availability data:', data);
+        } catch (e) {
+            console.error('❌ Error parsing availability data:', e);
+        }
+    }
+
+    // Navigation entre semaines
+    function changeWeek(direction) {
+        const currentUrl = new URL(window.location);
+        const currentWeekOffset = parseInt(currentUrl.searchParams.get('week_offset') || '0');
+        const newWeekOffset = currentWeekOffset + direction;
+        
+        currentUrl.searchParams.set('week_offset', newWeekOffset);
+        window.location.href = currentUrl.toString();
+    }
+</script>
+
+{{ shifts_by_employee|json_script:"shifts-data" }}
+{{ week_days_json|json_script:"week-days-data" }}
+{{ week_schedule.can_be_edited|json_script:"can-edit-data" }}
+
+<script>
+    // Charger les horaires existants depuis Django
+    const shiftsElement = document.getElementById('shifts-data');
+    let existingShifts = {};
+    
+    if (shiftsElement && shiftsElement.textContent) {
+        try {
+            existingShifts = JSON.parse(shiftsElement.textContent);
+            console.log('🔄 Chargement des horaires existants:', existingShifts);
+        } catch (error) {
+            console.error('❌ Erreur parsing shifts data:', error);
+        }
+    }
+    
+    // Charger les jours de la semaine
+    const weekDaysElement = document.getElementById('week-days-data');
+    let weekDays = [];
+    
+    if (weekDaysElement && weekDaysElement.textContent) {
+        try {
+            weekDays = JSON.parse(weekDaysElement.textContent);
+        } catch (error) {
+            console.error('❌ Erreur parsing week days data:', error);
+        }
+    }
+
+    // Charger le statut d'édition
+    const canEditElement = document.getElementById('can-edit-data');
+    let canEditWeek = true;
+    
+    if (canEditElement && canEditElement.textContent) {
+        try {
+            canEditWeek = JSON.parse(canEditElement.textContent);
+        } catch (error) {
+            console.error('❌ Erreur parsing can edit data:', error);
+        }
+    }
+    
+    // Attendre que le gestionnaire d'horaires soit initialisé avant de charger les shifts existants
+    setTimeout(() => {
+        // Charger les shifts dans l'interface
+        if (existingShifts && Object.keys(existingShifts).length > 0) {
+            loadExistingShifts(existingShifts);
+        }
+    }, 500); // Délai pour s'assurer que le DOM et le gestionnaire sont prêts
+
+    function loadExistingShifts(shiftsData) {
+        for (const employeeId in shiftsData) {
+            const employeeShifts = shiftsData[employeeId];
+            
+            for (const day in employeeShifts) {
+                const shiftData = employeeShifts[day];
+                
+                // Créer la clé localStorage pour ce shift
+                const shiftKey = `shift_${employeeId}_${getDateForDay(day)}`;
+                
+                // Sauvegarder dans localStorage pour compatibilité avec le code existant
+                const localStorageData = {
+                    heure_debut: shiftData.heure_debut,
+                    heure_fin: shiftData.heure_fin,
+                    pause_duree: shiftData.pause_duree || 30,
+                    note: shiftData.note || '',
+                    employee_id: employeeId,
+                    date: getDateForDay(day),
+                    from_database: true,
+                    shift_id: shiftData.id
+                };
+                
+                localStorage.setItem(shiftKey, JSON.stringify(localStorageData));
+                
+                // Afficher dans l'interface
+                const cell = document.querySelector(`[data-employee-id="${employeeId}"][data-day="${day}"]`);
+                if (cell) {
+                    updateCellDisplay(cell, localStorageData);
+                }
+            }
+        }
+        console.log('✅ Horaires existants chargés dans l\'interface');
+    }
+
+    function getDateForDay(dayKey) {
+        const dayData = weekDays.find(day => day.jour_key === dayKey);
+        return dayData ? dayData.date_str : null;
+    }
+
+    function updateCellDisplay(cell, shiftData) {
+        // Marquer la cellule comme ayant un shift
+        cell.classList.add('has-shift');
+        
+        // Trouver ou créer l'affichage de l'horaire
+        let timeDisplay = cell.querySelector('.time-display');
+        if (!timeDisplay) {
+            timeDisplay = document.createElement('div');
+            timeDisplay.className = 'time-display';
+            cell.appendChild(timeDisplay);
+        }
+        
+        // Créer le contenu HTML
+        const noteHtml = shiftData.note ? `<small class="note-text">${shiftData.note}</small>` : '';
+        const deleteButtonHtml = canEditWeek ? `
+            <button class="btn-delete-shift" onclick="quickDeleteShift(this, '${shiftData.employee_id}', '${shiftData.date}')" title="Supprimer ce shift">
+                <i class="fas fa-times"></i>
+            </button>
+        ` : '';
+        
+        timeDisplay.innerHTML = `
+            <span class="time-text">${shiftData.heure_debut} - ${shiftData.heure_fin}</span>
+            ${noteHtml}
+            ${deleteButtonHtml}
+        `;
+        
+        // Si c'est une semaine qui ne peut pas être éditée, désactiver la cellule
+        if (!canEditWeek) {
+            cell.classList.add('readonly');
+            // Désactiver les événements de clic
+            cell.style.pointerEvents = 'none';
+        }
+        
+        // Ajouter l'indicateur visuel de shift
+        cell.style.backgroundColor = '#d4edda';
+        cell.style.borderLeft = '3px solid #28a745';
+    }
+</script>
+
+<!-- Include du modal d'édition d'horaire -->
+{% include 'restoplus/partials/time_edit_modal.html' %}
+
+{% endblock extra_js %}

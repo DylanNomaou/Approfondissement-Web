@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils import timezone
-from .models import User, Task, Role, Notification
+from .models import User, Task, Role, Notification, WorkShift
 
 # Register your models here.
 @admin.register(User,)
@@ -100,4 +100,70 @@ class NotificationAdmin(admin.ModelAdmin):
         updated = queryset.update(is_read=False, read_at=None)
         self.message_user(request, f"{updated} notification(s) marquée(s) comme non lue(s).")
     mark_as_unread.short_description = "Marquer comme non lu"
+
+
+@admin.register(WorkShift)  
+class WorkShiftAdmin(admin.ModelAdmin):
+    list_display = (
+        'employee', 'date', 'heure_debut', 'heure_fin', 
+        'has_break', 'pause_duree', 'duree_totale_formatted',
+        'duree_effective_formatted', 'status'
+    )
+    list_filter = (
+        'status', 'has_break', 'date', 'employee__role'
+    )
+    search_fields = (
+        'employee__username', 'employee__first_name', 'employee__last_name', 'note'
+    )
+    date_hierarchy = 'date'
+    readonly_fields = (
+        'duree_totale_formatted', 'duree_effective_formatted', 
+        'is_long_shift', 'break_required', 'created_at', 'updated_at'
+    )
+    
+    fieldsets = (
+        ('Employé et Date', {
+            'fields': ('employee', 'date')
+        }),
+        ('Heures de travail', {
+            'fields': ('heure_debut', 'heure_fin'),
+            'description': 'Définissez les heures de début et de fin du quart'
+        }),
+        ('Pause', {
+            'fields': ('has_break', 'pause_duree', 'pause_debut', 'pause_fin'),
+            'description': 'Configuration de la pause'
+        }),
+        ('Informations calculées', {
+            'fields': ('duree_totale_formatted', 'duree_effective_formatted', 'is_long_shift', 'break_required'),
+            'classes': ('collapse',)
+        }),
+        ('Note et Statut', {
+            'fields': ('note', 'status', 'created_by')
+        }),
+        ('Métadonnées', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('employee', 'created_by')
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Si c'est une création
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+    
+    # Actions personnalisées
+    def mark_as_published(self, request, queryset):
+        updated = queryset.update(status=WorkShift.ShiftStatus.PUBLISHED)
+        self.message_user(request, f"{updated} quart(s) marqué(s) comme publié(s).")
+    mark_as_published.short_description = "Marquer comme publié"
+    
+    def mark_as_completed(self, request, queryset):
+        updated = queryset.update(status=WorkShift.ShiftStatus.COMPLETED)
+        self.message_user(request, f"{updated} quart(s) marqué(s) comme terminé(s).")
+    mark_as_completed.short_description = "Marquer comme terminé"
+    
+    actions = ['mark_as_published', 'mark_as_completed']
 
