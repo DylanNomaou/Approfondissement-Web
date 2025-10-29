@@ -36,7 +36,7 @@
                 <div class="collapse {% if request.resolver_match.url_name == 'create_schedule' or request.resolver_match.url_name == 'view_schedule' %}show{% endif %}"
                     id="employeesSubmenu">
                     <ul class="nav flex-column ms-4">
-                        {% if user.is_staff or user.is_superuser %}
+                        {%if user.is_authenticated and user.can_manage_employees %}
                         <li class="nav-item">
                             <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'create_schedule' %}active{% endif %}"
                                 href="{% url 'create_schedule' %}">
@@ -50,7 +50,7 @@
                                 <i class="bi bi-calendar-check me-2"></i>Affichage horaires
                             </a>
                         </li>
-                        {% if user.is_staff or user.is_superuser %}
+                        {%if user.is_authenticated and user.can_manage_employees %}
                         <li class="nav-item">
                             <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'add_employee' %}active{% endif %}"
                                 href="{% url 'add_employee' %}">
@@ -58,7 +58,7 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if user.is_staff or user.is_superuser %}
+                        {%if user.is_authenticated and user.can_manage_employees %}
                         <li class="nav-item">
                             <a class="nav-link text-light-50 py-2" href="{% url 'employees_management' %}">
                                 <i class="bi bi-list-ul me-2"></i>Liste Employés
@@ -268,7 +268,7 @@
                         </ul>
                     </div>
                 </li>
-
+                {%if user.is_authenticated and user.can_manage_employees %}
                 <li class="nav-item">
                     <a class="nav-link text-light d-flex align-items-center py-3 sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'create_role' or request.resolver_match.url_name == 'manage_user_role' %}active{% endif %}"
                         href="#" data-bs-toggle="collapse" data-bs-target="#mobileAdminSubmenu">
@@ -293,6 +293,7 @@
                         </ul>
                     </div>
                 </li>
+                {% endif %}
             </ul>
         </nav>
     </div>
