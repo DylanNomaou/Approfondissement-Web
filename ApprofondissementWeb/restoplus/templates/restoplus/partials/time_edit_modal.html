@@ -44,10 +44,11 @@
                                         Heure de début
                                     </label>
                                     <input type="time" 
-                                           class="form-control elegant-input" 
+                                           class="form-control elegant-input time-input" 
                                            id="heure_debut" 
                                            name="heure_debut" 
-                                           step="900" 
+                                           step="300"
+                                           value="08:00"
                                            required>
                                     <div class="invalid-feedback"></div>
                                 </div>
@@ -62,10 +63,11 @@
                                         Heure de fin
                                     </label>
                                     <input type="time" 
-                                           class="form-control elegant-input" 
+                                           class="form-control elegant-input time-input" 
                                            id="heure_fin" 
                                            name="heure_fin" 
-                                           step="900" 
+                                           step="300"
+                                           value="17:00"
                                            required>
                                     <div class="invalid-feedback"></div>
                                 </div>
@@ -206,6 +208,11 @@
                     <i class="fas fa-times me-2"></i>
                     Annuler
                 </button>
+                <!-- Bouton de suppression (caché par défaut, affiché si un shift existe) -->
+                <button type="button" class="btn btn-danger me-auto d-none" id="deleteWorkShiftBtn">
+                    <i class="fas fa-trash me-2"></i>
+                    Supprimer
+                </button>
                 <button type="button" class="btn btn-primary elegant-btn-save" id="saveWorkShiftBtn">
                     <i class="fas fa-check me-2"></i>
                     Enregistrer le quart
@@ -218,3 +225,5 @@
         </div>
     </div>
 </div>
+
+

@@ -1,0 +1,307 @@
+{% extends 'restoplus/base.html' %} {% load static %}
+
+<!--Block content-->
+{% block content %}
+<section class="page-view-schedule">
+  <div class="schedule-container">
+    <!-- En-tête -->
+    <div class="schedule-header">
+      <div class="header-content">
+        <!-- Titre -->
+        <h1>
+          <i class="fas fa-calendar-check"></i>
+          Horaires de la semaine
+        </h1>
+
+        <!-- Informations de la semaine -->
+        <div class="week-info">
+          <div class="week-period">
+            <i class="fas fa-calendar-week"></i>
+            <span
+              >{{ week_schedule.week_start }} - {{ week_schedule.week_end
+              }}</span
+            >
+          </div>
+          <div class="schedule-status">
+            {% if week_schedule.is_published %}
+            <span class="badge badge-success">
+              <i class="fas fa-check-circle"></i>
+              Publié
+            </span>
+            {% else %}
+            <span class="badge badge-warning">
+              <i class="fas fa-clock"></i>
+              Brouillon
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Navigation entre semaines -->
+        <div class="week-navigation">
+          <button class="btn-week" id="prev-week-btn" onclick="changeWeek(-1)">
+            <i class="fas fa-chevron-left"></i>
+            Semaine précédente
+          </button>
+          <button class="btn-week" id="next-week-btn" onclick="changeWeek(1)">
+            Semaine suivante
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau des horaires -->
+    <div class="schedule-display-container">
+      <div class="schedule-display">
+        <!-- En-tête avec les jours de la semaine -->
+        <div class="display-header">
+          <div class="employee-header">Employés</div>
+          {% for day in week_days %}
+          <div class="day-header">
+            <div class="day-name">{{ day.jour_name }}</div>
+            <div class="day-date">{{ day.date_short }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Corps de la grille avec les employés -->
+        <div class="display-body">
+          {% for employee in employes %}
+          <div class="employee-row" data-employee-id="{{ employee.id }}">
+            <!-- Informations de l'employé -->
+            <div class="employee-info">
+              <div class="employee-name">
+                {{ employee.get_full_name|default:employee.username }}
+              </div>
+              <div class="employee-role">
+                {{ employee.role.name|default:"Employé" }}
+              </div>
+              <div class="employee-color" data-color="#007bff"></div>
+            </div>
+
+            <!-- Cellules d'horaire pour chaque jour -->
+            {% for day in week_days %}
+            <div
+              class="schedule-cell"
+              data-employee-id="{{ employee.id }}"
+              data-day="{{ day.jour_key }}"
+              data-date="{{ day.date_str }}"
+            >
+              <div class="time-display-readonly">
+                <span
+                  class="time-text shift-time"
+                  data-employee="{{ employee.id }}"
+                  data-day="{{ day.jour_key }}"
+                  >-</span
+                >
+                <div
+                  class="shift-details"
+                  data-employee="{{ employee.id }}"
+                  data-day="{{ day.jour_key }}"
+                >
+                  <!-- Les détails seront remplis par JavaScript -->
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="schedule-actions">
+      {% if user.is_staff or user.is_superuser %}
+        {% if week_schedule.can_modify %}
+        <a href="{% url 'create_schedule' %}" class="btn btn-primary">
+          <i class="fas fa-edit"></i>
+          Modifier les horaires
+        </a>
+        {% endif %}
+      {% endif %}
+      <button class="btn btn-secondary" onclick="window.print()">
+        <i class="fas fa-print"></i>
+        Imprimer
+      </button>
+      <a href="{% url 'accueil' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-home"></i>
+        Retour à l'accueil
+      </a>
+    </div>
+  </div>
+</section>
+
+{{ shifts_by_employee|json_script:"shifts-data" }}
+
+<!-- Script pour charger les horaires -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🔄 Chargement de la page d'affichage des horaires...");
+
+    // Récupérer les données des shifts depuis Django
+    const shiftsElement = document.getElementById("shifts-data");
+    let shiftsData = {};
+
+    if (shiftsElement && shiftsElement.textContent) {
+      try {
+        shiftsData = JSON.parse(shiftsElement.textContent);
+        console.log(
+          "✅ Données des shifts chargées depuis Django:",
+          shiftsData
+        );
+      } catch (error) {
+        console.error("❌ Erreur parsing shifts data:", error);
+        shiftsData = {};
+      }
+    }
+
+    // Charger les shifts dans l'interface
+    loadShiftsFromData(shiftsData);
+  });
+  function loadShiftsFromData(shiftsData) {
+    console.log("🔄 Application des shifts dans l'interface...");
+    let shiftsLoaded = 0;
+
+    // Parcourir tous les employés et jours
+    for (const employeeId in shiftsData) {
+      const employeeShifts = shiftsData[employeeId];
+
+      for (const day in employeeShifts) {
+        const shiftData = employeeShifts[day];
+
+        // Trouver la cellule correspondante
+        const timeText = document.querySelector(
+          `.shift-time[data-employee="${employeeId}"][data-day="${day}"]`
+        );
+        const shiftDetails = document.querySelector(
+          `.shift-details[data-employee="${employeeId}"][data-day="${day}"]`
+        );
+
+        if (timeText && shiftData) {
+          // Afficher l'horaire
+          timeText.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+
+          // Ajouter les détails
+          let detailsHTML = "";
+          if (shiftData.has_break && shiftData.pause_duree > 0) {
+            detailsHTML += `<small class="pause-info"><i class="fas fa-coffee"></i> Pause: ${shiftData.pause_duree}min</small>`;
+          }
+          if (shiftData.note) {
+            detailsHTML += `<small class="note-info"><i class="fas fa-sticky-note"></i> ${shiftData.note}</small>`;
+          }
+          if (shiftData.duree_effective) {
+            detailsHTML += `<small class="duration-info"><i class="fas fa-clock"></i> ${shiftData.duree_effective}</small>`;
+          }
+
+          if (shiftDetails) {
+            shiftDetails.innerHTML = detailsHTML;
+          }
+
+          // Marquer la cellule comme ayant un shift
+          const cell = timeText.closest(".schedule-cell");
+          if (cell) {
+            cell.classList.add("has-shift");
+
+            // Tooltip avec toutes les informations
+            let tooltip = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+            if (shiftData.pause_duree > 0) {
+              tooltip += `\nPause: ${shiftData.pause_duree} min`;
+            }
+            if (shiftData.note) {
+              tooltip += `\nNote: ${shiftData.note}`;
+            }
+            cell.title = tooltip;
+          }
+
+          shiftsLoaded++;
+        }
+      }
+    }
+
+    console.log(`✅${shiftsLoaded} shifts affichés`);
+  }
+
+  function calculateShiftDuration(startTime, endTime, pauseMinutes = 0) {}
+
+  function calculateScheduleStats() {
+    console.log("📊 Calcul des statistiques...");
+
+    const cells = document.querySelectorAll(".schedule-cell.has-shift");
+    let totalMinutes = 0;
+    let employeesWithShifts = new Set();
+
+    cells.forEach((cell) => {
+      const timeText = cell.querySelector(".shift-time");
+      const employeeId = timeText?.dataset.employee;
+
+      if (employeeId) {
+        employeesWithShifts.add(employeeId);
+      }
+
+      // Extraire les heures pour calculer la durée
+      const timeContent = timeText?.textContent?.trim();
+      if (timeContent && timeContent !== "-") {
+        const [startTime, endTime] = timeContent.split(" - ");
+        if (startTime && endTime) {
+          const duration = calculateShiftDuration(startTime, endTime, 0);
+          totalMinutes += duration;
+        }
+      }
+    });
+
+    // Mettre à jour les statistiques
+    const totalHoursEl = document.getElementById("total-hours");
+    const totalShiftsEl = document.getElementById("total-shifts");
+
+    if (totalHoursEl) {
+      totalHoursEl.textContent = formatHours(totalMinutes);
+    }
+
+    if (totalShiftsEl) {
+      totalShiftsEl.textContent = cells.length;
+    }
+
+    console.log(
+      `📊 Stats: ${formatHours(totalMinutes)} total, ${
+        employeesWithShifts.size
+      } employés`
+    );
+  }
+
+  function calculateShiftDuration(startTime, endTime, pauseMinutes = 0) {
+    const [startHour, startMin] = startTime.split(":").map(Number);
+    const [endHour, endMin] = endTime.split(":").map(Number);
+
+    const startTotalMin = startHour * 60 + startMin;
+    let endTotalMin = endHour * 60 + endMin;
+
+    // Gérer le cas où le shift se termine le lendemain
+    if (endTotalMin <= startTotalMin) {
+      endTotalMin += 24 * 60;
+    }
+
+    const workMinutes = endTotalMin - startTotalMin - pauseMinutes;
+    return Math.max(0, workMinutes);
+  }
+
+  function formatHours(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h${minutes.toString().padStart(2, "0")}`;
+  }
+
+  // Navigation entre semaines
+  function changeWeek(direction) {
+    const currentUrl = new URL(window.location);
+    const currentWeekOffset = parseInt(
+      currentUrl.searchParams.get("week_offset") || "0"
+    );
+    const newWeekOffset = currentWeekOffset + direction;
+
+    currentUrl.searchParams.set("week_offset", newWeekOffset);
+    window.location.href = currentUrl.toString();
+  }
+</script>
+{% endblock content %}

@@ -13,6 +13,16 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 from datetime import datetime, timedelta
+import locale
+
+# Configuration de la locale française pour les dates
+try:
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'fr_FR')
+    except locale.Error:
+        pass  # Garde la locale par défaut si français non disponible
 
 # Create your views here.
 def accueil(request):
@@ -299,46 +309,7 @@ def availability_form(request):
     return render(request, 'restoplus/availability_form.html', {"form": form, "employe": employe})
 
 
-# ======================================================================
-# Création d'horaires
-# ======================================================================
-def create_schedule(request):
-    """Vue pour créer des horaires"""
-    from datetime import datetime, timedelta
-    import json
-    
-    # Récupérer tous les employés
-    employes = User.objects.all()
-    
-    # Créer les jours de la semaine (lundi à dimanche)
-    today = datetime.now().date()
-    # Trouver le lundi de cette semaine
-    monday = today - timedelta(days=today.weekday())
-    
-    week_days = []
-    days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-    days_keys = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
-    
-    for i in range(7):
-        day = monday + timedelta(days=i)
-        week_days.append({
-            'jour_name': days_names[i],
-            'jour_key': days_keys[i],
-            'date_short': day.strftime('%d/%m'),
-            'date_str': day.strftime('%Y-%m-%d'),
-            'date_formatted': day.strftime('%d %B %Y')
-        })
-    
-    # Convertir en JSON pour JavaScript
-    week_days_json = json.dumps(week_days)
-    
-    context = {
-        'employes': employes,
-        'week_days': week_days,
-        'week_days_json': week_days_json,
-    }
-    
-    return render(request, 'restoplus/horaire_creation.html', context)
+
 
 # ======================================================================
 # ⚙️ ADMINISTRATION
@@ -705,25 +676,37 @@ def delete_employee(request, employe_id):
 
 
 # ======================================================================
-# 📅 CRÉATION D'HORAIRES
+#  CRÉATION D'HORAIRES
 # ======================================================================
 
 @login_required
 def create_schedule(request):
-    """Vue pour créer des horaires"""
-   
+    """Vue pour créer des horaires - Réservée aux administrateurs"""
     
-    # Récupérer tous les employés
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_staff and not request.user.is_superuser:
+        from django.shortcuts import redirect
+        from django.contrib import messages
+        messages.error(request, "Accès non autorisé. Seuls les administrateurs peuvent créer des horaires.")
+        return redirect('view_schedule')
+   
+    # Récupérer le décalage de semaine depuis les paramètres GET
+    week_offset = int(request.GET.get('week_offset', 0))
+    
+    # Récupérer tous les employés avec leurs disponibilités
     employes = User.objects.all()
     
     # Créer les jours de la semaine (lundi à dimanche)
     today = datetime.now().date()
-    # Trouver le lundi de cette semaine
-    monday = today - timedelta(days=today.weekday())
+    # Trouver le lundi de cette semaine + décalage
+    monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    
+    # Vérifier si la semaine peut être modifiée (pas dans le passé)
+    can_edit_week = monday >= (today - timedelta(days=today.weekday()))
     
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-    days_keys = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+    days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
     
     for i in range(7):
         day = monday + timedelta(days=i)
@@ -735,13 +718,251 @@ def create_schedule(request):
             'date_formatted': day.strftime('%d %B %Y')
         })
     
-    # Convertir en JSON pour JavaScript
-    week_days_json = json.dumps(week_days)
+    # Récupérer les WorkShifts existants pour cette semaine
+    from .models import WorkShift
+    week_start = monday
+    week_end = monday + timedelta(days=6)
     
+    # Vérifier si l'horaire de cette semaine est déjà publié
+    published_shifts_count = WorkShift.objects.filter(
+        date__range=[week_start, week_end],
+        status=WorkShift.ShiftStatus.PUBLISHED
+    ).count()
+    
+    # Déterminer si l'horaire est publié (pour affichage d'information)
+    is_published = published_shifts_count > 0
+    
+    existing_shifts = WorkShift.objects.filter(
+        date__range=[week_start, week_end]
+    ).select_related('employee').order_by('date', 'heure_debut')
+    
+    # Organiser les shifts par employé et jour
+    shifts_by_employee = {}
+    for shift in existing_shifts:
+        emp_id = shift.employee_id
+        day_key = days_keys[shift.date.weekday()]  # 0=lundi, 1=mardi, etc.
+        
+        if emp_id not in shifts_by_employee:
+            shifts_by_employee[emp_id] = {}
+        
+        shifts_by_employee[emp_id][day_key] = {
+            'heure_debut': shift.heure_debut.strftime('%H:%M'),
+            'heure_fin': shift.heure_fin.strftime('%H:%M'),
+            'duree_effective': shift.duree_effective_formatted,
+            'note': shift.note,
+            'has_break': shift.has_break,
+            'pause_duree': shift.pause_duree,
+            'status': shift.status,
+            'id': shift.id,
+        }
+    
+    # Récupérer les disponibilités pour tous les employés
+    avail_qs = Availability.objects.all().select_related('employe')
+    availabilities = [
+        {
+            'employe_id': a.employe_id,
+            'day': a.day,                                    # 'monday'...'sunday'
+            'heure_debut': a.heure_debut.strftime('%H:%M'),
+            'heure_fin': a.heure_fin.strftime('%H:%M'),
+            'remplie': a.remplie,
+        }
+        for a in avail_qs
+    ]
+
+    # Forcer la locale française pour le formatage des dates
+    import locale
+    try:
+        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+    except:
+        try:
+            locale.setlocale(locale.LC_TIME, 'fr_FR')
+        except:
+            pass
+
+    # Créer des variables de dates explicites
+    week_start_formatted = week_start.strftime('%d %B %Y')
+    week_end_formatted = week_end.strftime('%d %B %Y')
+
     context = {
         'employes': employes,
         'week_days': week_days,
-        'week_days_json': week_days_json,
+        'week_days_json': json.dumps(week_days),
+        'availabilities_json': availabilities,  # Pas de json.dumps() ici car json_script le fait automatiquement
+        'shifts_by_employee': shifts_by_employee,
+        'week_start_formatted': week_start_formatted,
+        'week_end_formatted': week_end_formatted,
+        'week_schedule': {
+            'status': 'published' if is_published else 'draft', 
+            'can_be_edited': can_edit_week and not is_published,
+            'is_published': is_published,
+            'week_start': week_start_formatted,
+            'week_end': week_end_formatted,
+            'week_offset': week_offset,
+        },
     }
     
     return render(request, 'restoplus/horaire_creation.html', context)
+
+
+@login_required
+def view_schedule(request):
+    """Vue pour afficher les horaires publiés en lecture seule"""
+    
+    # Récupérer tous les employés
+    employes = User.objects.all()
+    
+    # Récupérer le décalage de semaine depuis les paramètres GET
+    week_offset = int(request.GET.get('week_offset', 0))
+    
+    # Créer les jours de la semaine (lundi à dimanche)
+    today = datetime.now().date()
+    # Trouver le lundi de cette semaine + décalage
+    monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+    
+    week_days = []
+    days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+    days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    
+    for i in range(7):
+        day = monday + timedelta(days=i)
+        week_days.append({
+            'jour_name': days_names[i],
+            'jour_key': days_keys[i],
+            'date_short': day.strftime('%d/%m'),
+            'date_str': day.strftime('%Y-%m-%d'),
+            'date_formatted': day.strftime('%d %B %Y')
+        })
+    
+    # Récupérer les shifts publiés pour cette semaine
+    from .models import WorkShift
+    week_start = monday
+    week_end = monday + timedelta(days=6)
+    
+    shifts = WorkShift.objects.filter(
+        date__range=[week_start, week_end],
+        status=WorkShift.ShiftStatus.PUBLISHED
+    ).select_related('employee').order_by('date', 'heure_debut')
+    
+    # Organiser les shifts par employé et jour
+    shifts_by_employee = {}
+    for shift in shifts:
+        emp_id = shift.employee_id
+        day_key = days_keys[shift.date.weekday()]  # 0=lundi, 1=mardi, etc.
+        
+        if emp_id not in shifts_by_employee:
+            shifts_by_employee[emp_id] = {}
+        
+        shifts_by_employee[emp_id][day_key] = {
+            'heure_debut': shift.heure_debut.strftime('%H:%M'),
+            'heure_fin': shift.heure_fin.strftime('%H:%M'),
+            'duree_effective': shift.duree_effective_formatted,
+            'note': shift.note,
+            'has_break': shift.has_break,
+            'pause_duree': shift.pause_duree,
+        }
+
+    # Déterminer le statut de l'horaire pour cette semaine
+    published_shifts_count = WorkShift.objects.filter(
+        date__range=[week_start, week_end],
+        status=WorkShift.ShiftStatus.PUBLISHED
+    ).count()
+    
+    # Si il y a des shifts publiés, l'horaire est publié et ne peut pas être modifié
+    is_published = published_shifts_count > 0
+    can_modify = not is_published
+
+    context = {
+        'employes': employes,
+        'week_days': week_days,
+        'shifts_by_employee': shifts_by_employee,
+        'week_schedule': {
+            'status': 'published' if is_published else 'draft',
+            'week_start': week_start.strftime('%d %B %Y'),
+            'week_end': week_end.strftime('%d %B %Y'),
+            'is_published': is_published,
+            'can_modify': can_modify,
+        },
+    }
+    
+    return render(request, 'restoplus/view_schedule.html', context)
+
+
+@login_required
+@require_POST
+def publish_schedule(request):
+    """Publie les horaires depuis localStorage vers la base de données - Réservé aux administrateurs"""
+    
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({
+            'success': False, 
+            'message': 'Accès non autorisé. Seuls les administrateurs peuvent publier des horaires.'
+        }, status=403)
+    
+    try:
+        # Récupérer les données JSON depuis la requête
+        data = json.loads(request.body)
+        shifts_data = data.get('shifts', {})
+        
+        published_count = 0
+        errors = []
+        
+        # Parcourir chaque shift et l'enregistrer en base
+        for shift_key, shift_info in shifts_data.items():
+            try:
+                # Extraire employee_id et date du key: "shift_1_2025-10-28"
+                parts = shift_key.split('_')
+                if len(parts) >= 3:
+                    employee_id = int(parts[1])
+                    date_str = parts[2]
+                    shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    
+                    # Récupérer l'employé
+                    employee = User.objects.get(id=employee_id)
+                    
+                    # Créer ou mettre à jour le WorkShift
+                    from .models import WorkShift
+                    shift, created = WorkShift.objects.update_or_create(
+                        employee=employee,
+                        date=shift_date,
+                        defaults={
+                            'heure_debut': datetime.strptime(shift_info['heure_debut'], '%H:%M').time(),
+                            'heure_fin': datetime.strptime(shift_info['heure_fin'], '%H:%M').time(),
+                            'pause_duree': shift_info.get('pause_duree', 30),
+                            'has_break': shift_info.get('pause_duree', 30) > 0,
+                            'note': shift_info.get('note', ''),
+                            'status': WorkShift.ShiftStatus.PUBLISHED,
+                            'created_by': request.user,
+                        }
+                    )
+                    
+                    published_count += 1
+                    
+            except (ValueError, User.DoesNotExist) as e:
+                errors.append(f"Erreur avec {shift_key}: {str(e)}")
+                continue
+        
+        if errors:
+            return JsonResponse({
+                'success': False,
+                'message': f'{published_count} horaires publiés, {len(errors)} erreurs',
+                'errors': errors
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'message': f'{published_count} horaires publiés avec succès',
+                'published_count': published_count
+            })
+            
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Données JSON invalides'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erreur serveur: {str(e)}'
+        })
+
