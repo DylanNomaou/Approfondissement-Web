@@ -38,7 +38,12 @@
 
                         <div class="mb-3">
                             <label for="email" class="form-label">Courriel</label>
-                            <input type="email" class="form-control" id="email" name="email"
+                            {% if form_errors.email %}
+                            <div class="text-danger mb-1">
+                                {{ form_errors.email|join:", " }}
+                            </div>
+                            {% endif %}
+                            <input type="email" class="form-control{% if form_errors.email %} is-invalid{% endif %}" id="email" name="email"
                                 value="{{ employee.email }}" placeholder="exemple@restoplus.com">
                         </div>
 
