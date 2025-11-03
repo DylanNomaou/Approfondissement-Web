@@ -69,17 +69,7 @@
                         </button>
                         {% endif %}
 
-                        <!--Archiver-->
-                        {% if week_schedule.status == 'published' %}
-                        <form method="post" action="" style="display: inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="status" value="archived">
-                            <button type="submit" class="btn btn-warning">
-                                <i class="fas fa-archive"></i>
-                                Archiver
-                            </button>
-                        </form>
-                        {% endif %}
+
 
                     </div>
                     <!--Fin des actions de publication-->
