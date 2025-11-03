@@ -28,15 +28,16 @@
                     <!--Sélecteur de semaine-->
                     <div class="week-selector">
                         <!--Semaine Précédente-->
-                        <button class="btn-week" id="prev-week-btn" onclick="changeWeek(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <button class="btn-week" id="prev-week-btn" onclick="changeWeek(-1)"><i
+                                class="fas fa-chevron-left"></i></button>
 
                         <!--Semaine actuelle-->
-                        <span class="current-week" id="current-week-display">
-                            {{ week_schedule.week_start }} - {{ week_schedule.week_end }}
-                        </span>
+                        <span class="current-week" id="current-week-display">{{ week_schedule.week_start }} - {{
+                            week_schedule.week_end }}</span>
 
                         <!--Semaine Suivante-->
-                        <button class="btn-week" id="next-week-btn" onclick="changeWeek(1)"><i class="fas fa-chevron-right"></i></button>
+                        <button class="btn-week" id="next-week-btn" onclick="changeWeek(1)"><i
+                                class="fas fa-chevron-right"></i></button>
                     </div>
                     <!--Fin du sélecteur de semaine-->
 
@@ -45,22 +46,24 @@
                         <!-- Badge de statut -->
                         <span class="week-status-badge {{ week_schedule.status }}">
                             {% if week_schedule.status == 'draft' %}
-                                 Brouillon
+                            Brouillon
                             {% elif week_schedule.status == 'published' %}
-                                Publié
+                            Publié
                             {% else %}
-                                 Archivé
+                            Archivé
                             {% endif %}
                         </span>
 
                         <!--Publier les horaires avec JavaScript-->
                         {% if week_schedule.can_be_edited %}
-                        <button type="button" class="btn btn-success" id="publishScheduleBtn" onclick="publishSchedule()">
+                        <button type="button" class="btn btn-success" id="publishScheduleBtn"
+                            onclick="publishSchedule()">
                             <i class="fas fa-upload"></i>
                             Publier l'horaire
                         </button>
                         {% else %}
-                        <button type="button" class="btn btn-secondary" disabled title="Cette semaine ne peut plus être modifiée">
+                        <button type="button" class="btn btn-secondary" disabled
+                            title="Cette semaine ne peut plus être modifiée">
                             <i class="fas fa-lock"></i>
                             Semaine passée
                         </button>
@@ -111,7 +114,8 @@
 
                         <!-- Cellules d'horaire pour chaque jour -->
                         {% for day in week_days %}
-                            <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}" data-date="{{ day.date_str }}">
+                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}"
+                            data-date="{{ day.date_str }}">
 
                             <div class="time-slot">
                                 <!-- Zone où l'horaire sera affiché/édité -->
@@ -146,13 +150,13 @@
     console.log('🔥 Template loaded');
     console.log('🔍 Week days element:', document.getElementById('week-days-data'));
     console.log('🔍 Availability element:', document.getElementById('availability-data'));
-    
+
     // Test simple de clic
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => {
             const cells = document.querySelectorAll('.schedule-cell');
             console.log('📊 Cellules trouvées:', cells.length);
-            
+
             cells.forEach((cell, index) => {
                 console.log(`📋 Cellule ${index}:`, {
                     employeeId: cell.dataset.employeeId,
@@ -162,7 +166,7 @@
             });
         }, 1000);
     });
-    
+
     if (document.getElementById('week-days-data')) {
         console.log('📅 Week days content:', document.getElementById('week-days-data').textContent);
         try {
@@ -172,7 +176,7 @@
             console.error('❌ Error parsing week days data:', e);
         }
     }
-    
+
     if (document.getElementById('availability-data')) {
         console.log('⚠️ Availability content:', document.getElementById('availability-data').textContent);
         try {
@@ -188,7 +192,7 @@
         const currentUrl = new URL(window.location);
         const currentWeekOffset = parseInt(currentUrl.searchParams.get('week_offset') || '0');
         const newWeekOffset = currentWeekOffset + direction;
-        
+
         currentUrl.searchParams.set('week_offset', newWeekOffset);
         window.location.href = currentUrl.toString();
     }
@@ -202,7 +206,7 @@
     // Charger les horaires existants depuis Django
     const shiftsElement = document.getElementById('shifts-data');
     let existingShifts = {};
-    
+
     if (shiftsElement && shiftsElement.textContent) {
         try {
             existingShifts = JSON.parse(shiftsElement.textContent);
@@ -211,11 +215,11 @@
             console.error('❌ Erreur parsing shifts data:', error);
         }
     }
-    
+
     // Charger les jours de la semaine
     const weekDaysElement = document.getElementById('week-days-data');
     let weekDays = [];
-    
+
     if (weekDaysElement && weekDaysElement.textContent) {
         try {
             weekDays = JSON.parse(weekDaysElement.textContent);
@@ -227,7 +231,7 @@
     // Charger le statut d'édition
     const canEditElement = document.getElementById('can-edit-data');
     let canEditWeek = true;
-    
+
     if (canEditElement && canEditElement.textContent) {
         try {
             canEditWeek = JSON.parse(canEditElement.textContent);
@@ -235,7 +239,7 @@
             console.error('❌ Erreur parsing can edit data:', error);
         }
     }
-    
+
     // Attendre que le gestionnaire d'horaires soit initialisé avant de charger les shifts existants
     setTimeout(() => {
         // Charger les shifts dans l'interface
@@ -247,13 +251,13 @@
     function loadExistingShifts(shiftsData) {
         for (const employeeId in shiftsData) {
             const employeeShifts = shiftsData[employeeId];
-            
+
             for (const day in employeeShifts) {
                 const shiftData = employeeShifts[day];
-                
+
                 // Créer la clé localStorage pour ce shift
                 const shiftKey = `shift_${employeeId}_${getDateForDay(day)}`;
-                
+
                 // Sauvegarder dans localStorage pour compatibilité avec le code existant
                 const localStorageData = {
                     heure_debut: shiftData.heure_debut,
@@ -265,9 +269,9 @@
                     from_database: true,
                     shift_id: shiftData.id
                 };
-                
+
                 localStorage.setItem(shiftKey, JSON.stringify(localStorageData));
-                
+
                 // Afficher dans l'interface
                 const cell = document.querySelector(`[data-employee-id="${employeeId}"][data-day="${day}"]`);
                 if (cell) {
@@ -286,7 +290,7 @@
     function updateCellDisplay(cell, shiftData) {
         // Marquer la cellule comme ayant un shift
         cell.classList.add('has-shift');
-        
+
         // Trouver ou créer l'affichage de l'horaire
         let timeDisplay = cell.querySelector('.time-display');
         if (!timeDisplay) {
@@ -294,7 +298,7 @@
             timeDisplay.className = 'time-display';
             cell.appendChild(timeDisplay);
         }
-        
+
         // Créer le contenu HTML
         const noteHtml = shiftData.note ? `<small class="note-text">${shiftData.note}</small>` : '';
         const deleteButtonHtml = canEditWeek ? `
@@ -302,20 +306,20 @@
                 <i class="fas fa-times"></i>
             </button>
         ` : '';
-        
+
         timeDisplay.innerHTML = `
             <span class="time-text">${shiftData.heure_debut} - ${shiftData.heure_fin}</span>
             ${noteHtml}
             ${deleteButtonHtml}
         `;
-        
+
         // Si c'est une semaine qui ne peut pas être éditée, désactiver la cellule
         if (!canEditWeek) {
             cell.classList.add('readonly');
             // Désactiver les événements de clic
             cell.style.pointerEvents = 'none';
         }
-        
+
         // Ajouter l'indicateur visuel de shift
         cell.style.backgroundColor = '#d4edda';
         cell.style.borderLeft = '3px solid #28a745';
