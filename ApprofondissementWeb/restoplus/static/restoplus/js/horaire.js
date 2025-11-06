@@ -12,6 +12,7 @@ class HoraireManager {
         this.currentWorkShift = null;
         this.weekDays = this.loadWeekDays();
         this.canEditWeek = this.getCanEditWeekFlag();
+        // Charger l'état de publication de la semaine
         // Initialiser avec un tableau vide par défaut
         this.availabilities = [];
 
@@ -1053,6 +1054,84 @@ class HoraireManager {
     }
 
     /**
+     * Détermine l'état d'un shift selon les règles business
+     * @param {Object} shiftData - Données du shift
+     * @returns {string} 'published', 'pending-deletion', 'draft'
+     */
+    getShiftDisplayState(shiftData) {
+        if (!shiftData) return 'draft';
+
+        // Si le shift vient de la DB et est publié
+        if (shiftData.from_database && shiftData.status === 'published') {
+            // Si marqué pour suppression (logique à implémenter)
+            if (shiftData.marked_for_deletion) {
+                return 'pending-deletion';
+            }
+            return 'published';
+        }
+
+        // Si c'est un nouveau shift ou un brouillon
+        return 'draft';
+    }
+
+    /**
+     * Marque un shift pour suppression (sans le supprimer immédiatement si publié)
+     * @param {string} employeeId - ID de l'employé
+     * @param {string} date - Date du shift
+     */
+    markShiftForDeletion(employeeId, date) {
+        const key = `shift_${employeeId}_${date}`;
+        const stored = localStorage.getItem(key);
+        
+        if (stored) {
+            try {
+                const shiftData = JSON.parse(stored);
+                
+                // Si le shift est publié, on le marque pour suppression
+                if (shiftData.from_database && shiftData.status === 'published') {
+                    shiftData.marked_for_deletion = true;
+                    localStorage.setItem(key, JSON.stringify(shiftData));
+                    console.log("✓ Shift marqué pour suppression");
+                    return true;
+                } else {
+                    // Si c'est un brouillon, on peut le supprimer directement
+                    localStorage.removeItem(key);
+                    console.log("✓ Shift brouillon supprimé");
+                    return true;
+                }
+            } catch (error) {
+                console.error("Erreur lors du marquage pour suppression:", error);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Applique les styles CSS selon l'état du shift
+     * @param {Element} cell - Cellule DOM
+     * @param {string} state - État: 'published', 'pending-deletion', 'draft'
+     */
+    applyCellStateStyles(cell, state) {
+        // Supprimer toutes les classes d'état existantes
+        cell.classList.remove('shift-published', 'shift-pending-deletion', 'shift-draft');
+        
+        // Ajouter la classe appropriée
+        switch (state) {
+            case 'published':
+                cell.classList.add('shift-published');
+                break;
+            case 'pending-deletion':
+                cell.classList.add('shift-pending-deletion');
+                break;
+            case 'draft':
+            default:
+                cell.classList.add('shift-draft');
+                break;
+        }
+    }
+
+    /**
      * Sauvegarde le quart de travail
      */
     saveWorkShift() {
@@ -1113,16 +1192,46 @@ class HoraireManager {
         if (timeSlot) {
             const timeDisplay = timeSlot.querySelector(".time-display");
             if (timeDisplay) {
-                timeDisplay.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+                // Déterminer l'état du shift et ajouter l'icône appropriée
+                const state = this.getShiftDisplayState(shiftData);
+                let stateIcon = '';
+                
+                switch (state) {
+                    case 'published':
+                        stateIcon = ' ✅'; // Vert - Publié
+                        break;
+                    case 'pending-deletion':
+                        stateIcon = ' 🗑️'; // Gris - Marqué pour suppression
+                        break;
+                    case 'draft':
+                    default:
+                        stateIcon = ' ✏️'; // Jaune - Brouillon
+                        break;
+                }
+                
+                timeDisplay.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}${stateIcon}`;
             }
 
             cell.classList.add("has-shift");
+            
+            // Appliquer les styles selon l'état
+            const state = this.getShiftDisplayState(shiftData);
+            this.applyCellStateStyles(cell, state);
 
             // Ajouter un petit bouton de suppression directement dans la cellule
             this.addDeleteButtonToCell(cell);
 
-            // Tooltip avec détails
+            // Tooltip avec détails incluant l'état
             let tooltip = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+            
+            const state2 = this.getShiftDisplayState(shiftData);
+            const stateLabels = {
+                'published': 'Publié ✅',
+                'pending-deletion': 'Marqué pour suppression 🗑️',
+                'draft': 'Brouillon ✏️'
+            };
+            tooltip += `\nÉtat: ${stateLabels[state2]}`;
+            
             if (shiftData.pause_duree > 0) {
                 tooltip += `\nPause: ${shiftData.pause_duree} min`;
             }
@@ -1170,15 +1279,49 @@ class HoraireManager {
         const employeeName =
             employeeRow?.querySelector(".employee-name")?.textContent || "Employé";
 
-        const confirmMsg = `Supprimer le quart de ${employeeName} le ${date} ?`;
-        if (!confirm(confirmMsg)) return;
-
+        // Récupérer les données du shift pour déterminer l'action
         const key = `shift_${employeeId}_${date}`;
-        localStorage.removeItem(key);
+        const stored = localStorage.getItem(key);
+        
+        if (!stored) return;
+        
+        try {
+            const shiftData = JSON.parse(stored);
+            let confirmMsg, actionMsg;
+            
+            // Déterminer l'action selon l'état du shift
+            if (shiftData.from_database && shiftData.status === 'published') {
+                confirmMsg = `Marquer pour suppression le quart de ${employeeName} le ${date} ?\n(La suppression sera appliquée lors de la prochaine publication)`;
+                actionMsg = "Quart marqué pour suppression.";
+            } else {
+                confirmMsg = `Supprimer le quart de ${employeeName} le ${date} ?`;
+                actionMsg = "Quart supprimé avec succès.";
+            }
+            
+            if (!confirm(confirmMsg)) return;
 
-        // Nettoyer l'affichage
-        this.clearCellShiftDisplayDirect(cell);
-        this.showSuccessMessage("Quart supprimé avec succès.");
+            // Effectuer l'action appropriée
+            if (this.markShiftForDeletion(employeeId, date)) {
+                // Mettre à jour l'affichage
+                const updatedData = JSON.parse(localStorage.getItem(key));
+                if (updatedData) {
+                    // Si marqué pour suppression, mettre à jour l'affichage
+                    this.currentWorkShift = {
+                        cell: cell,
+                        employeeId: employeeId,
+                        date: date
+                    };
+                    this.updateCellDisplay(updatedData);
+                } else {
+                    // Si supprimé complètement, nettoyer l'affichage
+                    this.clearCellShiftDisplayDirect(cell);
+                }
+                
+                this.showSuccessMessage(actionMsg);
+            }
+        } catch (error) {
+            console.error("Erreur lors de la suppression:", error);
+        }
     }
 
     /**
@@ -1628,6 +1771,8 @@ function getAllShiftsFromLocalStorage() {
     );
     return allShifts;
 }
+
+
 
 function clearAllShiftsFromLocalStorage() {
     const keysToRemove = [];

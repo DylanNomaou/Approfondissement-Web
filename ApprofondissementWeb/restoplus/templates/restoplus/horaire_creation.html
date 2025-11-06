@@ -257,7 +257,8 @@
                     employee_id: employeeId,
                     date: getDateForDay(day),
                     from_database: true,
-                    shift_id: shiftData.id
+                    shift_id: shiftData.id,
+                    status: shiftData.status || 'draft'  // Ajouter le statut du shift
                 };
 
                 localStorage.setItem(shiftKey, JSON.stringify(localStorageData));
@@ -291,16 +292,10 @@
 
         // Créer le contenu HTML
         const noteHtml = shiftData.note ? `<small class="note-text">${shiftData.note}</small>` : '';
-        const deleteButtonHtml = canEditWeek ? `
-            <button class="btn-delete-shift" onclick="quickDeleteShift(this, '${shiftData.employee_id}', '${shiftData.date}')" title="Supprimer ce shift">
-                <i class="fas fa-times"></i>
-            </button>
-        ` : '';
 
         timeDisplay.innerHTML = `
             <span class="time-text">${shiftData.heure_debut} - ${shiftData.heure_fin}</span>
             ${noteHtml}
-            ${deleteButtonHtml}
         `;
 
         // Si c'est une semaine qui ne peut pas être éditée, désactiver la cellule

@@ -698,8 +698,10 @@ def create_schedule(request):
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
 
-    # Vérifier si la semaine peut être modifiée (pas dans le passé)
-    can_edit_week = monday >= (today - timedelta(days=today.weekday()))
+    # Vérifier si la semaine peut être modifiée 
+    # Règle : On peut modifier tant que la semaine n'a pas encore commencé (même si publiée)
+    current_monday = today - timedelta(days=today.weekday())
+    can_edit_week = monday >= current_monday
 
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
@@ -789,7 +791,7 @@ def create_schedule(request):
         'week_end_formatted': week_end_formatted,
         'week_schedule': {
             'status': 'published' if is_published else 'draft',
-            'can_be_edited': can_edit_week and not is_published,
+            'can_be_edited': can_edit_week,  # Permettre l'édition tant que la semaine n'a pas commencé
             'is_published': is_published,
             'week_start': week_start_formatted,
             'week_end': week_end_formatted,
@@ -813,6 +815,11 @@ def view_schedule(request):
     today = datetime.now().date()
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
+
+    week_has_started = today >= monday
+
+
+
 
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
@@ -864,7 +871,7 @@ def view_schedule(request):
 
     # Si il y a des shifts publiés, l'horaire est publié et ne peut pas être modifié
     is_published = published_shifts_count > 0
-    can_modify = not is_published
+    can_modify = not week_has_started
 
     context = {
         'employes': employes,
