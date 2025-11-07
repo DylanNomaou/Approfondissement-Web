@@ -95,12 +95,6 @@
                 <div class="collapse {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'create_role' or request.resolver_match.url_name == 'manage_user_role' %}show{% endif %}"
                     id="adminSubmenu">
                     <ul class="nav flex-column ms-4">
-                        <!--<li class="nav-item">
-                            <a class="nav-link text-light-50 py-2" href="#">
-                                <i class="bi bi-person-add me-2"></i>Création de compte
-                            </a>
-                        </li>
-                        <li class="nav-item"><!-- IGNORE --->
                         <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
                             href="{% url 'admin_dashboard' %}">
                             <i class="bi bi-shield-check me-2"></i>Donner accès
