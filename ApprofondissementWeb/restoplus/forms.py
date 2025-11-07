@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Task, WorkShift
+from .models import User, Task, WorkShift, Inventory
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.utils import timezone
@@ -550,3 +550,89 @@ class WorkShiftForm(forms.ModelForm):
                 'has_break': has_break
             }
         return None
+# ======================================================================
+# 🧑‍💼 INVENTAIRE À VÉRIFIER
+# ======================================================================
+
+class InventoryFilterForm(forms.Form):
+    """Formulaire de filtres pour l'inventaire (validation/clean centralisés)."""
+    recherche = forms.CharField(
+        required=False,
+        label="",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Rechercher par nom, SKU, catégorie, fournisseur...",
+        }),
+    )
+
+    category = forms.ChoiceField(
+        required=False,
+        label="",
+        choices=[("", "Catégorie (toutes)")],
+        widget=forms.Select(attrs={
+            "class": "form-select form-select-sm w-auto",
+        }),
+    )
+
+    unit = forms.ChoiceField(
+        required=False,
+        label="",
+        choices=[("", "Unité (toutes)")],
+        widget=forms.Select(attrs={
+            "class": "form-select form-select-sm w-auto",
+        }),
+    )
+    supplier = forms.ChoiceField(
+        required=False,
+        label="",
+        choices=[("", "Fournisseur (tous)")],
+        widget=forms.Select(attrs={
+            "class": "form-select form-select-sm w-auto",
+        }),
+    )
+    location = forms.ChoiceField(
+        required=False,
+        label="",
+        choices=[("", "Emplacement (tous)")],
+        widget=forms.Select(attrs={
+            "class": "form-select form-select-sm w-auto",
+        }),
+    )
+    def __init__(self, *args, **kwargs):
+        # Simples paramètres injectés par la vue (pas d'ORM ici)
+        categories = kwargs.pop("categories", [])
+        suppliers = kwargs.pop("suppliers", [])
+        locations = kwargs.pop("locations", [])
+        unit_choices = kwargs.pop("unit_choices", [])  # liste de tuples (code, label)
+
+        super().__init__(*args, **kwargs)
+
+        # Catégories
+        category_choices = [("", "Catégorie (toutes)")]
+        for c in categories:
+            category_choices.append((c, c))
+        self.fields["category"].choices = category_choices
+
+        # Fournisseurs
+        supplier_choices = [("", "Fournisseur (tous)")]
+        for s in suppliers:
+            supplier_choices.append((s, s))
+        self.fields["supplier"].choices = supplier_choices
+
+        # Emplacements
+        location_choices = [("", "Emplacement (tous)")]
+        for l in locations:
+            location_choices.append((l, l))
+        self.fields["location"].choices = location_choices
+
+        # Unités (déjà des tuples (code, label))
+        unit_choices_list = [("", "Unité (toutes)")]
+        for code, label in unit_choices:
+            unit_choices_list.append((code, label))
+        self.fields["unit"].choices = unit_choices_list
+    def clean_recherche(self):
+        # Normaliser la recherche: strip + réduire espaces
+        val = self.cleaned_data.get("recherche", "")
+        if val:
+            val = " ".join(val.split())
+        return val

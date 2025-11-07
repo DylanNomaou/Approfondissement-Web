@@ -11,8 +11,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
-from .models import User, Role, Task, Notification,Availability, Task
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm
+from .models import User, Role, Task, Notification,Availability, Task, Inventory
+from django.db.models import Q
+from django.core.paginator import Paginator
 from .notifications import notify_task_assigned, notify_role_assigned
 from datetime import date
 from django.http import JsonResponse
@@ -307,9 +309,93 @@ def availability_form(request):
                 initial[f"{day}_end"] = existing[day].heure_fin
         form = AvailabilityForm(initial=initial)
     return render(request, 'restoplus/availability_form.html', {"form": form, "employe": employe})
+# ======================================================================
+# 🧑‍💼 INVENTAIRE
+# ======================================================================
+
+def apply_inventory_filters(qs, data):
+    """Encapsule la logique de filtrage de l'inventaire."""
+    q = data.get('recherche') or ''
+    category = data.get('category') or ''
+    unit = data.get('unit') or ''
+    supplier = data.get('supplier') or ''
+    location = data.get('location') or ''
+
+    if q:
+        qs = qs.filter(
+            Q(name__icontains=q) |
+            Q(sku__icontains=q) |
+            Q(category__icontains=q) |
+            Q(supplier__icontains=q) |
+            Q(location__icontains=q)
+        )
+    if category:
+        qs = qs.filter(category=category)
+    if unit:
+        qs = qs.filter(unit=unit)
+    if supplier:
+        qs = qs.filter(supplier=supplier)
+    if location:
+        qs = qs.filter(location=location)
+    return qs
+
+def get_inventory_filter_options():
+    """Retourne les valeurs distinctes pour alimenter les filtres d'inventaire."""
+    categories = list(
+        Inventory.objects.exclude(category__isnull=True).exclude(category='')
+        .values_list('category', flat=True).order_by('category').distinct()
+    )
+    suppliers = list(
+        Inventory.objects.exclude(supplier__isnull=True).exclude(supplier='')
+        .values_list('supplier', flat=True).order_by('supplier').distinct()
+    )
+    locations = list(
+        Inventory.objects.exclude(location__isnull=True).exclude(location='')
+        .values_list('location', flat=True).order_by('location').distinct()
+    )
+    unit_choices = list(Inventory._meta.get_field('unit').choices or [])
+    return {
+        'categories': categories,
+        'suppliers': suppliers,
+        'locations': locations,
+        'unit_choices': unit_choices,
+    }
 
 
+@login_required
+def inventory_management(request):
+    """Liste d'inventaire avec formulaire de filtres + pagination (côté serveur)."""
+    opts = get_inventory_filter_options()
+    form = InventoryFilterForm(
+        request.GET or None,
+        categories=opts['categories'],
+        suppliers=opts['suppliers'],
+        locations=opts['locations'],
+        unit_choices=opts['unit_choices'],
+    )
+    qs = Inventory.objects.all()
 
+    if form.is_valid():
+        qs = apply_inventory_filters(qs, form.cleaned_data)
+
+    # Pagination
+    paginator = Paginator(qs, 25)  # 25 articles par page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Préserver la query string sans le paramètre 'page'
+    qd = request.GET.copy()
+    qd.pop('page', None)
+    querystring = qd.urlencode()
+
+    context = {
+        "form": form,
+        "inventory": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "querystring": querystring,
+    }
+    return render(request, "restoplus/inventory_management.html", context)
 
 # ======================================================================
 # ⚙️ ADMINISTRATION
@@ -815,13 +901,10 @@ def create_schedule(request):
 @login_required
 def view_schedule(request):
     """Vue pour afficher les horaires publiés en lecture seule"""
-    
     # Récupérer tous les employés
     employes = User.objects.all()
-    
     # Récupérer le décalage de semaine depuis les paramètres GET
-    week_offset = int(request.GET.get('week_offset', 0))
-    
+    week_offset = int(request.GET.get('week_offset', 0))  
     # Créer les jours de la semaine (lundi à dimanche)
     today = datetime.now().date()
     # Trouver le lundi de cette semaine + décalage
@@ -890,8 +973,7 @@ def view_schedule(request):
             'is_published': is_published,
             'can_modify': can_modify,
         },
-    }
-    
+    }  
     return render(request, 'restoplus/view_schedule.html', context)
 
 
