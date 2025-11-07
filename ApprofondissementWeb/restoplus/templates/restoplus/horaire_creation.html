@@ -257,8 +257,7 @@
                     employee_id: employeeId,
                     date: getDateForDay(day),
                     from_database: true,
-                    shift_id: shiftData.id,
-                    status: shiftData.status || 'draft'  // Ajouter le statut du shift
+                    shift_id: shiftData.id
                 };
 
                 localStorage.setItem(shiftKey, JSON.stringify(localStorageData));

@@ -2002,16 +2002,16 @@ $admin-badge-size : 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         font-size: 0.8rem;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        // border-right: 1px solid rgba(255, 255, 255, 0.1); // Bordure supprimée
 
         @media (min-width: 1200px) {
           padding: 1.25rem 1rem;
           font-size: 0.85rem;
         }
 
-        &:last-child {
-          border-right: none;
-        }
+        // &:last-child {
+        //   border-right: none; // Plus nécessaire
+        // }
       }
 
       .employee-header {
@@ -2130,7 +2130,7 @@ $admin-badge-size : 0.75rem;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          border-right: 1px solid rgba(0, 0, 0, 0.08);
+          // border-right: 1px solid rgba(0, 0, 0, 0.08); // Bordure supprimée
 
           @media (min-width: 1200px) {
             padding: 1.25rem 1.5rem;
@@ -2193,7 +2193,7 @@ $admin-badge-size : 0.75rem;
         .schedule-cell {
           padding: 0.75rem 0.5rem;
           text-align: center;
-          border-right: 1px solid rgba(0, 0, 0, 0.08);
+          // border-right: 1px solid rgba(0, 0, 0, 0.08); // Bordure supprimée
           position: relative;
           min-height: 70px;
           display: flex;
@@ -2205,9 +2205,9 @@ $admin-badge-size : 0.75rem;
             min-height: 90px;
           }
 
-          &:last-child {
-            border-right: none;
-          }
+          // &:last-child {
+          //   border-right: none; // Plus nécessaire
+          // }
 
           .time-slot {
             width: 100%;
@@ -3138,9 +3138,9 @@ $admin-badge-size : 0.75rem;
     }
   }
 
-  // Styles pour les disponibilités
+  // Styles pour les disponibilités (bordures supprimées)
   &.has-availability {
-    border-left: 3px solid $success-color;
+    // border-left: 3px solid $success-color; // Bordure verte supprimée
 
     &:hover {
       background-color: lighten($success-color, 45%);
@@ -3148,7 +3148,7 @@ $admin-badge-size : 0.75rem;
   }
 
   &.no-availability {
-    border-left: 3px solid $danger-color;
+    // border-left: 3px solid $danger-color; // Bordure rouge supprimée
     background-color: lighten($danger-color, 45%);
     cursor: not-allowed !important;
 
@@ -3194,7 +3194,7 @@ $admin-badge-size : 0.75rem;
   }
 
   &:hover {
-    border-color: $primary-color;
+    // border-color: $primary-color; // Bordure hover supprimée
     box-shadow: 0 2px 8px rgba($primary-color, 0.15);
   }
 }
@@ -3731,4 +3731,270 @@ $admin-badge-size : 0.75rem;
     width: 64px;
     height: 64px;
     background: #6f42c1;
+}
+
+// ===========================
+// STYLES POUR LA RÉINITIALISATION DE MOT DE PASSE
+// ===========================
+
+// Styles pour les templates d'authentification
+.auth-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  .auth-card {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    .card-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      
+      h3 {
+        font-weight: 600;
+      }
+    }
+    
+    .card-body {
+      background: rgba(255, 255, 255, 0.95);
+    }
+  }
+}
+
+// Styles pour les champs de code de vérification
+.verification-code-input {
+  letter-spacing: 0.5em;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-align: center;
+  text-transform: uppercase;
+  
+  &:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    border-color: #86b7fe;
+  }
+}
+
+// Styles pour l'indicateur de force du mot de passe
+.password-strength-indicator {
+  .progress {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    
+    .progress-bar {
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+  }
+  
+  .password-requirements {
+    li {
+      transition: all 0.3s ease;
+      
+      i.text-success {
+        color: $success-color !important;
+      }
+      
+      i.text-danger {
+        color: $danger-color !important;
+      }
+    }
+  }
+}
+
+// Animation pour le compte à rebours
+.countdown-timer {
+  .countdown-display {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.5rem;
+    
+    &.danger {
+      animation: pulse-danger 1s infinite;
+    }
+  }
+}
+
+@keyframes pulse-danger {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+// Styles pour les alertes de réinitialisation
+.reset-alert {
+  border-radius: $border-radius;
+  border: none;
+  padding: 1rem;
+  
+  &.alert-success {
+    background: linear-gradient(45deg, lighten($success-color, 40%), lighten($success-color, 30%));
+    color: darken($success-color, 20%);
+  }
+  
+  &.alert-warning {
+    background: linear-gradient(45deg, lighten($warning-color, 30%), lighten($warning-color, 20%));
+    color: darken($warning-color, 30%);
+  }
+  
+  &.alert-danger {
+    background: linear-gradient(45deg, lighten($danger-color, 40%), lighten($danger-color, 30%));
+    color: darken($danger-color, 20%);
+  }
+  
+  &.alert-info {
+    background: linear-gradient(45deg, lighten($info-color, 30%), lighten($info-color, 20%));
+    color: darken($info-color, 40%);
+  }
+}
+
+// Styles pour les boutons de réinitialisation
+.btn-reset {
+  @include button-animation;
+  border-radius: $border-radius;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  
+  &.btn-warning {
+    background: linear-gradient(45deg, $warning-color, darken($warning-color, 10%));
+    border: none;
+    color: $dark-color;
+    
+    &:hover {
+      background: linear-gradient(45deg, darken($warning-color, 5%), darken($warning-color, 15%));
+      color: $dark-color;
+    }
+  }
+  
+  &.btn-info {
+    background: linear-gradient(45deg, $info-color, darken($info-color, 10%));
+    border: none;
+    color: $dark-color;
+    
+    &:hover {
+      background: linear-gradient(45deg, darken($info-color, 5%), darken($info-color, 15%));
+      color: $dark-color;
+    }
+  }
+  
+  &.btn-success {
+    background: linear-gradient(45deg, $success-color, darken($success-color, 10%));
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(45deg, darken($success-color, 5%), darken($success-color, 15%));
+    }
+  }
+}
+
+// Styles pour les icônes de validation/erreur
+.validation-icon {
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+  
+  &.success {
+    color: $success-color;
+    animation: check-in 0.3s ease-in-out;
+  }
+  
+  &.error {
+    color: $danger-color;
+    animation: error-shake 0.5s ease-in-out;
+  }
+}
+
+@keyframes check-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes error-shake {
+  0%, 20%, 40%, 60%, 80% {
+    transform: translateX(-3px);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+// Responsive design pour les écrans de réinitialisation
+@media (max-width: 576px) {
+  .auth-container {
+    padding: 1rem;
+    
+    .auth-card {
+      .card-header h3 {
+        font-size: 1.5rem;
+      }
+      
+      .card-body {
+        padding: 1.5rem !important;
+      }
+    }
+  }
+  
+  .verification-code-input {
+    font-size: 1.25rem;
+    letter-spacing: 0.3em;
+  }
+}
+
+// Helpers pour l'accessibilité
+.sr-only-focusable {
+  &:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
+// Styles pour les tooltips personnalisés
+.custom-tooltip {
+  position: relative;
+  
+  &:hover .tooltip-content {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  .tooltip-content {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: $dark-color;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    transition: opacity 0.3s, visibility 0.3s;
+    
+    &::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: $dark-color;
+    }
+  }
 }

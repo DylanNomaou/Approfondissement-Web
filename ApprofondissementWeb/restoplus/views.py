@@ -11,8 +11,11 @@ from django.http import Http404, JsonResponse
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
 from .forms import UserRegisterForm, UserLoginForm, TaskForm, AvailabilityForm
-from .models import User, Role, Task, Notification, Availability
+from .models import User, Role, Task, Notification, Availability, PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
 
 # Configuration de la locale française pour les dates
@@ -978,3 +981,197 @@ def custom_404_view(request, exception=None):
     """Vue personnalisée pour les erreurs 404 de page non trouvée"""
     return render(request, 'restoplus/404.html', status=404)
     return redirect('employees_management')
+
+
+# ==========================================
+# VUES POUR LA RÉINITIALISATION DE MOT DE PASSE
+# ==========================================
+
+def password_reset_request(request):
+    """Étape 1: Saisie de l'adresse email pour la réinitialisation"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        
+        if not email:
+            messages.error(request, "❌ Veuillez saisir une adresse email.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Vérifier si l'email existe dans notre base de données
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Pour des raisons de sécurité, on ne révèle pas si l'email existe ou non
+            messages.info(request, 
+                "📧 Si cette adresse email est enregistrée dans notre système, "
+                "vous recevrez un code de réinitialisation dans quelques minutes.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Vérifier le rate limiting (max 1 code par minute)
+        if PasswordResetCode.has_recent_code(email, minutes=1):
+            messages.warning(request, 
+                "⏱️ Un code de réinitialisation a déjà été envoyé récemment. "
+                "Veuillez attendre 1 minute avant de demander un nouveau code.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Nettoyer les anciens codes et créer un nouveau
+        try:
+            reset_code = PasswordResetCode.create_for_email(email)
+            
+            # Envoyer l'email avec le code
+            subject = "🔑 Code de réinitialisation - RestoPLus"
+            message = f"""
+Bonjour,
+
+Vous avez demandé la réinitialisation de votre mot de passe pour RestoPLus.
+
+Votre code de réinitialisation est : {reset_code.code}
+
+Ce code est valide pendant 15 minutes et ne peut être utilisé qu'une seule fois.
+
+Si vous n'avez pas demandé cette réinitialisation, ignorez simplement ce message.
+
+L'équipe RestoPLus
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 
+                "📧 Un code de réinitialisation a été envoyé à votre adresse email. "
+                "Vérifiez votre boîte de réception et vos spam.")
+            
+            # Rediriger vers la page de saisie du code avec l'email en session
+            request.session['reset_email'] = email
+            return redirect('password_reset_verify')
+            
+        except Exception as e:
+            messages.error(request, 
+                "❌ Une erreur s'est produite lors de l'envoi de l'email. "
+                "Veuillez réessayer plus tard.")
+            return render(request, 'registration/password_reset_request.html')
+    
+    return render(request, 'registration/password_reset_request.html')
+
+
+def password_reset_verify(request):
+    """Étape 2: Saisie et vérification du code de réinitialisation"""
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().upper()
+        
+        if not code:
+            messages.error(request, "❌ Veuillez saisir le code de réinitialisation.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        if len(code) != 6:
+            messages.error(request, "❌ Le code doit contenir exactement 6 caractères.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        # Chercher le code valide
+        reset_code = PasswordResetCode.get_valid_code(email, code)
+        
+        if not reset_code:
+            messages.error(request, "❌ Code invalide ou expiré. Veuillez vérifier et réessayer.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        # Vérifier les tentatives
+        if not reset_code.can_attempt():
+            messages.error(request, 
+                "❌ Trop de tentatives invalides. Veuillez demander un nouveau code.")
+            return redirect('password_reset_request')
+        
+        # Incrémenter les tentatives avant validation
+        reset_code.increment_attempts()
+        
+        # Valider le code (vérification redondante pour sécurité)
+        if reset_code.code != code:
+            messages.error(request, "❌ Code incorrect. Tentatives restantes : " + 
+                          str(5 - reset_code.attempts))
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        # Code valide ! Passer à l'étape suivante
+        request.session['reset_code_id'] = reset_code.id
+        messages.success(request, "✅ Code validé avec succès !")
+        return redirect('password_reset_confirm')
+    
+    return render(request, 'registration/password_reset_verify.html', {'email': email})
+
+
+def password_reset_confirm(request):
+    """Étape 3: Saisie du nouveau mot de passe"""
+    reset_code_id = request.session.get('reset_code_id')
+    if not reset_code_id:
+        messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
+    try:
+        reset_code = PasswordResetCode.objects.get(id=reset_code_id)
+        if not reset_code.is_valid():
+            messages.error(request, "❌ Code expiré. Veuillez recommencer la procédure.")
+            return redirect('password_reset_request')
+    except PasswordResetCode.DoesNotExist:
+        messages.error(request, "❌ Code invalide. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
+    if request.method == 'POST':
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+        
+        # Validation du mot de passe
+        if not password1 or not password2:
+            messages.error(request, "❌ Tous les champs sont obligatoires.")
+            return render(request, 'registration/password_reset_confirm.html')
+        
+        if password1 != password2:
+            messages.error(request, "❌ Les mots de passe ne correspondent pas.")
+            return render(request, 'registration/password_reset_confirm.html')
+        
+        if len(password1) < 8:
+            messages.error(request, "❌ Le mot de passe doit contenir au moins 8 caractères.")
+            return render(request, 'registration/password_reset_confirm.html')
+        
+        # Mettre à jour le mot de passe de l'utilisateur
+        try:
+            user = User.objects.get(email=reset_code.email)
+            user.set_password(password1)
+            user.save()
+            
+            # Marquer le code comme utilisé
+            reset_code.mark_as_used()
+            
+            # Nettoyer la session
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'reset_code_id' in request.session:
+                del request.session['reset_code_id']
+            
+            messages.success(request, 
+                "✅ Votre mot de passe a été mis à jour avec succès ! "
+                "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.")
+            
+            return redirect('login')
+            
+        except User.DoesNotExist:
+            messages.error(request, "❌ Utilisateur introuvable. Veuillez recommencer la procédure.")
+            return redirect('password_reset_request')
+        except Exception as e:
+            messages.error(request, "❌ Une erreur s'est produite. Veuillez réessayer.")
+            return render(request, 'registration/password_reset_confirm.html')
+    
+    return render(request, 'registration/password_reset_confirm.html')
+
+
+def password_reset_complete(request):
+    """Étape 4: Confirmation de la réinitialisation"""
+    # Cette vue peut être utilisée pour afficher une page de confirmation
+    # ou rediriger directement vers la page de connexion
+    return render(request, 'registration/password_reset_complete.html')

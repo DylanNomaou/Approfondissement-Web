@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils import timezone
-from .models import User, Task, Role, Notification, WorkShift
+from .models import User, Task, Role, Notification, WorkShift, PasswordResetCode
 
 # Register your models here.
 @admin.register(User,)
@@ -166,4 +166,49 @@ class WorkShiftAdmin(admin.ModelAdmin):
     mark_as_completed.short_description = "Marquer comme terminé"
     
     actions = ['mark_as_published', 'mark_as_completed']
+
+
+@admin.register(PasswordResetCode)
+class PasswordResetCodeAdmin(admin.ModelAdmin):
+    list_display = ('email', 'code', 'created_at', 'expires_at', 'is_used', 'attempts', 'is_expired_display')
+    list_filter = ('is_used', 'created_at', 'expires_at')
+    search_fields = ('email', 'code')
+    readonly_fields = ('code', 'created_at', 'expires_at')
+    ordering = ('-created_at',)
+    date_hierarchy = 'created_at'
+    
+    def is_expired_display(self, obj):
+        """Afficher si le code est expiré avec une icône"""
+        if obj.is_expired():
+            return "✅ Expiré"
+        else:
+            return "❌ Actif"
+    is_expired_display.short_description = "Statut"
+    
+    def get_queryset(self, request):
+        """Optimiser les requêtes"""
+        return super().get_queryset(request).select_related()
+    
+    def has_add_permission(self, request):
+        """Empêcher la création manuelle de codes (utiliser les vues)"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """Permettre seulement la lecture"""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Permettre la suppression pour le nettoyage"""
+        return request.user.is_superuser
+    
+    actions = ['cleanup_expired_codes']
+    
+    def cleanup_expired_codes(self, request, queryset):
+        """Action pour nettoyer les codes expirés"""
+        deleted_count, _ = PasswordResetCode.cleanup_expired()
+        self.message_user(
+            request, 
+            f"{deleted_count[0] if deleted_count else 0} code(s) expiré(s) supprimé(s)."
+        )
+    cleanup_expired_codes.short_description = "Nettoyer les codes expirés"
 
