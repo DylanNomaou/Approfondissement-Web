@@ -21,17 +21,18 @@
         <div class="card-body">
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-lg-6">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <div class="input-group input-group-sm">
+                        {{ form.category }}
                         {{ form.recherche }}
+                        <button type="submit" class="btn rounded-end px-3" aria-label="Rechercher" style="background-color: #febd69; border-color: #febd69; color: #111;">
+                            <i class="bi bi-search"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="d-flex gap-2 justify-content-lg-end flex-wrap">
-                        {{ form.category }}
                         {{ form.unit }}
                         {{ form.supplier }}
-                        {{ form.location }}
                         <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
                         <a href="{% url 'inventory_management' %}"
                             class="btn btn-sm btn-outline-secondary">Réinitialiser</a>

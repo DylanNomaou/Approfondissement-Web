@@ -140,7 +140,6 @@ class Inventory(models.Model):
 
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Quantité")
     unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="pcs", verbose_name="Unité")
-    location = models.CharField(max_length=100, blank=True, verbose_name="Emplacement")
     supplier = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur")
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Prix coûtant")
 

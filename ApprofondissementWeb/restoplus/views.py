@@ -319,15 +319,13 @@ def apply_inventory_filters(qs, data):
     category = data.get('category') or ''
     unit = data.get('unit') or ''
     supplier = data.get('supplier') or ''
-    location = data.get('location') or ''
 
     if q:
         qs = qs.filter(
             Q(name__icontains=q) |
             Q(sku__icontains=q) |
             Q(category__icontains=q) |
-            Q(supplier__icontains=q) |
-            Q(location__icontains=q)
+            Q(supplier__icontains=q)
         )
     if category:
         qs = qs.filter(category=category)
@@ -335,8 +333,6 @@ def apply_inventory_filters(qs, data):
         qs = qs.filter(unit=unit)
     if supplier:
         qs = qs.filter(supplier=supplier)
-    if location:
-        qs = qs.filter(location=location)
     return qs
 
 def get_inventory_filter_options():
@@ -349,15 +345,10 @@ def get_inventory_filter_options():
         Inventory.objects.exclude(supplier__isnull=True).exclude(supplier='')
         .values_list('supplier', flat=True).order_by('supplier').distinct()
     )
-    locations = list(
-        Inventory.objects.exclude(location__isnull=True).exclude(location='')
-        .values_list('location', flat=True).order_by('location').distinct()
-    )
     unit_choices = list(Inventory._meta.get_field('unit').choices or [])
     return {
         'categories': categories,
         'suppliers': suppliers,
-        'locations': locations,
         'unit_choices': unit_choices,
     }
 
@@ -370,7 +361,6 @@ def inventory_management(request):
         request.GET or None,
         categories=opts['categories'],
         suppliers=opts['suppliers'],
-        locations=opts['locations'],
         unit_choices=opts['unit_choices'],
     )
     qs = Inventory.objects.all()

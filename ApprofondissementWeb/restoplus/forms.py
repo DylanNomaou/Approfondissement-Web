@@ -556,21 +556,24 @@ class WorkShiftForm(forms.ModelForm):
 
 class InventoryFilterForm(forms.Form):
     """Formulaire de filtres pour l'inventaire (validation/clean centralisés)."""
+    
+    category = forms.ChoiceField(
+        required=False,
+        label="",
+        choices=[("", "Toutes")],
+        widget=forms.Select(attrs={
+            "class": "form-select form-select-sm border-end-0 rounded-0 rounded-start",
+            "style": "max-width: 120px; background-color: #f3f3f3; font-size: 0.875rem;",
+        }),
+    )
+    
     recherche = forms.CharField(
         required=False,
         label="",
         widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Rechercher par nom, SKU, catégorie, fournisseur...",
-        }),
-    )
-
-    category = forms.ChoiceField(
-        required=False,
-        label="",
-        choices=[("", "Catégorie (toutes)")],
-        widget=forms.Select(attrs={
-            "class": "form-select form-select-sm w-auto",
+            "class": "form-control form-control-sm border-start-0 border-end-0",
+            "placeholder": "Rechercher...",
+            "style": "box-shadow: none; font-size: 1rem;",
         }),
     )
 
@@ -608,7 +611,7 @@ class InventoryFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         # Catégories
-        category_choices = [("", "Catégorie (toutes)")]
+        category_choices = [("", "toutes")]
         for c in categories:
             category_choices.append((c, c))
         self.fields["category"].choices = category_choices
