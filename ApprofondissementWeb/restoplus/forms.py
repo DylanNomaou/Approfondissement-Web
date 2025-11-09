@@ -551,7 +551,7 @@ class WorkShiftForm(forms.ModelForm):
             }
         return None
 # ======================================================================
-# 🧑‍💼 INVENTAIRE À VÉRIFIER
+# 🧑‍💼 INVENTAIRE 
 # ======================================================================
 
 class InventoryFilterForm(forms.Form):
@@ -560,7 +560,7 @@ class InventoryFilterForm(forms.Form):
     category = forms.ChoiceField(
         required=False,
         label="",
-        choices=[],  # rempli depuis la vue
+        choices=[],
         widget=forms.Select(attrs={
             "class": "form-select form-select-sm border-end-0 rounded-0 rounded-start",
             "style": "max-width: 120px; background-color: #f3f3f3; font-size: 0.875rem;",
@@ -580,7 +580,7 @@ class InventoryFilterForm(forms.Form):
     unit = forms.ChoiceField(
         required=False,
         label="",
-        choices=[],  # rempli depuis la vue
+        choices=[],
         widget=forms.Select(attrs={
             "class": "form-select form-select-sm w-auto",
         }),
@@ -589,7 +589,7 @@ class InventoryFilterForm(forms.Form):
     supplier = forms.ChoiceField(
         required=False,
         label="",
-        choices=[],  # rempli depuis la vue
+        choices=[],
         widget=forms.Select(attrs={
             "class": "form-select form-select-sm w-auto",
         }),
@@ -597,7 +597,6 @@ class InventoryFilterForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         # On s'attend à recevoir des tuples prêts à l'emploi depuis la vue :
-        # categories_choices, supplier_choices, unit_choices
         categories = kwargs.pop("categories_choices", [("", "Toutes")])
         suppliers = kwargs.pop("supplier_choices", [("", "Fournisseur (tous)")])
         unit_choices = kwargs.pop("unit_choices", [("", "Unité (toutes)")])

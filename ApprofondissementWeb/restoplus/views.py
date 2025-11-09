@@ -316,7 +316,16 @@ def availability_form(request):
 class InventoryCreateForm(forms.ModelForm):
     class Meta:
         model = Inventory
-        fields = ["name", "sku", "category", "unit", "supplier", "quantity"]
+        fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
+            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU (optionnel)"}),
+            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
+            "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+            "unit": forms.Select(attrs={"class": "form-select"}),
+            "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
+            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+        }
 
 @login_required
 def inventory_management(request):
@@ -379,11 +388,9 @@ def inventory_management(request):
     else:
         has_filters = False
 
-    # Pagination
     paginator = Paginator(inventory_queryset, 25)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    # Préserver querystring sans page
     params = request.GET.copy()
     params.pop("page", None)
     querystring = params.urlencode()
