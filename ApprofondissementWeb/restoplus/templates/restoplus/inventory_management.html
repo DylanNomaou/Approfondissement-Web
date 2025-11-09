@@ -55,6 +55,7 @@
             <div class="col-md-1">Unité</div>
             <div class="col-md-2">Fournisseur</div>
             <div class="col-md-1 text-end pe-1">Coût</div>
+            <div class="col-md-1 text-center">Action</div>
         </div>
     </div>
 
@@ -88,6 +89,17 @@
                 </div>
                 <div class="col-md-2 text-truncate">{{ item.supplier|default:'—' }}</div>
                 <div class="col-md-1 text-end text-nowrap">{{ item.cost_price }}$</div>
+                <div class="col-md-1 text-center">
+                    {% if item.sku %}
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="?{% if querystring %}{{ querystring }}&{% endif %}sku={{ item.sku }}"
+                       title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    {% else %}
+                    <span class="text-muted" title="SKU manquant">—</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% empty %}
@@ -122,9 +134,9 @@
         <div class="modal-content">
             <form method="post">
                 {% csrf_token %}
-                <input type="hidden" name="create_inventory" value="1">
+                <!-- Pas besoin de champ caché spécial: distinction création/modif par existence d'un objet avec ce SKU -->
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addInventoryModalLabel">Ajouter un article</h5>
+                    <h5 class="modal-title" id="addInventoryModalLabel">{% if sku_param %}Modifier un article{% else %}Ajouter un article{% endif %}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">
@@ -147,7 +159,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <button type="submit" class="btn btn-success">{% if sku_param %}Mettre à jour{% else %}Enregistrer{% endif %}</button>
                 </div>
             </form>
         </div>
@@ -157,9 +169,8 @@
 {% endblock %}
 {% block extra_js %}
 <script src="{% static 'restoplus/js/inventory_autosubmit.js' %}"></script>
-{% if creation_form.errors %}
+{% if creation_form.errors or sku_param %}
 <script>
-// Réouvrir le modal si erreurs de validation
 document.addEventListener('DOMContentLoaded', function(){
     var modal = new bootstrap.Modal(document.getElementById('addInventoryModal'));
     modal.show();

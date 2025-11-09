@@ -319,24 +319,59 @@ class InventoryCreateForm(forms.ModelForm):
         fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
-            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU (optionnel)"}),
+            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU"}),
             "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
             "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
             "unit": forms.Select(attrs={"class": "form-select"}),
             "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
             "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
         }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
+        self.fields['sku'].required = True
 
 @login_required
 def inventory_management(request):
-    create_form = InventoryCreateForm(request.POST or None)
-    if request.method == "POST" and "create_inventory" in request.POST:
-        if create_form.is_valid():
-            new_item = create_form.save()
-            messages.success(request, f"Article '{new_item.name}' ajouté avec succès.")
-            return redirect("inventory_management")
+    # Paramètre GET pour édition simple: ?sku=ABC123
+    sku_param = (request.GET.get('sku') or '').strip()
+
+    if request.method == 'POST':
+        # On tente de récupérer l'instance par le SKU fourni dans le formulaire
+        posted_sku = (request.POST.get('sku') or '').strip()
+        instance = None
+        if posted_sku:
+            try:
+                instance = Inventory.objects.get(sku=posted_sku)
+            except Inventory.DoesNotExist:
+                instance = None
+        form = InventoryCreateForm(request.POST, instance=instance)
+        if form.is_valid():
+            obj = form.save()
+            if instance:
+                messages.success(request, f"Article '{obj.name}' mis à jour.")
+            else:
+                messages.success(request, f"Article '{obj.name}' créé.")
+            # Redirection sans paramètre sku (PRG)
+            params = request.GET.copy()
+            if 'sku' in params:
+                params.pop('sku')
+            qs = params.urlencode()
+            base_url = request.path
+            return redirect(f"{base_url}?{qs}" if qs else base_url)
+        else:
+            create_form = form  # garder erreurs
     else:
-        pass
+        # GET: si sku_param présent on pré-remplit le formulaire, sinon formulaire vide
+        if sku_param:
+            try:
+                instance = Inventory.objects.get(sku=sku_param)
+                create_form = InventoryCreateForm(instance=instance)
+            except Inventory.DoesNotExist:
+                # Pré-remplir juste le champ SKU si objet absent
+                create_form = InventoryCreateForm(initial={'sku': sku_param})
+        else:
+            create_form = InventoryCreateForm()
 
     category_choices = [("", "Toutes")] + [
         (cat, cat)
@@ -402,6 +437,7 @@ def inventory_management(request):
         "paginator": paginator,
         "querystring": querystring,
         "has_filters": has_filters,
+        "sku_param": sku_param,
     }
     return render(request, "restoplus/inventory_management.html", context)
 
