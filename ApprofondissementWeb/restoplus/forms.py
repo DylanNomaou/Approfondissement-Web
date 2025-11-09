@@ -556,17 +556,17 @@ class WorkShiftForm(forms.ModelForm):
 
 class InventoryFilterForm(forms.Form):
     """Formulaire de filtres pour l'inventaire (validation/clean centralisés)."""
-    
+
     category = forms.ChoiceField(
         required=False,
         label="",
-        choices=[("", "Toutes")],
+        choices=[],  # rempli depuis la vue
         widget=forms.Select(attrs={
             "class": "form-select form-select-sm border-end-0 rounded-0 rounded-start",
             "style": "max-width: 120px; background-color: #f3f3f3; font-size: 0.875rem;",
         }),
     )
-    
+
     recherche = forms.CharField(
         required=False,
         label="",
@@ -580,62 +580,38 @@ class InventoryFilterForm(forms.Form):
     unit = forms.ChoiceField(
         required=False,
         label="",
-        choices=[("", "Unité (toutes)")],
+        choices=[],  # rempli depuis la vue
         widget=forms.Select(attrs={
             "class": "form-select form-select-sm w-auto",
         }),
     )
+
     supplier = forms.ChoiceField(
         required=False,
         label="",
-        choices=[("", "Fournisseur (tous)")],
+        choices=[],  # rempli depuis la vue
         widget=forms.Select(attrs={
             "class": "form-select form-select-sm w-auto",
         }),
     )
-    location = forms.ChoiceField(
-        required=False,
-        label="",
-        choices=[("", "Emplacement (tous)")],
-        widget=forms.Select(attrs={
-            "class": "form-select form-select-sm w-auto",
-        }),
-    )
+
     def __init__(self, *args, **kwargs):
-        # Simples paramètres injectés par la vue (pas d'ORM ici)
-        categories = kwargs.pop("categories", [])
-        suppliers = kwargs.pop("suppliers", [])
-        locations = kwargs.pop("locations", [])
-        unit_choices = kwargs.pop("unit_choices", [])  # liste de tuples (code, label)
+        # On s'attend à recevoir des tuples prêts à l'emploi depuis la vue :
+        # categories_choices, supplier_choices, unit_choices
+        categories = kwargs.pop("categories_choices", [("", "Toutes")])
+        suppliers = kwargs.pop("supplier_choices", [("", "Fournisseur (tous)")])
+        unit_choices = kwargs.pop("unit_choices", [("", "Unité (toutes)")])
 
         super().__init__(*args, **kwargs)
 
-        # Catégories
-        category_choices = [("", "toutes")]
-        for c in categories:
-            category_choices.append((c, c))
-        self.fields["category"].choices = category_choices
+        self.fields["category"].choices = categories
+        self.fields["supplier"].choices = suppliers
+        self.fields["unit"].choices = unit_choices
 
-        # Fournisseurs
-        supplier_choices = [("", "Fournisseur (tous)")]
-        for s in suppliers:
-            supplier_choices.append((s, s))
-        self.fields["supplier"].choices = supplier_choices
-
-        # Emplacements
-        location_choices = [("", "Emplacement (tous)")]
-        for l in locations:
-            location_choices.append((l, l))
-        self.fields["location"].choices = location_choices
-
-        # Unités (déjà des tuples (code, label))
-        unit_choices_list = [("", "Unité (toutes)")]
-        for code, label in unit_choices:
-            unit_choices_list.append((code, label))
-        self.fields["unit"].choices = unit_choices_list
     def clean_recherche(self):
-        # Normaliser la recherche: strip + réduire espaces
         val = self.cleaned_data.get("recherche", "")
         if val:
             val = " ".join(val.split())
         return val
+
+

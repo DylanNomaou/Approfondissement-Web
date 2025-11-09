@@ -160,8 +160,6 @@ class Inventory(models.Model):
         errors = {}
         if self.quantity is not None and self.quantity < 0:
             errors["quantity"] = "La quantité ne peut pas être négative."
-        if self.reorder_quantity is not None and self.reorder_quantity < 0:
-            errors["reorder_quantity"] = "La quantité commandée doit être positive."
         if errors:
             raise ValidationError(errors)
 

@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django import forms
 from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm
 from .models import User, Role, Task, Notification,Availability, Task, Inventory
 from django.db.models import Q
@@ -31,9 +32,8 @@ except locale.Error:
     try:
         locale.setlocale(locale.LC_TIME, 'fr_FR')
     except locale.Error:
-        pass  # Garde la locale par défaut si français non disponible
+        pass 
 
-# Create your views here.
 
 @login_required
 def accueil(request):
@@ -313,79 +313,114 @@ def availability_form(request):
 # 🧑‍💼 INVENTAIRE
 # ======================================================================
 
-def apply_inventory_filters(qs, data):
-    """Encapsule la logique de filtrage de l'inventaire."""
-    q = data.get('recherche') or ''
-    category = data.get('category') or ''
-    unit = data.get('unit') or ''
-    supplier = data.get('supplier') or ''
-
-    if q:
-        qs = qs.filter(
-            Q(name__icontains=q) |
-            Q(sku__icontains=q) |
-            Q(category__icontains=q) |
-            Q(supplier__icontains=q)
-        )
-    if category:
-        qs = qs.filter(category=category)
-    if unit:
-        qs = qs.filter(unit=unit)
-    if supplier:
-        qs = qs.filter(supplier=supplier)
-    return qs
-
-def get_inventory_filter_options():
-    """Retourne les valeurs distinctes pour alimenter les filtres d'inventaire."""
-    categories = list(
-        Inventory.objects.exclude(category__isnull=True).exclude(category='')
-        .values_list('category', flat=True).order_by('category').distinct()
-    )
-    suppliers = list(
-        Inventory.objects.exclude(supplier__isnull=True).exclude(supplier='')
-        .values_list('supplier', flat=True).order_by('supplier').distinct()
-    )
-    unit_choices = list(Inventory._meta.get_field('unit').choices or [])
-    return {
-        'categories': categories,
-        'suppliers': suppliers,
-        'unit_choices': unit_choices,
-    }
-
+class InventoryCreateForm(forms.ModelForm):
+    class Meta:
+        model = Inventory
+        fields = ["name", "sku", "category", "unit", "supplier", "quantity"]
 
 @login_required
 def inventory_management(request):
-    """Liste d'inventaire avec formulaire de filtres + pagination (côté serveur)."""
-    opts = get_inventory_filter_options()
-    form = InventoryFilterForm(
-        request.GET or None,
-        categories=opts['categories'],
-        suppliers=opts['suppliers'],
-        unit_choices=opts['unit_choices'],
-    )
-    qs = Inventory.objects.all()
+    create_form = InventoryCreateForm(request.POST or None)
+    if request.method == "POST" and "create_inventory" in request.POST:
+        if create_form.is_valid():
+            new_item = create_form.save()
+            messages.success(request, f"Article '{new_item.name}' ajouté avec succès.")
+            return redirect("inventory_management")
+    else:
+        pass
 
-    if form.is_valid():
-        qs = apply_inventory_filters(qs, form.cleaned_data)
+    category_choices = [("", "Toutes")] + [
+        (cat, cat)
+        for cat in (
+            Inventory.objects
+            .exclude(category__isnull=True)
+            .exclude(category="")
+            .values_list("category", flat=True)
+            .order_by("category")
+            .distinct()
+        )
+    ]
+    supplier_choices = [("", "Fournisseur")] + [
+        (sup, sup)
+        for sup in (
+            Inventory.objects
+            .exclude(supplier__isnull=True)
+            .exclude(supplier="")
+            .values_list("supplier", flat=True)
+            .order_by("supplier")
+            .distinct()
+        )
+    ]
+    unit_choices = [("", "Unité")] + list(Inventory.UNIT_CHOICES)
+
+    # Instancier le formulaire de filtres en lui passant des tuples prêts
+    filter_form = InventoryFilterForm(
+        request.GET or None,
+        categories_choices=category_choices,
+        supplier_choices=supplier_choices,
+        unit_choices=unit_choices,
+    )
+
+    # Queryset initial explicite
+    inventory_queryset = Inventory.objects.all()
+
+    # Appliquer les filtres si valides
+    if filter_form.is_valid():
+        inventory_queryset = apply_inventory_filters(inventory_queryset, filter_form.cleaned_data)
+
+    # Calculer has_filters
+    filter_keys = ["category", "unit", "supplier", "recherche"]
+    if filter_form.is_bound:
+        if filter_form.is_valid():
+            form_data = filter_form.cleaned_data
+            has_filters = any(form_data.get(key) for key in filter_keys)
+        else:
+            has_filters = any(request.GET.get(key) for key in filter_keys)
+    else:
+        has_filters = False
 
     # Pagination
-    paginator = Paginator(qs, 25)  # 25 articles par page
-    page_number = request.GET.get('page')
+    paginator = Paginator(inventory_queryset, 25)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-
-    # Préserver la query string sans le paramètre 'page'
-    qd = request.GET.copy()
-    qd.pop('page', None)
-    querystring = qd.urlencode()
-
+    # Préserver querystring sans page
+    params = request.GET.copy()
+    params.pop("page", None)
+    querystring = params.urlencode()
     context = {
-        "form": form,
+        "form": filter_form,
+        "creation_form": create_form,
         "inventory": page_obj.object_list,
         "page_obj": page_obj,
         "paginator": paginator,
         "querystring": querystring,
+        "has_filters": has_filters,
     }
     return render(request, "restoplus/inventory_management.html", context)
+
+
+def apply_inventory_filters(inventory_queryset, cleaned_data):
+    search_text = cleaned_data.get("recherche") or ""
+    category_value = cleaned_data.get("category") or ""
+    unit_value = cleaned_data.get("unit") or ""
+    supplier_value = cleaned_data.get("supplier") or ""
+
+    if search_text:
+        inventory_queryset = inventory_queryset.filter(
+            Q(name__icontains=search_text) |
+            Q(sku__icontains=search_text) |
+            Q(category__icontains=search_text) |
+            Q(supplier__icontains=search_text)
+        )
+    if category_value:
+        inventory_queryset = inventory_queryset.filter(category=category_value)
+    if unit_value:
+        inventory_queryset = inventory_queryset.filter(unit=unit_value)
+    if supplier_value:
+        inventory_queryset = inventory_queryset.filter(supplier=supplier_value)
+
+    return inventory_queryset
+
 
 # ======================================================================
 # ⚙️ ADMINISTRATION
