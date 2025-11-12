@@ -1,9 +1,11 @@
+"""Modèles pour l'application RestoPlus"""
+
+from datetime import date
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 from django.forms import ValidationError
 from django.utils import timezone
-from datetime import date
 
 class Role(models.Model):
     """Modèle pour définir les rôles"""
@@ -34,6 +36,7 @@ email_validator = RegexValidator(
     message="Format de l'adresse courriel invalide."
 )
 
+"""Modèle personnalisé pour les utilisateurs"""
 class User(AbstractUser):
     @property
     def mobile_display(self):
