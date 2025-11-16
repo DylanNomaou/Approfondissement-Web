@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Task, WorkShift
+from .models import User, Task, WorkShift, Ticket
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.utils import timezone
@@ -328,14 +328,14 @@ class WorkShiftForm(forms.ModelForm):
     """
     Formulaire pour créer/éditer un quart de travail basé sur le modèle WorkShift
     """
-    
+
     class Meta:
         model = WorkShift
         fields = [
-            'heure_debut', 'heure_fin', 'has_break', 'pause_duree', 
+            'heure_debut', 'heure_fin', 'has_break', 'pause_duree',
             'pause_debut', 'pause_fin', 'note'
         ]
-        
+
         widgets = {
             'heure_debut': forms.TimeInput(
                 attrs={
@@ -388,7 +388,7 @@ class WorkShiftForm(forms.ModelForm):
                 }
             ),
         }
-        
+
         labels = {
             'heure_debut': 'Heure de début',
             'heure_fin': 'Heure de fin',
@@ -398,7 +398,7 @@ class WorkShiftForm(forms.ModelForm):
             'pause_fin': 'Fin de pause',
             'note': 'Note (optionnelle)',
         }
-        
+
         error_messages = {
             'heure_debut': {
                 'required': 'L\'heure de début est obligatoire.',
@@ -418,7 +418,7 @@ class WorkShiftForm(forms.ModelForm):
         self.employee = kwargs.pop('employee', None)
         self.shift_date = kwargs.pop('date', None)
         super().__init__(*args, **kwargs)
-        
+
         # Configuration conditionnelle des champs de pause
         if not self.instance.pk or not self.instance.has_break:
             self.fields['pause_debut'].required = False
@@ -433,25 +433,25 @@ class WorkShiftForm(forms.ModelForm):
         pause_duree = cleaned_data.get('pause_duree', 0)
         pause_debut = cleaned_data.get('pause_debut')
         pause_fin = cleaned_data.get('pause_fin')
-        
+
         # Validation des heures de base
         if heure_debut and heure_fin:
             # Calculer la durée totale du quart
             debut = datetime.combine(date.today(), heure_debut)
             fin = datetime.combine(date.today(), heure_fin)
-            
+
             # Gérer le cas où le quart se termine le lendemain
             if fin <= debut:
                 fin += timedelta(days=1)
-            
+
             duree_totale = (fin - debut).total_seconds() / 3600  # en heures
-            
+
             # Vérifications de durée
             if duree_totale > 12:
                 raise ValidationError(
                     "Un quart ne peut pas dépasser 12 heures."
                 )
-            
+
             # Validation spécifique des pauses
             if has_break:
                 if pause_duree is None:
@@ -465,33 +465,33 @@ class WorkShiftForm(forms.ModelForm):
                     raise ValidationError({
                         'pause_duree': 'La durée de pause ne peut pas dépasser 120 minutes.'
                     })
-                
+
                 # Calculer la durée effective
                 duree_effective = duree_totale - (pause_duree / 60)
-                
+
                 if duree_effective < 1:
                     raise ValidationError(
                         "La durée effective de travail doit être d'au moins 1 heure."
                     )
-                
+
                 # Validation des heures de pause spécifiques
                 if pause_debut and pause_fin:
                     if pause_fin <= pause_debut:
                         raise ValidationError({
                             'pause_fin': 'L\'heure de fin de pause doit être après l\'heure de début.'
                         })
-                    
+
                     # Vérifier que la pause est dans les heures de travail
                     if (pause_debut < heure_debut or pause_fin > heure_fin):
                         raise ValidationError({
                             'pause_debut': 'La pause doit être comprise dans les heures de travail.'
                         })
-                    
+
                     # Calculer la durée réelle de la pause
                     pause_debut_dt = datetime.combine(date.today(), pause_debut)
                     pause_fin_dt = datetime.combine(date.today(), pause_fin)
                     duree_pause_reelle = (pause_fin_dt - pause_debut_dt).total_seconds() / 60
-                    
+
                     # Vérifier la cohérence avec pause_duree
                     if abs(duree_pause_reelle - pause_duree) > 5:  # Tolérance de 5 minutes
                         raise ValidationError({
@@ -502,24 +502,24 @@ class WorkShiftForm(forms.ModelForm):
                 cleaned_data['pause_duree'] = 0
                 cleaned_data['pause_debut'] = None
                 cleaned_data['pause_fin'] = None
-                
+
                 # Vérifier la durée minimale sans pause
                 if duree_totale < 1:
                     raise ValidationError(
                         "La durée totale de travail doit être d'au moins 1 heure."
                     )
-        
+
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        
+
         # Assigner l'employé et la date si fournis
         if self.employee:
             instance.employee = self.employee
         if self.shift_date:
             instance.date = self.shift_date
-            
+
         if commit:
             instance.save()
         return instance
@@ -533,16 +533,16 @@ class WorkShiftForm(forms.ModelForm):
             heure_fin = self.cleaned_data['heure_fin']
             has_break = self.cleaned_data.get('has_break', True)
             pause_duree = self.cleaned_data.get('pause_duree', 0) if has_break else 0
-            
+
             debut = datetime.combine(date.today(), heure_debut)
             fin = datetime.combine(date.today(), heure_fin)
-            
+
             if fin <= debut:
                 fin += timedelta(days=1)
-            
+
             duree_totale = (fin - debut).total_seconds() / 3600
             duree_effective = duree_totale - (pause_duree / 60) if has_break else duree_totale
-            
+
             return {
                 'duree_totale': round(duree_totale, 2),
                 'duree_effective': round(duree_effective, 2),
@@ -550,3 +550,65 @@ class WorkShiftForm(forms.ModelForm):
                 'has_break': has_break
             }
         return None
+
+class TicketForm(forms.ModelForm):
+    """Formulaire pour créer un ticket"""
+
+    class Meta:
+        model = Ticket
+        fields = ['title', 'description', 'category']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control form-control-lg',
+                'placeholder': 'Titre du ticket',
+                'maxlength': '100'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Décrivez le problème en détail...',
+                'maxlength': '500'
+            }),
+            'category': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+        }
+        labels = {
+            'title': 'Titre du ticket',
+            'description': 'Description',
+            'category': 'Catégorie',
+        }
+        error_messages = {
+            'title': {
+                'required': 'Le titre du ticket est obligatoire.',
+                'max_length': 'Le titre ne peut pas dépasser 100 caractères.',
+            },
+            'description': {
+                'required': 'La description est obligatoire.',
+                'max_length': 'La description ne peut pas dépasser 500 caractères.',
+            },
+            'category': {
+                'required': 'Veuillez écrire une catégorie.',
+                'invalid_choice': 'Catégorie invalide.'
+            }
+        }
+    def clean_description(self):
+        """valider la description"""
+        description = self.cleaned_data.get('description')
+        if len(description) < 10:
+            raise ValidationError("La description doit contenir au moins 10 caractères.")
+        return description
+
+    def clean_title(self):
+        """valider le titre"""
+        title = self.cleaned_data.get('title')
+        if len(title) < 5:
+            raise ValidationError("Le titre doit contenir au moins 5 caractères.")
+        return title
+
+    def clean_category(self):
+        """valider la catégorie"""
+        category = self.cleaned_data.get('category')
+        if len(category) < 3:
+            raise ValidationError("La catégorie doit contenir au moins 3 caractères.")
+        return category

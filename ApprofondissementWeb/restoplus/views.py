@@ -4,6 +4,7 @@ from datetime import date
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied,ValidationError
 from django.contrib import messages
 from django.http import JsonResponse
@@ -11,8 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
-from .models import User, Role, Task, Notification,Availability, Task
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, TicketForm
+from .models import User, Role, Task, Notification,Availability, Task, Ticket
 from .notifications import notify_task_assigned, notify_role_assigned
 from datetime import date
 from django.http import JsonResponse
@@ -690,32 +691,32 @@ def delete_employee(request, employe_id):
 @login_required
 def create_schedule(request):
     """Vue pour créer des horaires - Réservée aux administrateurs"""
-    
+
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
         from django.shortcuts import redirect
         from django.contrib import messages
         messages.error(request, "Accès non autorisé. Seuls les administrateurs peuvent créer des horaires.")
         return redirect('view_schedule')
-   
+
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
-    
+
     # Récupérer tous les employés avec leurs disponibilités
     employes = User.objects.all()
-    
+
     # Créer les jours de la semaine (lundi à dimanche)
     today = datetime.now().date()
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
-    
+
     # Vérifier si la semaine peut être modifiée (pas dans le passé)
     can_edit_week = monday >= (today - timedelta(days=today.weekday()))
-    
+
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    
+
     for i in range(7):
         day = monday + timedelta(days=i)
         week_days.append({
@@ -725,34 +726,34 @@ def create_schedule(request):
             'date_str': day.strftime('%Y-%m-%d'),
             'date_formatted': day.strftime('%d %B %Y')
         })
-    
+
     # Récupérer les WorkShifts existants pour cette semaine
     from .models import WorkShift
     week_start = monday
     week_end = monday + timedelta(days=6)
-    
+
     # Vérifier si l'horaire de cette semaine est déjà publié
     published_shifts_count = WorkShift.objects.filter(
         date__range=[week_start, week_end],
         status=WorkShift.ShiftStatus.PUBLISHED
     ).count()
-    
+
     # Déterminer si l'horaire est publié (pour affichage d'information)
     is_published = published_shifts_count > 0
-    
+
     existing_shifts = WorkShift.objects.filter(
         date__range=[week_start, week_end]
     ).select_related('employee').order_by('date', 'heure_debut')
-    
+
     # Organiser les shifts par employé et jour
     shifts_by_employee = {}
     for shift in existing_shifts:
         emp_id = shift.employee_id
         day_key = days_keys[shift.date.weekday()]  # 0=lundi, 1=mardi, etc.
-        
+
         if emp_id not in shifts_by_employee:
             shifts_by_employee[emp_id] = {}
-        
+
         shifts_by_employee[emp_id][day_key] = {
             'heure_debut': shift.heure_debut.strftime('%H:%M'),
             'heure_fin': shift.heure_fin.strftime('%H:%M'),
@@ -763,7 +764,7 @@ def create_schedule(request):
             'status': shift.status,
             'id': shift.id,
         }
-    
+
     # Récupérer les disponibilités pour tous les employés
     avail_qs = Availability.objects.all().select_related('employe')
     availabilities = [
@@ -800,7 +801,7 @@ def create_schedule(request):
         'week_start_formatted': week_start_formatted,
         'week_end_formatted': week_end_formatted,
         'week_schedule': {
-            'status': 'published' if is_published else 'draft', 
+            'status': 'published' if is_published else 'draft',
             'can_be_edited': can_edit_week and not is_published,
             'is_published': is_published,
             'week_start': week_start_formatted,
@@ -808,29 +809,29 @@ def create_schedule(request):
             'week_offset': week_offset,
         },
     }
-    
+
     return render(request, 'restoplus/horaire_creation.html', context)
 
 
 @login_required
 def view_schedule(request):
     """Vue pour afficher les horaires publiés en lecture seule"""
-    
+
     # Récupérer tous les employés
     employes = User.objects.all()
-    
+
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
-    
+
     # Créer les jours de la semaine (lundi à dimanche)
     today = datetime.now().date()
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
-    
+
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    
+
     for i in range(7):
         day = monday + timedelta(days=i)
         week_days.append({
@@ -840,26 +841,26 @@ def view_schedule(request):
             'date_str': day.strftime('%Y-%m-%d'),
             'date_formatted': day.strftime('%d %B %Y')
         })
-    
+
     # Récupérer les shifts publiés pour cette semaine
     from .models import WorkShift
     week_start = monday
     week_end = monday + timedelta(days=6)
-    
+
     shifts = WorkShift.objects.filter(
         date__range=[week_start, week_end],
         status=WorkShift.ShiftStatus.PUBLISHED
     ).select_related('employee').order_by('date', 'heure_debut')
-    
+
     # Organiser les shifts par employé et jour
     shifts_by_employee = {}
     for shift in shifts:
         emp_id = shift.employee_id
         day_key = days_keys[shift.date.weekday()]  # 0=lundi, 1=mardi, etc.
-        
+
         if emp_id not in shifts_by_employee:
             shifts_by_employee[emp_id] = {}
-        
+
         shifts_by_employee[emp_id][day_key] = {
             'heure_debut': shift.heure_debut.strftime('%H:%M'),
             'heure_fin': shift.heure_fin.strftime('%H:%M'),
@@ -874,7 +875,7 @@ def view_schedule(request):
         date__range=[week_start, week_end],
         status=WorkShift.ShiftStatus.PUBLISHED
     ).count()
-    
+
     # Si il y a des shifts publiés, l'horaire est publié et ne peut pas être modifié
     is_published = published_shifts_count > 0
     can_modify = not is_published
@@ -891,7 +892,7 @@ def view_schedule(request):
             'can_modify': can_modify,
         },
     }
-    
+
     return render(request, 'restoplus/view_schedule.html', context)
 
 
@@ -899,22 +900,22 @@ def view_schedule(request):
 @require_POST
 def publish_schedule(request):
     """Publie les horaires depuis localStorage vers la base de données - Réservé aux administrateurs"""
-    
+
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
         return JsonResponse({
-            'success': False, 
+            'success': False,
             'message': 'Accès non autorisé. Seuls les administrateurs peuvent publier des horaires.'
         }, status=403)
-    
+
     try:
         # Récupérer les données JSON depuis la requête
         data = json.loads(request.body)
         shifts_data = data.get('shifts', {})
-        
+
         published_count = 0
         errors = []
-        
+
         # Parcourir chaque shift et l'enregistrer en base
         for shift_key, shift_info in shifts_data.items():
             try:
@@ -924,10 +925,10 @@ def publish_schedule(request):
                     employee_id = int(parts[1])
                     date_str = parts[2]
                     shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    
+
                     # Récupérer l'employé
                     employee = User.objects.get(id=employee_id)
-                    
+
                     # Créer ou mettre à jour le WorkShift
                     from .models import WorkShift
                     shift, created = WorkShift.objects.update_or_create(
@@ -943,13 +944,13 @@ def publish_schedule(request):
                             'created_by': request.user,
                         }
                     )
-                    
+
                     published_count += 1
-                    
+
             except (ValueError, User.DoesNotExist) as e:
                 errors.append(f"Erreur avec {shift_key}: {str(e)}")
                 continue
-        
+
         if errors:
             return JsonResponse({
                 'success': False,
@@ -962,7 +963,7 @@ def publish_schedule(request):
                 'message': f'{published_count} horaires publiés avec succès',
                 'published_count': published_count
             })
-            
+
     except json.JSONDecodeError:
         return JsonResponse({
             'success': False,
@@ -984,3 +985,70 @@ def custom_404_view(request, exception=None):
     """Vue personnalisée pour les erreurs 404 de page non trouvée"""
     return render(request, 'restoplus/404.html', status=404)
     return redirect('employees_management')
+
+
+@login_required
+def tickets_list(request):
+    """" """
+    tickets = Ticket.objects.filter(created_by=request.user).select_related('created_by')
+
+    return render(request, 'restoplus/tickets_list.html', {'tickets': tickets})
+
+@login_required
+def create_ticket(request):
+    """ """
+    if request.method == 'POST':
+        form = TicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.save()
+
+            messages.success(request, "Ticket créé avec succès !")
+            return redirect('ticket_detail', ticket_id=ticket.id)
+    else:
+        form = TicketForm()
+    return render(request, 'restoplus/create_ticket.html', {'form': form})
+
+@login_required
+def ticket_detail(request, ticket_id):
+    """Details d'un ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
+        messages.error(request, "Vous n'avez pas la permission de voir ce ticket.")
+        return render(request, 'resto_plus/403.html', status=403)
+    return render(request, 'restoplus/ticket_detail.html', {'ticket': ticket})
+
+@login_required
+def delete_ticket(request, ticket_id):
+    """Supprimer un ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    if request.method == 'POST':
+        ticket_title = ticket.title
+        ticket.delete()
+        messages.success(request, f"Ticket '{ticket_title}' supprimé avec succès.")
+        if request.user.has_permission('can_manage_users'):
+            return redirect('all_tickets')
+        else:
+            return redirect('tickets_list')
+    return render(request, 'restoplus/delete_ticket.html', {'ticket': ticket})
+
+@login_required
+def all_tickets(request):
+    """Vue pour les admins - voir TOUS les tickets"""
+
+    if not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    tickets = Ticket.objects.all().select_related('created_by').order_by('-date_created')
+
+    context = {
+        'tickets': tickets,
+        'total_tickets': tickets.count(),
+    }
+    return render(request, 'restoplus/all_tickets.html', context)

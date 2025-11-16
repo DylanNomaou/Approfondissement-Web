@@ -552,3 +552,34 @@ class WorkShift(models.Model):
             date=date
         ).first()  # Un seul quart par employé par jour
 
+class Ticket(models.Model):
+    """Modèle pour les tickets de support"""
+    # CATEGORY_CHOICES = [
+    #     ('Bris', 'Bris d\'équipement'),
+    #     ('inventaire', 'Problème d\'inventaire'),
+    #     ('technique', 'Problème technique'),
+    #     ('autre', 'Autre'),
+    # ]
+    title = models.CharField(max_length=255, verbose_name="Titre du ticket")
+    description = models.TextField(verbose_name="Description du problème")
+    category = models.CharField(
+        max_length=150,
+        verbose_name="Catégorie",
+        help_text="ex: bris d'équipement, Problème d'inventaire, Problème technique, autre ..."
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tickets_crees',
+        verbose_name="Créé par"
+    )
+
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+
+    class Meta:
+        verbose_name = "Ticket"
+        verbose_name_plural = "Tickets"
+        ordering = ['-date_created']
+
+    def __str__(self):
+        return f"#{self.id} - {self.title}"
