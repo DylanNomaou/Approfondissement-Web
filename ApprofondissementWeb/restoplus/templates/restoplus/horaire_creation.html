@@ -15,12 +15,21 @@
                 </h1>
 
                 <!-- Message d'information si l'horaire est publié -->
-                {% if week_schedule.is_published %}
+                {% if week_schedule.is_published and not week_schedule.can_be_edited %}
                 <div class="alert alert-warning mt-3 mb-3" role="alert">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Attention :</strong> Cet horaire est déjà publié. Les modifications ne sont plus autorisées.
+                    <strong>Attention :</strong> Cet horaire est déjà publié. Les modifications ne sont plus permises.
                 </div>
                 {% endif %}
+
+                {% if week_schedule.is_published and week_schedule.can_be_edited %}
+                <div class="alert alert-info mt-3 mb-3" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Attention :</strong> Cet horaire est déjà publié. Les modifications sont encore permises.
+                </div>
+                {% endif %}
+
+
 
                 <!-- Action Buttons -->
                 <div class="header-actions">
