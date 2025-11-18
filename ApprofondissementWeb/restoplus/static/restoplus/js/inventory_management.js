@@ -36,7 +36,7 @@ function gererClicFenetre(evenement) {
 
 async function afficherSuggestions() {
   let valeur = document.getElementById("id_recherche").value.trim();
-  divSuggestions.replaceChildren()
+  divSuggestions.replaceChildren();
   if (valeur.length < 3) {
     divSuggestions.classList.add("masquer");
     return;
@@ -47,10 +47,11 @@ async function afficherSuggestions() {
   try {
     const response = await fetch('/ajax/suggestions/' + encodeURIComponent(valeur), { signal });
     let data = await response.json();
-    resultats(data.suggestions,valeur).forEach(item => {
+    resultats(data.suggestions, valeur).forEach(item => {
       const a = document.createElement("a");
       a.href = "#";
       a.textContent = item.name;
+      a.dataset.value = item.name; // pour remplir le champ plus tard
       divSuggestions.appendChild(a);
     });
     divSuggestions.classList.remove("masquer");
@@ -59,6 +60,18 @@ async function afficherSuggestions() {
   }
   document.addEventListener("click", gererClicFenetre);
 }
+
+divSuggestions.addEventListener("click", (e) => {
+  const lien = e.target.closest("a");
+  if (!lien) return;
+  e.preventDefault();
+  const champ = document.getElementById("id_recherche");
+  const form = document.getElementById("inventory-filter-form");
+  if (champ) champ.value = lien.dataset.value || lien.textContent;
+  if (form) form.submit();
+  divSuggestions.replaceChildren();
+  divSuggestions.classList.add("masquer");
+});
 
 function resultats(suggestions, query) {
   // Trie et récupère les 5 premiers résultats

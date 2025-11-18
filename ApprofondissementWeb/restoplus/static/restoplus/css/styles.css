@@ -8,16 +8,25 @@
   height: 40px;
 }
 
+#inventory-filter-form {
+  overflow: visible;
+  z-index: 10;
+  position: relative;
+}
+
 #suggestions {
   position: absolute;
   top: 100%;
-  left: 0;
-  width: 100%;
-  background: white;
+  left: 10%;
+  background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
+  width: 36%;
+  max-width: 70%;
   z-index: 1000;
   padding: 4px 0;
+  margin-top: 2px;
+  border-radius: 5px 5px 15px 15px;
 }
 #suggestions a {
   display: block;
