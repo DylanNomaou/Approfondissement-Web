@@ -9,6 +9,7 @@
         border: 2px solid rgba(255, 193, 7, 0.3);
         border-radius: 12px;
         transition: all 0.3s ease;
+        position: relative;
     }
 
     .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-draft .time-display {
@@ -21,11 +22,27 @@
         border-color: rgba(255, 193, 7, 0.5);
     }
 
+    /* Indicateur de statut brouillon */
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-draft::before {
+        content: "BROUILLON";
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(255, 193, 7, 0.8);
+        color: #333;
+        font-size: 8px;
+        font-weight: bold;
+        padding: 1px 4px;
+        border-radius: 3px;
+        z-index: 10;
+    }
+
     .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published {
         background: linear-gradient(135deg, rgba(25, 135, 84, 0.15), rgba(25, 135, 84, 0.08));
         border: 2px solid rgba(25, 135, 84, 0.3);
         border-radius: 12px;
         transition: all 0.3s ease;
+        position: relative;
     }
 
     .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published .time-display {
@@ -36,6 +53,34 @@
     .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published:hover {
         background: linear-gradient(135deg, rgba(25, 135, 84, 0.25), rgba(25, 135, 84, 0.15));
         border-color: rgba(25, 135, 84, 0.5);
+    }
+
+    /* Indicateur de statut publié */
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published::before {
+        content: "PUBLIÉ";
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(25, 135, 84, 0.8);
+        color: white;
+        font-size: 8px;
+        font-weight: bold;
+        padding: 1px 4px;
+        border-radius: 3px;
+        z-index: 10;
+    }
+
+    /* Styles pour les boutons de suppression */
+    .delete-shift-btn {
+        background: rgba(220, 53, 69, 0.9) !important;
+        border: none !important;
+        padding: 2px 6px !important;
+        font-size: 10px !important;
+    }
+
+    .delete-shift-btn:hover {
+        background: rgba(220, 53, 69, 1) !important;
+        transform: scale(1.05);
     }
 </style>
 {% endblock %}
@@ -151,7 +196,7 @@
 
                         <!-- Cellules d'horaire pour chaque jour -->
                         {% for day in week_days %}
-                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}"
+                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_name }}"
                             data-date="{{ day.date_str }}">
 
                             <div class="time-slot">
@@ -404,5 +449,72 @@
 
 <!-- Include du modal d'édition d'horaire -->
 {% include 'restoplus/partials/time_edit_modal.html' %}
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteShiftConfirmModal" tabindex="-1" aria-labelledby="deleteShiftModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteShiftModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-times fa-3x text-warning"></i>
+                    </div>
+
+                    <!-- Informations du shift à supprimer -->
+                    <div class="shift-info mb-3">
+                        <h6 class="fw-bold mb-2" id="deleteShiftEmployeeName">Employé</h6>
+                        <p class="mb-1">
+                            <strong>Date :</strong> <span id="deleteShiftDate">--</span>
+                        </p>
+                        <p class="mb-1">
+                            <strong>Horaire :</strong> <span id="deleteShiftTime">--</span>
+                        </p>
+                        <p class="mb-3">
+                            <strong>Statut :</strong>
+                            <span id="deleteShiftStatus" class="badge">--</span>
+                        </p>
+                    </div>
+
+                    <!-- Message de confirmation selon le type -->
+                    <div id="draftDeleteMessage" class="alert alert-warning" style="display: none;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Suppression de brouillon</strong><br>
+                        Ce quart sera supprimé du planning local uniquement.
+                    </div>
+
+                    <div id="publishedDeleteMessage" class="alert alert-danger" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Suppression définitive</strong><br>
+                        Ce quart publié sera définitivement supprimé de la base de données.
+                        Cette action est <strong>irréversible</strong> et affectera l'horaire publié.
+                    </div>
+
+                    <p class="text-muted">
+                        Voulez-vous vraiment supprimer ce quart de travail ?
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteShiftBtn">
+                    <i class="fas fa-trash me-2"></i>
+                    Supprimer le quart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock extra_js %}

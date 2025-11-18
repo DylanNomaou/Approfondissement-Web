@@ -1192,20 +1192,197 @@ class HoraireManager {
         const employeeName =
             employeeRow?.querySelector(".employee-name")?.textContent || "Employé";
 
-        const confirmMsg = `Supprimer le quart de ${employeeName} le ${date} ?`;
-        if (!confirm(confirmMsg)) return;
+        const key = `shift_${employeeId}_${date}`;
+        const shiftData = localStorage.getItem(key);
 
+        if (!shiftData) {
+            console.warn('Aucun shift trouvé en localStorage pour cette cellule');
+            return;
+        }
+
+        const shift = JSON.parse(shiftData);
+        this.showDeleteConfirmationModal({
+            employeeId,
+            date,
+            employeeName,
+            shift,
+            cell,
+            source: 'quick'
+        });
+    }    /**
+     * Affiche le modal de confirmation pour supprimer un shift
+     */
+    showDeleteConfirmationModal(deleteData) {
+        const { employeeId, date, employeeName, shift, cell, source } = deleteData;
+        const isPublished = shift.from_database === true && shift.shift_id;
+
+        // Stocker les données pour la suppression
+        this.pendingDeletion = deleteData;
+
+        // Remplir les informations dans le modal
+        document.getElementById('deleteShiftEmployeeName').textContent = employeeName;
+        document.getElementById('deleteShiftDate').textContent = new Date(date).toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('deleteShiftTime').textContent = `${shift.heure_debut} - ${shift.heure_fin}`;
+
+        // Afficher le statut et le message approprié
+        const statusElement = document.getElementById('deleteShiftStatus');
+        const draftMessage = document.getElementById('draftDeleteMessage');
+        const publishedMessage = document.getElementById('publishedDeleteMessage');
+
+        if (isPublished) {
+            statusElement.textContent = 'PUBLIÉ';
+            statusElement.className = 'badge bg-success';
+            draftMessage.style.display = 'none';
+            publishedMessage.style.display = 'block';
+        } else {
+            statusElement.textContent = 'BROUILLON';
+            statusElement.className = 'badge bg-warning text-dark';
+            draftMessage.style.display = 'block';
+            publishedMessage.style.display = 'none';
+        }
+
+        // Afficher le modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteShiftConfirmModal'));
+        modal.show();
+
+        // Gérer le clic sur le bouton de confirmation
+        const confirmBtn = document.getElementById('confirmDeleteShiftBtn');
+        // Supprimer l'écouteur précédent s'il existe
+        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+        const newConfirmBtn = document.getElementById('confirmDeleteShiftBtn');
+
+        newConfirmBtn.addEventListener('click', () => {
+            modal.hide();
+            this.executeShiftDeletion();
+        });
+    }
+
+    /**
+     * Exécute la suppression du shift après confirmation
+     */
+    executeShiftDeletion() {
+        if (!this.pendingDeletion) return;
+
+        const { employeeId, date, employeeName, shift, cell, source } = this.pendingDeletion;
+        const isPublished = shift.from_database === true && shift.shift_id;
+
+        if (isPublished) {
+            this.performPublishedShiftDeletion(shift.shift_id, employeeId, date, cell, source);
+        } else {
+            this.performDraftShiftDeletion(employeeId, date, cell, source);
+        }
+
+        // Nettoyer les données en attente
+        this.pendingDeletion = null;
+    }
+
+    /**
+     * Supprime un shift brouillon (localStorage uniquement)
+     */
+    performDraftShiftDeletion(employeeId, date, cell, source) {
         const key = `shift_${employeeId}_${date}`;
         localStorage.removeItem(key);
 
         // Nettoyer l'affichage
         this.clearCellShiftDisplayDirect(cell);
-        this.showSuccessMessage("Quart supprimé avec succès.");
+
+        // Si la suppression vient du modal d'édition, le fermer
+        if (source === 'modal') {
+            const modalEl = document.getElementById("timeEditModal");
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            // Masquer le bouton supprimer
+            const deleteBtn = document.getElementById("deleteWorkShiftBtn");
+            if (deleteBtn) deleteBtn.classList.add("d-none");
+        }
+
+        this.showSuccessMessage("Quart brouillon supprimé avec succès.");
     }
 
     /**
-     * Efface l'affichage du shift dans une cellule spécifique
+     * Effectue la suppression du shift publié via une requête AJAX
      */
+    async performPublishedShiftDeletion(shiftId, employeeId, date, cell, source) {
+        try {
+            const response = await fetch(`/horaire/delete-shift/${shiftId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken(),
+                },
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Supprimer aussi de localStorage
+                const key = `shift_${employeeId}_${date}`;
+                localStorage.removeItem(key);
+
+                // Nettoyer l'affichage
+                this.clearCellShiftDisplayDirect(cell);
+
+                // Si la suppression vient du modal d'édition, le fermer
+                if (source === 'modal') {
+                    const modalEl = document.getElementById("timeEditModal");
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                    // Masquer le bouton supprimer
+                    const deleteBtn = document.getElementById("deleteWorkShiftBtn");
+                    if (deleteBtn) deleteBtn.classList.add("d-none");
+                }
+
+                this.showSuccessMessage("Quart publié supprimé avec succès.");
+            } else {
+                this.showErrorMessage(result.message || "Erreur lors de la suppression du shift.");
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            this.showErrorMessage("Erreur de communication avec le serveur.");
+        }
+    }
+
+    /**
+     * Récupère le token CSRF
+     */
+    getCSRFToken() {
+        const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        return tokenElement ? tokenElement.value : '';
+    }
+
+    /**
+     * Affiche un message d'erreur
+     */
+    showErrorMessage(message) {
+        const toast = document.createElement("div");
+        toast.className = "toast align-items-center text-bg-danger border-0 position-fixed";
+        toast.style.cssText = "top: 20px; right: 20px; z-index: 9999;";
+        toast.setAttribute("role", "alert");
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }
     clearCellShiftDisplayDirect(cell) {
         const timeSlot = cell.querySelector(".time-slot");
         if (timeSlot) {
@@ -1329,10 +1506,25 @@ class HoraireManager {
     confirmAndDeleteShift() {
         if (!this.currentWorkShift) return;
 
-        const confirmMsg = `Voulez-vous vraiment supprimer le quart de ${this.currentWorkShift.employeeName} le ${this.currentWorkShift.date} ?`;
-        if (!confirm(confirmMsg)) return;
+        const key = `shift_${this.currentWorkShift.employeeId}_${this.currentWorkShift.date}`;
+        const shiftData = localStorage.getItem(key);
 
-        this.deleteWorkShift();
+        if (!shiftData) {
+            console.warn('Aucun shift trouvé en localStorage pour ce modal');
+            return;
+        }
+
+        const shift = JSON.parse(shiftData);
+
+        // Utiliser le modal de confirmation
+        this.showDeleteConfirmationModal({
+            employeeId: this.currentWorkShift.employeeId,
+            date: this.currentWorkShift.date,
+            employeeName: this.currentWorkShift.employeeName,
+            shift: shift,
+            cell: this.currentWorkShift.cell,
+            source: 'modal'
+        });
     }
 
     /**

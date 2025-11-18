@@ -28,7 +28,8 @@ urlpatterns=[
     path('create-schedule/', views.create_schedule, name='create_schedule'),
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
-    
+    path('horaire/delete-shift/<int:shift_id>/', views.delete_shift, name='delete_shift'),
+
     # URLs pour la réinitialisation de mot de passe
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset/verify/', views.password_reset_verify, name='password_reset_verify'),

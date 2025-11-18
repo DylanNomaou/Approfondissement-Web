@@ -972,6 +972,50 @@ def publish_schedule(request):
         })
 
 
+@login_required
+@require_http_methods(["DELETE"])
+def delete_shift(request, shift_id):
+    """Supprime un shift publié - Réservé aux administrateurs"""
+
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({
+            'success': False,
+            'message': 'Accès non autorisé. Seuls les administrateurs peuvent supprimer des horaires.'
+        }, status=403)
+
+    try:
+        from .models import WorkShift
+
+        # Récupérer le shift
+        shift = get_object_or_404(WorkShift, id=shift_id)
+
+        # Vérifier que le shift est bien publié
+        if shift.status != WorkShift.ShiftStatus.PUBLISHED:
+            return JsonResponse({
+                'success': False,
+                'message': 'Seuls les shifts publiés peuvent être supprimés via cette méthode.'
+            }, status=400)
+
+        # Enregistrer les informations pour le log
+        employee_name = shift.employee.get_full_name() or shift.employee.username
+        shift_date = shift.date
+        shift_time = f"{shift.heure_debut} - {shift.heure_fin}"
+
+        # Supprimer le shift
+        shift.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Shift de {employee_name} du {shift_date} ({shift_time}) supprimé avec succès.'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erreur lors de la suppression: {str(e)}'
+        }, status=500)
+
 
 def custom_403_view(request, exception=None):
     """Vue personnalisée pour les erreurs 403 de permission refusée"""
