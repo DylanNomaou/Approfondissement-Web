@@ -151,7 +151,7 @@
 
                         <!-- Cellules d'horaire pour chaque jour -->
                         {% for day in week_days %}
-                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_name }}"
+                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}"
                             data-date="{{ day.date_str }}">
 
                             <div class="time-slot">
@@ -177,6 +177,8 @@
 <!-- Données pour JavaScript -->
 {{ week_days_json|json_script:"week-days-data" }}
 {{ availabilities_json|json_script:"availability-data" }}
+{{ shifts_by_employee|json_script:"shifts-data" }}
+{{ week_schedule.can_be_edited|json_script:"can-edit-data" }}
 
 <!-- Script de la page -->
 <script defer src="{% static 'restoplus/js/horaire.js' %}"></script>
@@ -235,10 +237,6 @@
     }
 </script>
 
-{{ shifts_by_employee|json_script:"shifts-data" }}
-{{ week_days_json|json_script:"week-days-data" }}
-{{ week_schedule.can_be_edited|json_script:"can-edit-data" }}
-
 <script>
     // Charger les horaires existants depuis Django
     const shiftsElement = document.getElementById('shifts-data');
@@ -293,26 +291,41 @@
 
     // Charger les shifts après que tout soit prêt
     waitForHoraireManager().then(() => {
+        console.log('🔄 Gestionnaire prêt, chargement des shifts...', existingShifts);
         if (existingShifts && Object.keys(existingShifts).length > 0) {
             loadExistingShifts(existingShifts);
             // Recharger l'affichage pour s'assurer que tout est correct
             setTimeout(() => {
                 if (window.horaireManager) {
+                    console.log('🔄 Rechargement de l\'affichage des shifts...');
                     window.horaireManager.refreshAllShiftsDisplay();
                 }
-            }, 100);
+            }, 200);
+        } else {
+            console.log('⚠️ Aucun shift existant à charger');
         }
     });
 
     function loadExistingShifts(shiftsData) {
+        console.log('🔄 Début du chargement des shifts:', shiftsData);
+
         for (const employeeId in shiftsData) {
+            console.log(`👤 Traitement employé ${employeeId}:`, shiftsData[employeeId]);
             const employeeShifts = shiftsData[employeeId];
 
             for (const day in employeeShifts) {
+                console.log(`📅 Traitement jour ${day}:`, employeeShifts[day]);
                 const shiftData = employeeShifts[day];
+                const date = getDateForDay(day);
+
+                if (!date) {
+                    console.error(`❌ Date non trouvée pour le jour ${day}`);
+                    continue;
+                }
 
                 // Créer la clé localStorage pour ce shift
-                const shiftKey = `shift_${employeeId}_${getDateForDay(day)}`;
+                const shiftKey = `shift_${employeeId}_${date}`;
+                console.log(`🔑 Clé de stockage: ${shiftKey}`);
 
                 // Sauvegarder dans localStorage pour compatibilité avec le code existant
                 const localStorageData = {
@@ -321,17 +334,27 @@
                     pause_duree: shiftData.pause_duree || 30,
                     note: shiftData.note || '',
                     employee_id: employeeId,
-                    date: getDateForDay(day),
+                    date: date,
                     from_database: true,
                     shift_id: shiftData.id
                 };
 
                 localStorage.setItem(shiftKey, JSON.stringify(localStorageData));
+                console.log(`💾 Shift sauvé en localStorage:`, localStorageData);
 
                 // Afficher dans l'interface en utilisant la fonction appropriée du gestionnaire
                 const cell = document.querySelector(`[data-employee-id="${employeeId}"][data-day="${day}"]`);
+                console.log(`🎯 Cellule trouvée:`, cell, `pour employé ${employeeId}, jour ${day}`);
+
                 if (cell && window.horaireManager) {
                     window.horaireManager.displayShiftInCell(cell, localStorageData);
+                    console.log(`✅ Shift affiché dans la cellule`);
+                } else {
+                    console.error(`❌ Cellule ou gestionnaire introuvable`, {
+                        cell: !!cell,
+                        manager: !!window.horaireManager,
+                        selector: `[data-employee-id="${employeeId}"][data-day="${day}"]`
+                    });
                 }
             }
         }
@@ -339,8 +362,11 @@
     }
 
     function getDateForDay(dayKey) {
+        console.log('🔍 Recherche date pour jour:', dayKey, 'dans:', weekDays);
         const dayData = weekDays.find(day => day.jour_key === dayKey);
-        return dayData ? dayData.date_str : null;
+        const result = dayData ? dayData.date_str : null;
+        console.log('📅 Date trouvée:', result);
+        return result;
     }
 
     function updateCellDisplay(cell, shiftData) {

@@ -1838,5 +1838,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const manager = new HoraireManager();
-    console.log("Gestionnaire d'horaires initialisé");
+    // Exposer le gestionnaire globalement pour le template
+    window.horaireManager = manager;
+    console.log("Gestionnaire d'horaires initialisé et exposé globalement");
 });
