@@ -129,7 +129,7 @@ class Availability(models.Model):
 class Inventory(models.Model):
     """Article d'inventaire"""
     UNIT_CHOICES = [
-        ("pcs", "Pièce(s)"),
+        ("pcs", "Pièce"),
         ("lb", "Livres"),
         ("g", "Grammes"),
         ("l", "Litres"),

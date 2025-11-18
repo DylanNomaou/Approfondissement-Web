@@ -30,8 +30,7 @@ urlpatterns=[
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
     # URLS SECTION INVENTAIRE
-    path('inventory/',views.inventory_management,name='inventory_management')
+    path('inventory/',views.inventory_management,name='inventory_management'),
+    path('delete-inventoy-item/<str:sku>/', views.delete_inventory_item, name='delete_inventory_item'),
+    path('ajax/suggestions/<path:query>',views.suggestions_ajax, name="suggestions_ajax")
 ]
-
-
-

@@ -17,11 +17,6 @@ from .models import User, Role, Task, Notification,Availability, Task, Inventory
 from django.db.models import Q
 from django.core.paginator import Paginator
 from .notifications import notify_task_assigned, notify_role_assigned
-from datetime import date
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-import json
 from datetime import datetime, timedelta
 import locale
 
@@ -337,7 +332,7 @@ def inventory_management(request):
     # Paramètre GET pour édition simple: ?sku=ABC123
     sku_param = (request.GET.get('sku') or '').strip()
     if request.method == 'POST':
-        # On tente de récupérer l'instance par le SKU fourni dans le formulaire
+        # Si le sku existe
         posted_sku = (request.POST.get('sku') or '').strip()
         instance = None
         if posted_sku:
@@ -352,7 +347,7 @@ def inventory_management(request):
                 messages.success(request, f"Article '{obj.name}' mis à jour.")
             else:
                 messages.success(request, f"Article '{obj.name}' créé.")
-            # Redirection sans paramètre sku (PRG)
+            # Redirection sans paramètre sku
             params = request.GET.copy()
             if 'sku' in params:
                 params.pop('sku')
@@ -396,7 +391,6 @@ def inventory_management(request):
         )
     ]
     unit_choices = [("", "Unité")] + list(Inventory.UNIT_CHOICES)
-
     # Instancier le formulaire de filtres en lui passant des tuples prêts
     filter_form = InventoryFilterForm(
         request.GET or None,
@@ -405,14 +399,9 @@ def inventory_management(request):
         unit_choices=unit_choices,
     )
 
-    # Queryset initial explicite
     inventory_queryset = Inventory.objects.all()
-
-    # Appliquer les filtres si valides
     if filter_form.is_valid():
         inventory_queryset = apply_inventory_filters(inventory_queryset, filter_form.cleaned_data)
-
-    # Calculer has_filters
     filter_keys = ["category", "unit", "supplier", "recherche"]
     if filter_form.is_bound:
         if filter_form.is_valid():
@@ -440,6 +429,34 @@ def inventory_management(request):
         "sku_param": sku_param,
     }
     return render(request, "restoplus/inventory_management.html", context)
+
+"""Vue permettant de retirer un objet de l'inventaire"""
+def delete_inventory_item(request, item_id):
+    """Supprimer un article d'inventaire"""
+    try:
+        item = Inventory.objects.get(id=item_id)
+        item_name = item.name
+        item.delete()
+        messages.success(request, f"Article '{item_name}' supprimé avec succès.")
+    except Inventory.DoesNotExist:
+        messages.error(request, "Article introuvable.")
+    return redirect('inventory_management')
+
+"""Permet d'afficher dynamiquement une suggestion de recherche"""
+def suggestions_ajax(request,query):
+    query = query.strip()
+    query=query.replace("-"," ")
+    suggestions = []
+    if not query or len(query)<3:
+        return JsonResponse({'suggestions':[]})
+    else :
+        matched_items = Inventory.objects.filter(
+            Q(name__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(supplier__icontains=query)
+        ).values('name', 'sku', 'supplier')[:20]#Limite de résultats
+        suggestions = list(matched_items)
+    return JsonResponse({"suggestions": suggestions})
 
 
 def apply_inventory_filters(inventory_queryset, cleaned_data):
