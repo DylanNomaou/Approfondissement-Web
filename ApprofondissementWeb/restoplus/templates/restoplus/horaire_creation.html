@@ -113,7 +113,7 @@
 
                         <!-- Cellules d'horaire pour chaque jour -->
                         {% for day in week_days %}
-                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}"
+                        <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_name }}"
                             data-date="{{ day.date_str }}">
 
                             <div class="time-slot">
