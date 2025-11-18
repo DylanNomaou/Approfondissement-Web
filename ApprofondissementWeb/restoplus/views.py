@@ -11,14 +11,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm
-from .models import User, Role, Task, Notification,Availability, Task
+from django import forms
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm
+from .models import User, Role, Task, Notification,Availability, Task, Inventory
+from django.db.models import Q
+from django.core.paginator import Paginator
 from .notifications import notify_task_assigned, notify_role_assigned
-from datetime import date
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-import json
 from datetime import datetime, timedelta
 import locale
 
@@ -29,9 +27,8 @@ except locale.Error:
     try:
         locale.setlocale(locale.LC_TIME, 'fr_FR')
     except locale.Error:
-        pass  # Garde la locale par défaut si français non disponible
+        pass
 
-# Create your views here.
 
 @login_required
 def accueil(request):
@@ -307,8 +304,182 @@ def availability_form(request):
                 initial[f"{day}_end"] = existing[day].heure_fin
         form = AvailabilityForm(initial=initial)
     return render(request, 'restoplus/availability_form.html', {"form": form, "employe": employe})
+# ======================================================================
+# 🧑‍💼 INVENTAIRE
+# ======================================================================
+
+class InventoryCreateForm(forms.ModelForm):
+    class Meta:
+        model = Inventory
+        fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
+            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU"}),
+            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
+            "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+            "unit": forms.Select(attrs={"class": "form-select"}),
+            "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
+            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
+        self.fields['sku'].required = True
+
+"""Vue pour la gestion de l'inventaire"""
+@login_required
+def inventory_management(request):
+    # Paramètre GET pour édition simple: ?sku=ABC123
+    sku_param = (request.GET.get('sku') or '').strip()
+    if request.method == 'POST':
+        # Si le sku existe
+        posted_sku = (request.POST.get('sku') or '').strip()
+        instance = None
+        if posted_sku:
+            try:
+                instance = Inventory.objects.get(sku=posted_sku)
+            except Inventory.DoesNotExist:
+                instance = None
+        form = InventoryCreateForm(request.POST, instance=instance)
+        if form.is_valid():
+            obj = form.save()
+            if instance:
+                messages.success(request, f"Article '{obj.name}' mis à jour.")
+            else:
+                messages.success(request, f"Article '{obj.name}' créé.")
+            # Redirection sans paramètre sku
+            params = request.GET.copy()
+            if 'sku' in params:
+                params.pop('sku')
+            qs = params.urlencode()
+            base_url = request.path
+            return redirect(f"{base_url}?{qs}" if qs else base_url)
+        else:
+            create_form = form  # garder erreurs
+    else:
+        # GET: si sku_param présent on pré-remplit le formulaire, sinon formulaire vide
+        if sku_param:
+            try:
+                instance = Inventory.objects.get(sku=sku_param)
+                create_form = InventoryCreateForm(instance=instance)
+            except Inventory.DoesNotExist:
+                # Pré-remplir juste le champ SKU si objet absent
+                create_form = InventoryCreateForm(initial={'sku': sku_param})
+        else:
+            create_form = InventoryCreateForm()
+
+    category_choices = [("", "Toutes")] + [
+        (cat, cat)
+        for cat in (
+            Inventory.objects
+            .exclude(category__isnull=True)
+            .exclude(category="")
+            .values_list("category", flat=True)
+            .order_by("category")
+            .distinct()
+        )
+    ]
+    supplier_choices = [("", "Fournisseur")] + [
+        (sup, sup)
+        for sup in (
+            Inventory.objects
+            .exclude(supplier__isnull=True)
+            .exclude(supplier="")
+            .values_list("supplier", flat=True)
+            .order_by("supplier")
+            .distinct()
+        )
+    ]
+    unit_choices = [("", "Unité")] + list(Inventory.UNIT_CHOICES)
+    # Instancier le formulaire de filtres en lui passant des tuples prêts
+    filter_form = InventoryFilterForm(
+        request.GET or None,
+        categories_choices=category_choices,
+        supplier_choices=supplier_choices,
+        unit_choices=unit_choices,
+    )
+
+    inventory_queryset = Inventory.objects.all()
+    if filter_form.is_valid():
+        inventory_queryset = apply_inventory_filters(inventory_queryset, filter_form.cleaned_data)
+    filter_keys = ["category", "unit", "supplier", "recherche"]
+    if filter_form.is_bound:
+        if filter_form.is_valid():
+            form_data = filter_form.cleaned_data
+            has_filters = any(form_data.get(key) for key in filter_keys)
+        else:
+            has_filters = any(request.GET.get(key) for key in filter_keys)
+    else:
+        has_filters = False
+
+    paginator = Paginator(inventory_queryset, 25)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    params = request.GET.copy()
+    params.pop("page", None)
+    querystring = params.urlencode()
+    context = {
+        "form": filter_form,
+        "creation_form": create_form,
+        "inventory": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "querystring": querystring,
+        "has_filters": has_filters,
+        "sku_param": sku_param,
+    }
+    return render(request, "restoplus/inventory_management.html", context)
+
+"""Vue permettant de retirer un objet de l'inventaire"""
+def delete_inventory_item(request, item_id):
+    """Supprimer un article d'inventaire"""
+    try:
+        item = Inventory.objects.get(id=item_id)
+        item_name = item.name
+        item.delete()
+        messages.success(request, f"Article '{item_name}' supprimé avec succès.")
+    except Inventory.DoesNotExist:
+        messages.error(request, "Article introuvable.")
+    return redirect('inventory_management')
+
+"""Permet d'afficher dynamiquement une suggestion de recherche"""
+def suggestions_ajax(request,query):
+    query = query.strip()
+    query=query.replace("-"," ")
+    suggestions = []
+    if not query or len(query)<3:
+        return JsonResponse({'suggestions':[]})
+    else :
+        matched_items = Inventory.objects.filter(
+            Q(name__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(supplier__icontains=query)
+        ).values('name', 'sku', 'supplier')[:20]#Limite de résultats
+        suggestions = list(matched_items)
+    return JsonResponse({"suggestions": suggestions})
 
 
+def apply_inventory_filters(inventory_queryset, cleaned_data):
+    search_text = cleaned_data.get("recherche") or ""
+    category_value = cleaned_data.get("category") or ""
+    unit_value = cleaned_data.get("unit") or ""
+    supplier_value = cleaned_data.get("supplier") or ""
+
+    if search_text:
+        inventory_queryset = inventory_queryset.filter(
+            Q(name__icontains=search_text) |
+            Q(sku__icontains=search_text) |
+            Q(category__icontains=search_text) |
+            Q(supplier__icontains=search_text)
+        )
+    if category_value:
+        inventory_queryset = inventory_queryset.filter(category=category_value)
+    if unit_value:
+        inventory_queryset = inventory_queryset.filter(unit=unit_value)
+    if supplier_value:
+        inventory_queryset = inventory_queryset.filter(supplier=supplier_value)
+
+    return inventory_queryset
 
 
 # ======================================================================
@@ -690,32 +861,32 @@ def delete_employee(request, employe_id):
 @login_required
 def create_schedule(request):
     """Vue pour créer des horaires - Réservée aux administrateurs"""
-    
+
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
         from django.shortcuts import redirect
         from django.contrib import messages
         messages.error(request, "Accès non autorisé. Seuls les administrateurs peuvent créer des horaires.")
         return redirect('view_schedule')
-   
+
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
-    
+
     # Récupérer tous les employés avec leurs disponibilités
     employes = User.objects.all()
-    
+
     # Créer les jours de la semaine (lundi à dimanche)
     today = datetime.now().date()
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
-    
+
     # Vérifier si la semaine peut être modifiée (pas dans le passé)
     can_edit_week = monday >= (today - timedelta(days=today.weekday()))
-    
+
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    
+
     for i in range(7):
         day = monday + timedelta(days=i)
         week_days.append({
@@ -725,34 +896,34 @@ def create_schedule(request):
             'date_str': day.strftime('%Y-%m-%d'),
             'date_formatted': day.strftime('%d %B %Y')
         })
-    
+
     # Récupérer les WorkShifts existants pour cette semaine
     from .models import WorkShift
     week_start = monday
     week_end = monday + timedelta(days=6)
-    
+
     # Vérifier si l'horaire de cette semaine est déjà publié
     published_shifts_count = WorkShift.objects.filter(
         date__range=[week_start, week_end],
         status=WorkShift.ShiftStatus.PUBLISHED
     ).count()
-    
+
     # Déterminer si l'horaire est publié (pour affichage d'information)
     is_published = published_shifts_count > 0
-    
+
     existing_shifts = WorkShift.objects.filter(
         date__range=[week_start, week_end]
     ).select_related('employee').order_by('date', 'heure_debut')
-    
+
     # Organiser les shifts par employé et jour
     shifts_by_employee = {}
     for shift in existing_shifts:
         emp_id = shift.employee_id
         day_key = days_keys[shift.date.weekday()]  # 0=lundi, 1=mardi, etc.
-        
+
         if emp_id not in shifts_by_employee:
             shifts_by_employee[emp_id] = {}
-        
+
         shifts_by_employee[emp_id][day_key] = {
             'heure_debut': shift.heure_debut.strftime('%H:%M'),
             'heure_fin': shift.heure_fin.strftime('%H:%M'),
@@ -763,7 +934,7 @@ def create_schedule(request):
             'status': shift.status,
             'id': shift.id,
         }
-    
+
     # Récupérer les disponibilités pour tous les employés
     avail_qs = Availability.objects.all().select_related('employe')
     availabilities = [
@@ -800,7 +971,7 @@ def create_schedule(request):
         'week_start_formatted': week_start_formatted,
         'week_end_formatted': week_end_formatted,
         'week_schedule': {
-            'status': 'published' if is_published else 'draft', 
+            'status': 'published' if is_published else 'draft',
             'can_be_edited': can_edit_week and not is_published,
             'is_published': is_published,
             'week_start': week_start_formatted,
@@ -808,29 +979,26 @@ def create_schedule(request):
             'week_offset': week_offset,
         },
     }
-    
+
     return render(request, 'restoplus/horaire_creation.html', context)
 
 
 @login_required
 def view_schedule(request):
     """Vue pour afficher les horaires publiés en lecture seule"""
-    
     # Récupérer tous les employés
     employes = User.objects.all()
-    
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
-    
     # Créer les jours de la semaine (lundi à dimanche)
     today = datetime.now().date()
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
-    
+
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    
+
     for i in range(7):
         day = monday + timedelta(days=i)
         week_days.append({
@@ -840,26 +1008,26 @@ def view_schedule(request):
             'date_str': day.strftime('%Y-%m-%d'),
             'date_formatted': day.strftime('%d %B %Y')
         })
-    
+
     # Récupérer les shifts publiés pour cette semaine
     from .models import WorkShift
     week_start = monday
     week_end = monday + timedelta(days=6)
-    
+
     shifts = WorkShift.objects.filter(
         date__range=[week_start, week_end],
         status=WorkShift.ShiftStatus.PUBLISHED
     ).select_related('employee').order_by('date', 'heure_debut')
-    
+
     # Organiser les shifts par employé et jour
     shifts_by_employee = {}
     for shift in shifts:
         emp_id = shift.employee_id
         day_key = days_keys[shift.date.weekday()]  # 0=lundi, 1=mardi, etc.
-        
+
         if emp_id not in shifts_by_employee:
             shifts_by_employee[emp_id] = {}
-        
+
         shifts_by_employee[emp_id][day_key] = {
             'heure_debut': shift.heure_debut.strftime('%H:%M'),
             'heure_fin': shift.heure_fin.strftime('%H:%M'),
@@ -874,7 +1042,7 @@ def view_schedule(request):
         date__range=[week_start, week_end],
         status=WorkShift.ShiftStatus.PUBLISHED
     ).count()
-    
+
     # Si il y a des shifts publiés, l'horaire est publié et ne peut pas être modifié
     is_published = published_shifts_count > 0
     can_modify = not is_published
@@ -891,7 +1059,6 @@ def view_schedule(request):
             'can_modify': can_modify,
         },
     }
-    
     return render(request, 'restoplus/view_schedule.html', context)
 
 
@@ -899,22 +1066,22 @@ def view_schedule(request):
 @require_POST
 def publish_schedule(request):
     """Publie les horaires depuis localStorage vers la base de données - Réservé aux administrateurs"""
-    
+
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
         return JsonResponse({
-            'success': False, 
+            'success': False,
             'message': 'Accès non autorisé. Seuls les administrateurs peuvent publier des horaires.'
         }, status=403)
-    
+
     try:
         # Récupérer les données JSON depuis la requête
         data = json.loads(request.body)
         shifts_data = data.get('shifts', {})
-        
+
         published_count = 0
         errors = []
-        
+
         # Parcourir chaque shift et l'enregistrer en base
         for shift_key, shift_info in shifts_data.items():
             try:
@@ -924,10 +1091,10 @@ def publish_schedule(request):
                     employee_id = int(parts[1])
                     date_str = parts[2]
                     shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    
+
                     # Récupérer l'employé
                     employee = User.objects.get(id=employee_id)
-                    
+
                     # Créer ou mettre à jour le WorkShift
                     from .models import WorkShift
                     shift, created = WorkShift.objects.update_or_create(
@@ -943,13 +1110,13 @@ def publish_schedule(request):
                             'created_by': request.user,
                         }
                     )
-                    
+
                     published_count += 1
-                    
+
             except (ValueError, User.DoesNotExist) as e:
                 errors.append(f"Erreur avec {shift_key}: {str(e)}")
                 continue
-        
+
         if errors:
             return JsonResponse({
                 'success': False,
@@ -962,7 +1129,7 @@ def publish_schedule(request):
                 'message': f'{published_count} horaires publiés avec succès',
                 'published_count': published_count
             })
-            
+
     except json.JSONDecodeError:
         return JsonResponse({
             'success': False,
