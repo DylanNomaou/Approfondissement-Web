@@ -143,6 +143,7 @@ class HoraireManager {
         this.bindNavigationEvents();
         this.bindScheduleCellEvents();
         this.bindPublishButton(); // Nouveau : bouton publier
+        this.bindDebugKeys(); // Raccourcis de débogage
         this.updateWeekDisplay();
         this.updateAvailabilityIndicators();
         this.loadExistingShiftsFromStorage(); // Charger les shifts existants au démarrage
@@ -160,6 +161,21 @@ class HoraireManager {
     // ==========================================
     // GESTION DES ÉVÉNEMENTS
     // ==========================================
+
+    /**
+     * Attache les raccourcis clavier de débogage
+     */
+    bindDebugKeys() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Shift+R : Recharger l'affichage des shifts
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                console.log('🔄 Rechargement manuel de l\'affichage...');
+                this.refreshAllShiftsDisplay();
+                this.showMessage('Affichage des shifts rechargé', 'info');
+            }
+        });
+    }
 
     /**
      * Attache les événements de navigation (boutons semaine précédente/suivante)
@@ -1069,7 +1085,7 @@ class HoraireManager {
         const heureDebut = document.getElementById("heure_debut").value;
         const heureFin = document.getElementById("heure_fin").value;
 
-        console.log("✅ Sauvegarde directe sans vérification de disponibilité");
+        console.log("Sauvegarde directe sans vérification de disponibilité");
 
         const shiftData = {
             employee_id: this.currentWorkShift.employeeId,
@@ -1114,10 +1130,15 @@ class HoraireManager {
         if (timeSlot) {
             const timeDisplay = timeSlot.querySelector(".time-display");
             if (timeDisplay) {
-                timeDisplay.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+                // Afficher l'heure + indication "non publié"
+                timeDisplay.innerHTML = `
+                    <div class="shift-time">${shiftData.heure_debut} - ${shiftData.heure_fin}</div>
+                    <small class="shift-status text-warning">Non publié</small>
+                `;
+                console.log("📝 Shift ajouté avec statut 'Non publié'");
             }
 
-            cell.classList.add("has-shift");
+            cell.classList.add("has-shift", "shift-draft");
 
             // Ajouter un petit bouton de suppression directement dans la cellule
             this.addDeleteButtonToCell(cell);
@@ -1189,13 +1210,13 @@ class HoraireManager {
         const timeSlot = cell.querySelector(".time-slot");
         if (timeSlot) {
             const timeDisplay = timeSlot.querySelector(".time-display");
-            if (timeDisplay) timeDisplay.textContent = "-";
+            if (timeDisplay) timeDisplay.innerHTML = "-";
 
             // Supprimer le bouton de suppression
             const deleteBtn = timeSlot.querySelector(".delete-shift-btn");
             if (deleteBtn) deleteBtn.remove();
         }
-        cell.classList.remove("has-shift");
+        cell.classList.remove("has-shift", "shift-draft", "shift-published");
         cell.removeAttribute("title");
     }
 
@@ -1240,10 +1261,25 @@ class HoraireManager {
 
         const timeDisplay = timeSlot.querySelector(".time-display");
         if (timeDisplay) {
-            timeDisplay.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+            // Vérifier si le shift est publié (vient de la base de données)
+            const isPublished = shiftData.from_database === true;
+            const statusText = isPublished ? "✓ Publié" : "Non publié";
+            const statusClass = isPublished ? "text-success" : "text-warning";
+
+            // Afficher l'heure + indication du statut
+            timeDisplay.innerHTML = `
+                <div class="shift-time">${shiftData.heure_debut} - ${shiftData.heure_fin}</div>
+                <small class="shift-status ${statusClass}">${statusText}</small>
+            `;
         }
 
-        cell.classList.add("has-shift");
+        // Appliquer les classes CSS appropriées
+        if (shiftData.from_database === true) {
+            cell.classList.add("has-shift", "shift-published");
+        } else {
+            cell.classList.add("has-shift", "shift-draft");
+        }
+
         this.addDeleteButtonToCell(cell);
 
         // Tooltip avec détails
@@ -1357,6 +1393,55 @@ class HoraireManager {
         toast.addEventListener("hidden.bs.toast", () => {
             document.body.removeChild(toast);
         });
+    }
+
+    // ==========================================
+    // GESTION DE L'AFFICHAGE DES SHIFTS
+    // ==========================================
+
+    /**
+     * Recharge l'affichage de tous les shifts depuis localStorage
+     */
+    refreshAllShiftsDisplay() {
+        console.log("🔄 Rechargement de l'affichage des shifts...");
+
+        // D'abord, nettoyer l'affichage existant
+        const cells = document.querySelectorAll('.schedule-cell.has-shift');
+        cells.forEach(cell => {
+            cell.classList.remove('has-shift', 'shift-draft', 'shift-published');
+            const timeSlot = cell.querySelector('.time-slot');
+            if (timeSlot) {
+                const timeDisplay = timeSlot.querySelector('.time-display');
+                if (timeDisplay) {
+                    timeDisplay.innerHTML = '';
+                }
+            }
+            const deleteBtn = cell.querySelector('.delete-shift-btn');
+            if (deleteBtn) {
+                deleteBtn.remove();
+            }
+        });
+
+        // Recharger depuis localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("shift_")) {
+                try {
+                    const shiftData = JSON.parse(localStorage.getItem(key));
+                    const [, employeeId, date] = key.split('_');
+
+                    // Trouver la cellule correspondante
+                    const cell = document.querySelector(`[data-employee-id="${employeeId}"][data-date="${date}"]`);
+                    if (cell) {
+                        this.displayShiftInCell(cell, shiftData);
+                    }
+                } catch (error) {
+                    console.error("❌ Erreur lors du rechargement du shift:", key, error);
+                }
+            }
+        }
+
+        console.log("✅ Affichage rechargé");
     }
 
     // ==========================================
@@ -1550,11 +1635,19 @@ function publishSchedule() {
         return;
     }
 
-    // Demander confirmation
+    // Compter seulement les shifts non publiés (brouillons)
+    const unpublishedShifts = getUnpublishedShiftsFromLocalStorage();
+    const unpublishedCount = Object.keys(unpublishedShifts).length;
+
+    if (unpublishedCount === 0) {
+        showMessage("Aucun nouveau shift à publier. Tous les shifts sont déjà publiés.", "info");
+        return;
+    }
+
+    // Demander confirmation avec le nombre de shifts non publiés
     if (
         !confirm(
-            `Êtes-vous sûr de vouloir publier cet horaire avec ${Object.keys(allShifts).length
-            } shifts?`
+            `Êtes-vous sûr de vouloir publier ${unpublishedCount} shift${unpublishedCount > 1 ? 's' : ''} non publié${unpublishedCount > 1 ? 's' : ''}?`
         )
     ) {
         return;
@@ -1575,7 +1668,7 @@ function publishSchedule() {
             "X-CSRFToken": getCSRFToken(),
         },
         body: JSON.stringify({
-            shifts: allShifts,
+            shifts: unpublishedShifts, // Envoyer seulement les shifts non publiés
         }),
     })
         .then((response) => response.json())
@@ -1585,6 +1678,10 @@ function publishSchedule() {
                     `Horaire publié avec succès! ${data.shifts_created} shifts créés.`,
                     "success"
                 );
+
+                // Mettre à jour l'affichage des shifts pour montrer qu'ils sont publiés
+                updateShiftsToPublishedStatus();
+
                 // Nettoyer le localStorage après publication réussie
                 clearAllShiftsFromLocalStorage();
                 // Rediriger vers la page de visualisation après un délai
@@ -1630,6 +1727,30 @@ function getAllShiftsFromLocalStorage() {
     return allShifts;
 }
 
+function getUnpublishedShiftsFromLocalStorage() {
+    const unpublishedShifts = {};
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("shift_")) {
+            try {
+                const shiftData = JSON.parse(localStorage.getItem(key));
+                // Inclure seulement les shifts qui ne viennent pas de la base de données
+                if (shiftData.from_database !== true) {
+                    unpublishedShifts[key] = shiftData;
+                }
+            } catch (error) {
+                console.error("Erreur lors de la lecture du shift:", key, error);
+            }
+        }
+    }
+
+    console.log(
+        `${Object.keys(unpublishedShifts).length} shifts non publiés trouvés dans localStorage`
+    );
+    return unpublishedShifts;
+}
+
 
 
 function clearAllShiftsFromLocalStorage() {
@@ -1647,6 +1768,35 @@ function clearAllShiftsFromLocalStorage() {
     });
 
     console.log(`${keysToRemove.length} shifts supprimés du localStorage`);
+}
+
+function updateShiftsToPublishedStatus() {
+    // Trouver toutes les cellules qui ont des shifts
+    const shiftCells = document.querySelectorAll('.schedule-cell.has-shift');
+
+    shiftCells.forEach(cell => {
+        const timeSlot = cell.querySelector('.time-slot');
+        if (timeSlot) {
+            const timeDisplay = timeSlot.querySelector('.time-display');
+            if (timeDisplay) {
+                // Extraire le texte de l'heure (première ligne)
+                const shiftTime = timeDisplay.querySelector('.shift-time');
+                if (shiftTime) {
+                    // Mettre à jour l'affichage pour montrer "Publié"
+                    timeDisplay.innerHTML = `
+                        <div class="shift-time">${shiftTime.textContent}</div>
+                        <small class="shift-status text-success">✓ Publié</small>
+                    `;
+                }
+            }
+        }
+
+        // Changer la classe pour le style
+        cell.classList.remove('shift-draft');
+        cell.classList.add('shift-published');
+    });
+
+    console.log(`${shiftCells.length} shifts mis à jour vers le statut "Publié"`);
 }
 
 function getCSRFToken() {

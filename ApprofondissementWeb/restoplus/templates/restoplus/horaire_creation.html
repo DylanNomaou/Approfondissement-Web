@@ -1,6 +1,44 @@
 {% extends 'restoplus/base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+    /* Styles temporaires pour les cellules de shift - à transférer vers SCSS compilé */
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-draft {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.08));
+        border: 2px solid rgba(255, 193, 7, 0.3);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-draft .time-display {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 2px solid rgba(255, 193, 7, 0.4) !important;
+    }
+
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-draft:hover {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.25), rgba(255, 193, 7, 0.15));
+        border-color: rgba(255, 193, 7, 0.5);
+    }
+
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published {
+        background: linear-gradient(135deg, rgba(25, 135, 84, 0.15), rgba(25, 135, 84, 0.08));
+        border: 2px solid rgba(25, 135, 84, 0.3);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published .time-display {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 2px solid rgba(25, 135, 84, 0.4) !important;
+    }
+
+    .page-creation-horaire .schedule-grid .grid-body .employee-row .schedule-cell.shift-published:hover {
+        background: linear-gradient(135deg, rgba(25, 135, 84, 0.25), rgba(25, 135, 84, 0.15));
+        border-color: rgba(25, 135, 84, 0.5);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <section class="page-creation-horaire">
@@ -240,12 +278,31 @@
     }
 
     // Attendre que le gestionnaire d'horaires soit initialisé avant de charger les shifts existants
-    setTimeout(() => {
-        // Charger les shifts dans l'interface
+    function waitForHoraireManager() {
+        return new Promise((resolve) => {
+            const checkManager = () => {
+                if (window.horaireManager) {
+                    resolve();
+                } else {
+                    setTimeout(checkManager, 100);
+                }
+            };
+            checkManager();
+        });
+    }
+
+    // Charger les shifts après que tout soit prêt
+    waitForHoraireManager().then(() => {
         if (existingShifts && Object.keys(existingShifts).length > 0) {
             loadExistingShifts(existingShifts);
+            // Recharger l'affichage pour s'assurer que tout est correct
+            setTimeout(() => {
+                if (window.horaireManager) {
+                    window.horaireManager.refreshAllShiftsDisplay();
+                }
+            }, 100);
         }
-    }, 500); // Délai pour s'assurer que le DOM et le gestionnaire sont prêts
+    });
 
     function loadExistingShifts(shiftsData) {
         for (const employeeId in shiftsData) {
@@ -271,10 +328,10 @@
 
                 localStorage.setItem(shiftKey, JSON.stringify(localStorageData));
 
-                // Afficher dans l'interface
+                // Afficher dans l'interface en utilisant la fonction appropriée du gestionnaire
                 const cell = document.querySelector(`[data-employee-id="${employeeId}"][data-day="${day}"]`);
-                if (cell) {
-                    updateCellDisplay(cell, localStorageData);
+                if (cell && window.horaireManager) {
+                    window.horaireManager.displayShiftInCell(cell, localStorageData);
                 }
             }
         }
