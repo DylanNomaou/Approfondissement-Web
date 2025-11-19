@@ -1,11 +1,11 @@
-{% extends "restoplus/base.html" %} 
-{% load static %} 
-{% block title %}Dashboard Principal - RestoPLus{% endblock %} 
+{% extends "restoplus/base.html" %}
+{% load static %}
+{% block title %}Dashboard Principal - RestoPLus{% endblock %}
 {% block content %}
 
 <section class="dashboard-section">
   <div class="dashboard-container">
-    
+
     <!-- Messages Section -->
     {% if messages %}
       <div class="container-fluid mb-4">
@@ -78,7 +78,7 @@
                   <!-- Tâches assignées à l'utilisateur connecté -->
                   {% if user_tasks_today %}
                     {% for task in user_tasks_today %}
-                      <div class="task-item-horizontal d-flex flex-column justify-content-between p-3 {% if task.is_completed %}task-completed{% else %}task-pending{% endif %} rounded-3 task-clickable" 
+                      <div class="task-item-horizontal d-flex flex-column justify-content-between p-3 {% if task.is_completed %}task-completed{% else %}task-pending{% endif %} rounded-3 task-clickable"
                            data-task-id="{{ task.id }}"
                            data-task-title="{{ task.title }}"
                            data-task-description="{{ task.description|default:'' }}"
@@ -89,7 +89,7 @@
                            data-task-completed="{{ task.is_completed|yesno:'true,false' }}"
                            data-task-assigned-users="{% for user in task.assigned_to.all %}{{ user.get_full_name|default:user.username }}{% if not forloop.last %},{% endif %}{% endfor %}"
                            style="cursor: pointer; transition: all 0.2s ease;">
-                        
+
                         <div class="task-content-horizontal flex-grow-1 mb-2">
                           <div class="d-flex align-items-center justify-content-between mb-2">
                             {% if task.is_completed %}
@@ -122,7 +122,7 @@
                     </div>
                   {% endif %}
                 </div>
-                
+
                 <!-- Indicateur de scroll si plus de 2 tâches -->
                 {% if user_tasks_today|length > 2 %}
                   <div class="scroll-indicator-horizontal mt-3 text-center">
@@ -166,7 +166,7 @@
                 <div class="notifications-scroll-container-fixed">
                   {% for notification in user_notifications %}
                     {% if not notification.is_read %}
-                    <div class="notification-item-vertical border border-{{ notification.get_type_display_color }} border-2 rounded-3 p-3 bg-light mb-3" 
+                    <div class="notification-item-vertical border border-{{ notification.get_type_display_color }} border-2 rounded-3 p-3 bg-light mb-3"
                          data-notification-id="{{ notification.id }}">
                       <div class="d-flex align-items-start">
                         <div class="flex-shrink-0 me-3">
@@ -214,7 +214,7 @@
         </div>
       </div>
 
-      
+
 
       <!-- Actions Rapides -->
       <div class="row mb-4">
@@ -253,6 +253,7 @@
                     <span class="small">Voir Rapport</span>
                   </button>
                 </div>
+
               </div>
             </div>
           </div>

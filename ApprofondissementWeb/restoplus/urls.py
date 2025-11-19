@@ -29,6 +29,11 @@ urlpatterns=[
     path('create-schedule/', views.create_schedule, name='create_schedule'),
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
+    path('tickets/', views.tickets_list, name='tickets_list'),
+    path('tickets/create/', views.create_ticket, name='create_ticket'),
+    path('tickets/<int:ticket_id>/', views.ticket_detail, name='ticket_detail'),
+    path('tickets/<int:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
+    path('tickets/all/', views.all_tickets, name='all_tickets'),
     # URLS SECTION INVENTAIRE
     path('inventory/',views.inventory_management,name='inventory_management'),
     path('delete-inventoy-item/<str:sku>/', views.delete_inventory_item, name='delete_inventory_item'),
