@@ -1015,8 +1015,6 @@ def view_schedule(request):
     week_has_started = today >= monday
 
 
-
-
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
