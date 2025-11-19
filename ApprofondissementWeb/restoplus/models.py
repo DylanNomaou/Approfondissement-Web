@@ -269,6 +269,7 @@ class Notification(models.Model):
         ('reminder', 'Rappel'),
         ('system', 'Notification système'),
         ('schedule_published', 'Horaire publié'),
+        ('inventory_added', 'Inventaire ajouté'),
     ]
 
     titre = models.CharField(max_length=255, verbose_name="Titre")
@@ -346,6 +347,7 @@ class Notification(models.Model):
             'reminder': 'bi-bell',
             'system': 'bi-info-circle',
             'schedule_published': 'bi-calendar-check',
+            'inventory_added': 'bi-box-seam',
         }
         return icons.get(self.type_notification, 'bi-bell')
 
@@ -358,6 +360,7 @@ class Notification(models.Model):
             'reminder': 'warning',
             'system': 'secondary',
             'schedule_published': 'success',
+            'inventory_added': 'info',
         }
         return colors.get(self.type_notification, 'secondary')
 

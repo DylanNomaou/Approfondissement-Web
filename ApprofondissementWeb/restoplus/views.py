@@ -362,7 +362,17 @@ def inventory_management(request):
             if instance:
                 messages.success(request, f"Article '{obj.name}' mis à jour.")
             else:
+                # Nouvel article créé - envoyer des notifications aux administrateurs
                 messages.success(request, f"Article '{obj.name}' créé.")
+                try:
+                    from .notifications import notify_inventory_added
+                    notifications_count = notify_inventory_added(obj, request.user)
+                    if notifications_count > 0:
+                        messages.info(request, f"{notifications_count} notification(s) envoyée(s) aux administrateurs.")
+                except Exception as e:
+                    # En cas d'erreur avec les notifications, on continue sans interrompre
+                    messages.warning(request, f"Article créé, mais erreur d'envoi de notifications: {str(e)}")
+                
             # Redirection sans paramètre sku
             params = request.GET.copy()
             if 'sku' in params:
@@ -869,58 +879,6 @@ def delete_employee(request, employe_id):
 
 
 # ======================================================================
-#  NOTIFICATION D'HORAIRES
-# ======================================================================
-
-def create_schedule_notifications(week_start_date, created_by_user, shifts_count):
-    """
-    Créer des notifications pour informer tous les employés qu'un horaire a été publié
-    
-    Args:
-        week_start_date: Date de début de la semaine (lundi)
-        created_by_user: L'utilisateur qui a publié l'horaire
-        shifts_count: Nombre d'horaires publiés
-    """
-    from .models import Notification
-    
-    # Obtenir la date de fin de semaine (dimanche)
-    week_end_date = week_start_date + timedelta(days=6)
-    
-    # Formatage des dates pour l'affichage
-    week_start_formatted = week_start_date.strftime('%d/%m/%Y')
-    week_end_formatted = week_end_date.strftime('%d/%m/%Y')
-    
-    # Titre et description de la notification
-    titre = f"📅 Horaire publié - Semaine du {week_start_formatted}"
-    description = (
-        f"L'horaire de la semaine du {week_start_formatted} au {week_end_formatted} "
-        f"a été publié par {created_by_user.get_full_name() or created_by_user.username}. "
-        f"{shifts_count} horaire(s) de travail ont été assignés. "
-        f"Consultez votre horaire dans la section 'Voir les horaires'."
-    )
-    
-    # Récupérer tous les employés actifs
-    all_employees = User.objects.filter(is_active=True)
-    
-    # Créer une notification pour chaque employé
-    notifications_created = 0
-    for employee in all_employees:
-        # Ne pas créer de notification pour l'utilisateur qui a publié l'horaire
-        if employee.id != created_by_user.id:
-            Notification.objects.create(
-                titre=titre,
-                description=description,
-                type_notification='schedule_published',
-                assigned_to=employee,
-                created_by=created_by_user,
-                is_read=False
-            )
-            notifications_created += 1
-    
-    return notifications_created
-
-
-# ======================================================================
 #  CRÉATION D'HORAIRES
 # ======================================================================
 
@@ -1214,15 +1172,16 @@ def publish_schedule(request):
                         monday_of_week = first_date - timedelta(days=first_date.weekday())
                         
                         # Créer les notifications pour tous les employés
-                        notifications_count = create_schedule_notifications(
+                        from .notifications import notify_schedule_published
+                        notifications_count = notify_schedule_published(
                             week_start_date=monday_of_week,
-                            created_by_user=request.user,
+                            published_by=request.user,
                             shifts_count=published_count
                         )
                         
                         return JsonResponse({
                             'success': True,
-                            'message': f'{published_count} horaires publiés avec succès',
+                            'message': f'{published_count} horaires publiés avec succès. {notifications_count} notifications envoyées.',
                             'published_count': published_count,
                             'notifications_sent': notifications_count
                         })
