@@ -1,7 +1,5 @@
 """Views pour l'application RestoPlus"""
 import json
-<<<<<<< HEAD
-=======
 from datetime import date
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
@@ -20,7 +18,6 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from .notifications import notify_task_assigned, notify_role_assigned
 from datetime import datetime, timedelta
->>>>>>> origin
 import locale
 from datetime import date, datetime, timedelta
 from os import rename
@@ -872,6 +869,58 @@ def delete_employee(request, employe_id):
 
 
 # ======================================================================
+#  NOTIFICATION D'HORAIRES
+# ======================================================================
+
+def create_schedule_notifications(week_start_date, created_by_user, shifts_count):
+    """
+    Créer des notifications pour informer tous les employés qu'un horaire a été publié
+    
+    Args:
+        week_start_date: Date de début de la semaine (lundi)
+        created_by_user: L'utilisateur qui a publié l'horaire
+        shifts_count: Nombre d'horaires publiés
+    """
+    from .models import Notification
+    
+    # Obtenir la date de fin de semaine (dimanche)
+    week_end_date = week_start_date + timedelta(days=6)
+    
+    # Formatage des dates pour l'affichage
+    week_start_formatted = week_start_date.strftime('%d/%m/%Y')
+    week_end_formatted = week_end_date.strftime('%d/%m/%Y')
+    
+    # Titre et description de la notification
+    titre = f"📅 Horaire publié - Semaine du {week_start_formatted}"
+    description = (
+        f"L'horaire de la semaine du {week_start_formatted} au {week_end_formatted} "
+        f"a été publié par {created_by_user.get_full_name() or created_by_user.username}. "
+        f"{shifts_count} horaire(s) de travail ont été assignés. "
+        f"Consultez votre horaire dans la section 'Voir les horaires'."
+    )
+    
+    # Récupérer tous les employés actifs
+    all_employees = User.objects.filter(is_active=True)
+    
+    # Créer une notification pour chaque employé
+    notifications_created = 0
+    for employee in all_employees:
+        # Ne pas créer de notification pour l'utilisateur qui a publié l'horaire
+        if employee.id != created_by_user.id:
+            Notification.objects.create(
+                titre=titre,
+                description=description,
+                type_notification='schedule_published',
+                assigned_to=employee,
+                created_by=created_by_user,
+                is_read=False
+            )
+            notifications_created += 1
+    
+    return notifications_created
+
+
+# ======================================================================
 #  CRÉATION D'HORAIRES
 # ======================================================================
 
@@ -895,15 +944,10 @@ def create_schedule(request):
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
 
-<<<<<<< HEAD
     # Vérifier si la semaine peut être modifiée
     # Règle : On peut modifier tant que la semaine n'a pas encore commencé (même si publiée)
     week_has_started = today >= monday
     can_edit_week = not week_has_started
-=======
-    # Vérifier si la semaine peut être modifiée (pas dans le passé)
-    can_edit_week = monday >= (today - timedelta(days=today.weekday()))
->>>>>>> origin
 
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
@@ -993,11 +1037,7 @@ def create_schedule(request):
         'week_end_formatted': week_end_formatted,
         'week_schedule': {
             'status': 'published' if is_published else 'draft',
-<<<<<<< HEAD
             'can_be_edited': can_edit_week,  # Permettre l'édition tant que la semaine n'a pas commencé
-=======
-            'can_be_edited': can_edit_week and not is_published,
->>>>>>> origin
             'is_published': is_published,
             'week_start': week_start_formatted,
             'week_end': week_end_formatted,
@@ -1010,17 +1050,11 @@ def create_schedule(request):
 
 @login_required
 def view_schedule(request):
-<<<<<<< HEAD
     """Vue pour afficher les horairebliés en lecture seule"""
 
     # Récupérer tous les employés
     employes = User.objects.all()
 
-=======
-    """Vue pour afficher les horaires publiés en lecture seule"""
-    # Récupérer tous les employés
-    employes = User.objects.all()
->>>>>>> origin
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
     # Créer les jours de la semaine (lundi à dimanche)
@@ -1028,14 +1062,11 @@ def view_schedule(request):
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
 
-<<<<<<< HEAD
     week_has_started = today >= monday
 
 
 
 
-=======
->>>>>>> origin
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -1100,21 +1131,13 @@ def view_schedule(request):
             'can_modify': can_modify,
         },
     }
-<<<<<<< HEAD
-
-=======
->>>>>>> origin
     return render(request, 'restoplus/view_schedule.html', context)
 
 
 @login_required
 @require_POST
 def publish_schedule(request):
-<<<<<<< HEAD
     """Publie les horaires depuis localStorage vers la bse de données - Réservé aux administrateurs"""
-=======
-    """Publie les horaires depuis localStorage vers la base de données - Réservé aux administrateurs"""
->>>>>>> origin
 
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
@@ -1173,6 +1196,46 @@ def publish_schedule(request):
                 'errors': errors
             })
         else:
+            # Si des horaires ont été publiés avec succès, créer des notifications
+            if published_count > 0:
+                try:
+                    # Déterminer la semaine publiée en trouvant le lundi de la première date
+                    first_date = None
+                    for shift_key in shifts_data.keys():
+                        parts = shift_key.split('_')
+                        if len(parts) >= 3:
+                            date_str = parts[2]
+                            shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                            if first_date is None or shift_date < first_date:
+                                first_date = shift_date
+                    
+                    if first_date:
+                        # Trouver le lundi de cette semaine
+                        monday_of_week = first_date - timedelta(days=first_date.weekday())
+                        
+                        # Créer les notifications pour tous les employés
+                        notifications_count = create_schedule_notifications(
+                            week_start_date=monday_of_week,
+                            created_by_user=request.user,
+                            shifts_count=published_count
+                        )
+                        
+                        return JsonResponse({
+                            'success': True,
+                            'message': f'{published_count} horaires publiés avec succès',
+                            'published_count': published_count,
+                            'notifications_sent': notifications_count
+                        })
+                    
+                except Exception as e:
+                    # En cas d'erreur avec les notifications, on retourne quand même le succès
+                    # car les horaires ont été publiés
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'{published_count} horaires publiés avec succès (notifications non envoyées: {str(e)})',
+                        'published_count': published_count
+                    })
+            
             return JsonResponse({
                 'success': True,
                 'message': f'{published_count} horaires publiés avec succès',
@@ -1460,7 +1523,7 @@ def password_reset_confirm(request):
     try:
         reset_code = PasswordResetCode.objects.get(id=reset_code_id)
         if not reset_code.is_valid():
-            # Nettoyer la session
+            # Nettoyer la session immédiatement
             if 'reset_email' in request.session:
                 del request.session['reset_email']
             if 'fake_reset' in request.session:
@@ -1469,6 +1532,19 @@ def password_reset_confirm(request):
                 del request.session['reset_code_id']
 
             raise PermissionDenied("Code expiré ou invalide. Veuillez recommencer la procédure.")
+            
+        # IMPORTANT : Vérifier si le code a déjà été utilisé (même en GET)
+        if reset_code.is_used:
+            # Nettoyer la session immédiatement
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'fake_reset' in request.session:
+                del request.session['fake_reset']
+            if 'reset_code_id' in request.session:
+                del request.session['reset_code_id']
+
+            raise PermissionDenied("Code déjà utilisé. Veuillez recommencer la procédure.")
+            
     except PasswordResetCode.DoesNotExist:
         # Nettoyer la session
         if 'reset_email' in request.session:
@@ -1483,6 +1559,26 @@ def password_reset_confirm(request):
     if request.method == 'POST':
         password1 = request.POST.get('password1', '')
         password2 = request.POST.get('password2', '')
+        form_token = request.POST.get('reset_token', '')
+
+        # Vérification du token anti-rafraîchissement
+        session_token = request.session.get('reset_form_token')
+        if not form_token or not session_token or form_token != session_token:
+            # Token invalide ou manquant = tentative de rafraîchissement
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'reset_code_id' in request.session:
+                del request.session['reset_code_id']
+            if 'fake_reset' in request.session:
+                del request.session['fake_reset']
+            if 'reset_form_token' in request.session:
+                del request.session['reset_form_token']
+                
+            raise PermissionDenied("Formulaire expiré ou invalide. Veuillez recommencer la procédure.")
+
+        # Invalider immédiatement le token pour empêcher la réutilisation
+        if 'reset_form_token' in request.session:
+            del request.session['reset_form_token']
 
         # Validation du mot de passe
         if not password1 or not password2:
@@ -1518,6 +1614,9 @@ def password_reset_confirm(request):
                 "Votre mot de passe a été mis à jour avec succès ! "
                 "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.")
 
+            # Marquer que le processus de réinitialisation est terminé avec succès
+            request.session['reset_completed'] = True
+
             return redirect('password_reset_complete')
 
         except User.DoesNotExist:
@@ -1527,11 +1626,35 @@ def password_reset_confirm(request):
             messages.error(request, "Une erreur s'est produite. Veuillez réessayer.")
             return render(request, 'registration/password_reset_confirm.html')
 
-    return render(request, 'registration/password_reset_confirm.html')
+    # Génération d'un token anti-rafraîchissement pour l'affichage GET
+    import uuid
+    reset_token = str(uuid.uuid4())
+    request.session['reset_form_token'] = reset_token
+
+    return render(request, 'registration/password_reset_confirm.html', {
+        'reset_token': reset_token
+    })
 
 
 def password_reset_complete(request):
     """Étape 4: Confirmation de la réinitialisation"""
-    # Cette vue peut être utilisée pour afficher une page de confirmation
-    # ou rediriger directement vers la page de connexion
+    # Vérification de sécurité : l'utilisateur doit avoir terminé le processus complet
+    if not request.session.get('reset_completed'):
+        # Nettoyer toute session corrompue
+        if 'reset_email' in request.session:
+            del request.session['reset_email']
+        if 'fake_reset' in request.session:
+            del request.session['fake_reset']
+        if 'reset_code_id' in request.session:
+            del request.session['reset_code_id']
+        if 'reset_completed' in request.session:
+            del request.session['reset_completed']
+
+        # Accès non autorisé - rediriger vers 403
+        raise PermissionDenied("Accès non autorisé. Veuillez compléter le processus de réinitialisation.")
+
+    # Nettoyer la variable de session après affichage (usage unique)
+    if 'reset_completed' in request.session:
+        del request.session['reset_completed']
+
     return render(request, 'registration/password_reset_complete.html')

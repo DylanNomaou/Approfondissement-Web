@@ -3855,4 +3855,280 @@ body {
   width: 64px;
   height: 64px;
   background: #6f42c1;
+}
+
+.elegant-modal {
+  border: none;
+  border-radius: 16px;
+  -webkit-box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+.elegant-modal .elegant-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 2rem;
+  color: white;
+  position: relative;
+}
+.elegant-modal .elegant-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent);
+  pointer-events: none;
+}
+.elegant-modal .elegant-header .header-content {
+  position: relative;
+  z-index: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 1.5rem;
+}
+.elegant-modal .elegant-header .header-content .modal-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.elegant-modal .elegant-header .header-content .modal-icon i {
+  font-size: 1.5rem;
+}
+.elegant-modal .elegant-header .header-content .header-text .modal-title {
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+}
+.elegant-modal .elegant-header .header-content .header-text .modal-subtitle {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+.elegant-modal .elegant-header .elegant-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  width: 40px;
+  height: 40px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+.elegant-modal .elegant-header .elegant-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  -webkit-transform: scale(1.1);
+          transform: scale(1.1);
+}
+.elegant-modal .elegant-header .elegant-close i {
+  font-size: 1rem;
+}
+.elegant-modal .elegant-body {
+  padding: 2rem;
+}
+.elegant-modal .elegant-body .employee-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.elegant-modal .elegant-body .employee-card .employee-name {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+.elegant-modal .elegant-body .employee-card .employee-name i {
+  margin-right: 0.5rem;
+}
+.elegant-modal .elegant-body .employee-card .employee-details {
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+.elegant-modal .elegant-body .employee-card .employee-details strong {
+  color: #6c757d;
+}
+.elegant-modal .elegant-body .form-section {
+  margin-bottom: 1.5rem;
+}
+.elegant-modal .elegant-body .form-section .section-header {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+}
+.elegant-modal .elegant-body .form-section .section-header .section-icon {
+  color: #6c757d;
+}
+.elegant-modal .elegant-body .form-section .section-header .section-title {
+  color: #495057;
+  font-weight: 600;
+  margin: 0;
+}
+.elegant-modal .elegant-body .elegant-input-group {
+  margin-bottom: 1rem;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-label {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-label .label-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  font-size: 0.8rem;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-label .label-icon.start-icon {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-label .label-icon.end-icon {
+  background: linear-gradient(135deg, #dc3545, #fd7e14);
+  color: white;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-label .label-icon.break-icon {
+  background: linear-gradient(135deg, #ffc107, #fd7e14);
+  color: white;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input, .admin-dashboard .elegant-modal .elegant-body .elegant-input-group .elegant-textarea, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input:focus, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea:focus {
+  border-color: #667eea;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+          box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input.time-input, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea.time-input {
+  font-family: "Courier New", monospace;
+  font-weight: 600;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input.time-input::-webkit-datetime-edit, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea.time-input::-webkit-datetime-edit {
+  color: #495057;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input.time-input::-webkit-datetime-edit-fields-wrapper, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea.time-input::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input.time-input::-webkit-datetime-edit-text, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea.time-input::-webkit-datetime-edit-text {
+  color: #6c757d;
+  padding: 0 0.2rem;
+}
+.elegant-modal .elegant-body .elegant-input-group .elegant-input.time-input::-webkit-datetime-edit-hour-field, .elegant-modal .elegant-body .elegant-input-group .elegant-input.time-input::-webkit-datetime-edit-minute-field, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea.time-input::-webkit-datetime-edit-hour-field, .elegant-modal .elegant-body .elegant-input-group .elegant-textarea.time-input::-webkit-datetime-edit-minute-field {
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  color: #495057;
+}
+.elegant-modal .elegant-body .pause-section .pause-toggle .form-check-input {
+  width: 50px;
+  height: 24px;
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+.elegant-modal .elegant-body .pause-section .pause-toggle .form-check-input:checked {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+.elegant-modal .elegant-body .pause-section .pause-toggle .form-check-label {
+  font-weight: 600;
+  color: #495057;
+  margin-left: 0.5rem;
+}
+.elegant-modal .elegant-body .note-section .form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  min-height: 100px;
+}
+.elegant-modal .elegant-body .note-section .form-control:focus {
+  border-color: #667eea;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+          box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+.elegant-modal .modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+.elegant-modal .modal-footer .btn {
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+.elegant-modal .modal-footer .btn.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+.elegant-modal .modal-footer .btn.btn-primary:hover {
+  -webkit-transform: translateY(-2px);
+          transform: translateY(-2px);
+  -webkit-box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+.elegant-modal .modal-footer .btn.btn-secondary {
+  background: #6c757d;
+  border: none;
+}
+.elegant-modal .modal-footer .btn.btn-secondary:hover {
+  background: #5a6268;
+  -webkit-transform: translateY(-2px);
+          transform: translateY(-2px);
 }/*# sourceMappingURL=styles.css.map */

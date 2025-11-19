@@ -29,7 +29,6 @@ urlpatterns=[
     path('create-schedule/', views.create_schedule, name='create_schedule'),
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
-<<<<<<< HEAD
     path('horaire/delete-shift/<int:shift_id>/', views.delete_shift, name='delete_shift'),
 
     # URLs pour la réinitialisation de mot de passe
@@ -37,14 +36,14 @@ urlpatterns=[
     path('password-reset/verify/', views.password_reset_verify, name='password_reset_verify'),
     path('password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),
     path('password-reset/complete/', views.password_reset_complete, name='password_reset_complete'),
-]
 
-
-
-=======
-    # URLS SECTION INVENTAIRE
+        # URLS SECTION INVENTAIRE
     path('inventory/',views.inventory_management,name='inventory_management'),
     path('delete-inventoy-item/<str:sku>/', views.delete_inventory_item, name='delete_inventory_item'),
     path('ajax/suggestions/<path:query>',views.suggestions_ajax, name="suggestions_ajax")
 ]
->>>>>>> origin
+
+
+
+
+

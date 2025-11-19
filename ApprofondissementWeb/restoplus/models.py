@@ -268,6 +268,7 @@ class Notification(models.Model):
         ('task_completed', 'Tâche terminée'),
         ('reminder', 'Rappel'),
         ('system', 'Notification système'),
+        ('schedule_published', 'Horaire publié'),
     ]
 
     titre = models.CharField(max_length=255, verbose_name="Titre")
@@ -344,6 +345,7 @@ class Notification(models.Model):
             'task_completed': 'bi-check-circle',
             'reminder': 'bi-bell',
             'system': 'bi-info-circle',
+            'schedule_published': 'bi-calendar-check',
         }
         return icons.get(self.type_notification, 'bi-bell')
 
@@ -355,6 +357,7 @@ class Notification(models.Model):
             'task_completed': 'info',
             'reminder': 'warning',
             'system': 'secondary',
+            'schedule_published': 'success',
         }
         return colors.get(self.type_notification, 'secondary')
 
