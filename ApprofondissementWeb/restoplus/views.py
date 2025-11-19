@@ -1,27 +1,26 @@
 """Views pour l'application RestoPlus"""
 import json
-from datetime import date
-from django.shortcuts import render,redirect,get_object_or_404
-from django.contrib.auth import login
-from django.http import Http404
-from django.db.models import Q
-from django.core.exceptions import PermissionDenied,ValidationError
-from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, TicketForm
-from .models import User, Role, Task, Notification,Availability, Task, Ticket
-from django import forms
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm, StockOrderForm, StockOrderItemFormSet
-from .models import User, Role, Task, Notification,Availability, Task, Inventory, StockOrderItem, StockOrder
-from django.db.models import Q
-from django.core.paginator import Paginator
-from .notifications import notify_task_assigned, notify_role_assigned
-from datetime import datetime, timedelta
 import locale
+from datetime import date, datetime, timedelta
+from os import rename
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login
+from django.contrib import messages
+from django.http import Http404, JsonResponse
+from django.db.models import Q
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
+from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet,InventoryCreateForm
+from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,StockOrderItem,Ticket,PasswordResetCode
+from .notifications import notify_task_assigned, notify_role_assigned
+
 
 # Configuration de la locale française pour les dates
 try:
@@ -272,7 +271,7 @@ def ask_availibilities(request, employe_id):
         messages.success(request, f" Une demande de disponibilités a été envoyée à {employe.username}.")
         return redirect('employees_management')
     else :
-        messages.warning('La demande n\a pu être complétée')
+        messages.warning(request, 'La demande n\'a pu être complétée')
         return redirect('employees_management')
 
 @login_required
@@ -310,24 +309,6 @@ def availability_form(request):
 # ======================================================================
 # 🧑‍💼 INVENTAIRE
 # ======================================================================
-
-class InventoryCreateForm(forms.ModelForm):
-    class Meta:
-        model = Inventory
-        fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
-            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU"}),
-            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
-            "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
-            "unit": forms.Select(attrs={"class": "form-select"}),
-            "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
-            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
-        }
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
-        self.fields['sku'].required = True
 
 """Vue pour la gestion de l'inventaire"""
 @login_required
@@ -485,6 +466,7 @@ def apply_inventory_filters(inventory_queryset, cleaned_data):
     return inventory_queryset
 
 
+
 # ======================================================================
 # ⚙️ ADMINISTRATION
 # ======================================================================
@@ -617,7 +599,6 @@ def toggle_task_status(request):
             status_text = "terminée" if task.is_completed else "réouverte"
             message = f"Tâche '{task.title}' marquée comme {status_text}"
             return JsonResponse({
-                'success': True,
                 'success': True,
                 'message': message,
                 'is_completed': task.is_completed
@@ -769,7 +750,6 @@ def add_employee(request):
     return render(request, 'restoplus/add_employee.html',
                   {'form': form,
                    'roles': roles})
-from django.core.exceptions import ValidationError
 
 @login_required
 def edit_employee(request, employe_id):
@@ -867,8 +847,6 @@ def create_schedule(request):
 
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
-        from django.shortcuts import redirect
-        from django.contrib import messages
         messages.error(request, "Accès non autorisé. Seuls les administrateurs peuvent créer des horaires.")
         return redirect('view_schedule')
 
@@ -883,6 +861,9 @@ def create_schedule(request):
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
 
+    # Vérifier si la semaine peut être modifiée 
+    # Règle : On peut modifier tant que la semaine n'a pas encore commencé (même si publiée)
+    current_monday = today - timedelta(days=today.weekday())
     # Vérifier si la semaine peut être modifiée (pas dans le passé)
     can_edit_week = monday >= (today - timedelta(days=today.weekday()))
 
@@ -952,7 +933,6 @@ def create_schedule(request):
     ]
 
     # Forcer la locale française pour le formatage des dates
-    import locale
     try:
         locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
     except:
@@ -968,7 +948,7 @@ def create_schedule(request):
     context = {
         'employes': employes,
         'week_days': week_days,
-        'week_days_json': json.dumps(week_days),
+        'week_days_json': week_days,
         'availabilities_json': availabilities,  # Pas de json.dumps() ici car json_script le fait automatiquement
         'shifts_by_employee': shifts_by_employee,
         'week_start_formatted': week_start_formatted,
@@ -998,6 +978,9 @@ def view_schedule(request):
     # Trouver le lundi de cette semaine + décalage
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
 
+    week_has_started = today >= monday
+
+
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     days_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -1005,7 +988,7 @@ def view_schedule(request):
     for i in range(7):
         day = monday + timedelta(days=i)
         week_days.append({
-            'jour_name': days_names[i],
+            'rename': days_names[i],
             'jour_key': days_keys[i],
             'date_short': day.strftime('%d/%m'),
             'date_str': day.strftime('%Y-%m-%d'),
@@ -1048,7 +1031,7 @@ def view_schedule(request):
 
     # Si il y a des shifts publiés, l'horaire est publié et ne peut pas être modifié
     is_published = published_shifts_count > 0
-    can_modify = not is_published
+    can_modify = not week_has_started
 
     context = {
         'employes': employes,
@@ -1056,8 +1039,8 @@ def view_schedule(request):
         'shifts_by_employee': shifts_by_employee,
         'week_schedule': {
             'status': 'published' if is_published else 'draft',
-            'week_start': week_start.strftime('%d %B %Y'),
-            'week_end': week_end.strftime('%d %B %Y'),
+            'week_start': week_start.strftime('%d/%m/%Y'),
+            'week_end': week_end.strftime('%d/%m/%Y'),
             'is_published': is_published,
             'can_modify': can_modify,
         },
@@ -1349,5 +1332,200 @@ def custom_403_view(request, exception=None):
 def custom_404_view(request, exception=None):
     """Vue personnalisée pour les erreurs 404 de page non trouvée"""
     return render(request, 'restoplus/404.html', status=404)
+    return redirect('employees_management')
+
+
+# ==========================================
+# VUES POUR LA RÉINITIALISATION DE MOT DE PASSE
+# ==========================================
+
+def password_reset_request(request):
+    """Étape 1: Saisie de l'adresse email pour la réinitialisation"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        
+        if not email:
+            messages.error(request, "❌ Veuillez saisir une adresse email.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Vérifier si l'email existe dans notre base de données
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Pour des raisons de sécurité, on ne révèle pas si l'email existe ou non
+            messages.info(request, 
+                "📧 Si cette adresse email est enregistrée dans notre système, "
+                "vous recevrez un code de réinitialisation dans quelques minutes.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Vérifier le rate limiting (max 1 code par minute)
+        if PasswordResetCode.has_recent_code(email, minutes=1):
+            messages.warning(request, 
+                "⏱️ Un code de réinitialisation a déjà été envoyé récemment. "
+                "Veuillez attendre 1 minute avant de demander un nouveau code.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Nettoyer les anciens codes et créer un nouveau
+        try:
+            reset_code = PasswordResetCode.create_for_email(email)
+            
+            # Envoyer l'email avec le code
+            subject = "🔑 Code de réinitialisation - RestoPLus"
+            message = f"""
+Bonjour,
+
+Vous avez demandé la réinitialisation de votre mot de passe pour RestoPLus.
+
+Votre code de réinitialisation est : {reset_code.code}
+
+Ce code est valide pendant 15 minutes et ne peut être utilisé qu'une seule fois.
+
+Si vous n'avez pas demandé cette réinitialisation, ignorez simplement ce message.
+
+L'équipe RestoPLus
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 
+                "📧 Un code de réinitialisation a été envoyé à votre adresse email. "
+                "Vérifiez votre boîte de réception et vos spam.")
+            
+            # Rediriger vers la page de saisie du code avec l'email en session
+            request.session['reset_email'] = email
+            return redirect('password_reset_verify')
+            
+        except Exception as e:
+            messages.error(request, 
+                "❌ Une erreur s'est produite lors de l'envoi de l'email. "
+                "Veuillez réessayer plus tard.")
+            return render(request, 'registration/password_reset_request.html')
+    
+    return render(request, 'registration/password_reset_request.html')
+
+
+def password_reset_verify(request):
+    """Étape 2: Saisie et vérification du code de réinitialisation"""
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().upper()
+        
+        if not code:
+            messages.error(request, "❌ Veuillez saisir le code de réinitialisation.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        if len(code) != 6:
+            messages.error(request, "❌ Le code doit contenir exactement 6 caractères.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        # Chercher le code valide
+        reset_code = PasswordResetCode.get_valid_code(email, code)
+        
+        if not reset_code:
+            messages.error(request, "❌ Code invalide ou expiré. Veuillez vérifier et réessayer.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        # Vérifier les tentatives
+        if not reset_code.can_attempt():
+            messages.error(request, 
+                "❌ Trop de tentatives invalides. Veuillez demander un nouveau code.")
+            return redirect('password_reset_request')
+        
+        # Incrémenter les tentatives avant validation
+        reset_code.increment_attempts()
+        
+        # Valider le code (vérification redondante pour sécurité)
+        if reset_code.code != code:
+            messages.error(request, "❌ Code incorrect. Tentatives restantes : " + 
+                          str(5 - reset_code.attempts))
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+        
+        # Code valide ! Passer à l'étape suivante
+        request.session['reset_code_id'] = reset_code.id
+        messages.success(request, "✅ Code validé avec succès !")
+        return redirect('password_reset_confirm')
+    
+    return render(request, 'registration/password_reset_verify.html', {'email': email})
+
+
+def password_reset_confirm(request):
+    """Étape 3: Saisie du nouveau mot de passe"""
+    reset_code_id = request.session.get('reset_code_id')
+    if not reset_code_id:
+        messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
+    try:
+        reset_code = PasswordResetCode.objects.get(id=reset_code_id)
+        if not reset_code.is_valid():
+            messages.error(request, "❌ Code expiré. Veuillez recommencer la procédure.")
+            return redirect('password_reset_request')
+    except PasswordResetCode.DoesNotExist:
+        messages.error(request, "❌ Code invalide. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
+    if request.method == 'POST':
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+        
+        # Validation du mot de passe
+        if not password1 or not password2:
+            messages.error(request, "❌ Tous les champs sont obligatoires.")
+            return render(request, 'registration/password_reset_confirm.html')
+        
+        if password1 != password2:
+            messages.error(request, "❌ Les mots de passe ne correspondent pas.")
+            return render(request, 'registration/password_reset_confirm.html')
+        
+        if len(password1) < 8:
+            messages.error(request, "❌ Le mot de passe doit contenir au moins 8 caractères.")
+            return render(request, 'registration/password_reset_confirm.html')
+        
+        # Mettre à jour le mot de passe de l'utilisateur
+        try:
+            user = User.objects.get(email=reset_code.email)
+            user.set_password(password1)
+            user.save()
+            
+            # Marquer le code comme utilisé
+            reset_code.mark_as_used()
+            
+            # Nettoyer la session
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'reset_code_id' in request.session:
+                del request.session['reset_code_id']
+            
+            messages.success(request, 
+                "✅ Votre mot de passe a été mis à jour avec succès ! "
+                "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.")
+            
+            return redirect('login')
+            
+        except User.DoesNotExist:
+            messages.error(request, "❌ Utilisateur introuvable. Veuillez recommencer la procédure.")
+            return redirect('password_reset_request')
+        except Exception as e:
+            messages.error(request, "❌ Une erreur s'est produite. Veuillez réessayer.")
+            return render(request, 'registration/password_reset_confirm.html')
+    
+    return render(request, 'registration/password_reset_confirm.html')
+
+
+def password_reset_complete(request):
+    """Étape 4: Confirmation de la réinitialisation"""
+    # Cette vue peut être utilisée pour afficher une page de confirmation
+    # ou rediriger directement vers la page de connexion
+    return render(request, 'registration/password_reset_complete.html')
 
 

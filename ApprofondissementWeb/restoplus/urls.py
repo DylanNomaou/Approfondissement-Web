@@ -29,6 +29,12 @@ urlpatterns=[
     path('create-schedule/', views.create_schedule, name='create_schedule'),
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
+    
+    # URLs pour la réinitialisation de mot de passe
+    path('password-reset/', views.password_reset_request, name='password_reset_request'),
+    path('password-reset/verify/', views.password_reset_verify, name='password_reset_verify'),
+    path('password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),
+    path('password-reset/complete/', views.password_reset_complete, name='password_reset_complete'),
     path('tickets/', views.tickets_list, name='tickets_list'),
     path('tickets/create/', views.create_ticket, name='create_ticket'),
     path('tickets/<int:ticket_id>/', views.ticket_detail, name='ticket_detail'),
@@ -41,8 +47,9 @@ urlpatterns=[
     path('stock-orders/<int:pk>/', views.stock_order_detail, name='stock_order_detail'),
     path('stock-orders/<int:pk>/edit/', views.stock_order_update, name='stock_order_update'),
     path('stock-orders/<int:pk>/delete/', views.stock_order_delete, name='stock_order_delete'),
-    path('delete-inventoy-item/<str:sku>/', views.delete_inventory_item, name='delete_inventory_item'),
+    path('delete-inventory-item/<int:item_id>/', views.delete_inventory_item, name='delete_inventory_item'),
     path('ajax/suggestions/<path:query>',views.suggestions_ajax, name="suggestions_ajax")
+
 ]
 
 
