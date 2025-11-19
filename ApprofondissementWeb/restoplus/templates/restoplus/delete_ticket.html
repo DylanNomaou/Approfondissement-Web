@@ -1,0 +1,34 @@
+{% extends "restoplus/base.html" %}
+{% block title %}Supprimer le Ticket - RestoPlus{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        Confirmer la suppression
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <h3>Êtes-vous sûr de vouloir supprimer ce ticket ?</h3>
+                    <div class="alert alert-warning mt-4">
+                        <strong>Ticket:</strong> {{ ticket.title }}
+                    </div>
+                    <form method="POST" class="d-flex gap-2 justify-content-end">
+                        {% csrf_token %}
+                        <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-secondary">
+                             Annuler
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                             Supprimer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

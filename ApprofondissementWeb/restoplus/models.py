@@ -1,3 +1,6 @@
+"""Modèles pour l'application RestoPlus"""
+
+from datetime import date
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
@@ -36,6 +39,7 @@ email_validator = RegexValidator(
     message="Format de l'adresse courriel invalide."
 )
 
+"""Modèle personnalisé pour les utilisateurs"""
 class User(AbstractUser):
     @property
     def mobile_display(self):
@@ -87,13 +91,10 @@ class User(AbstractUser):
 
     def can_create_task_for_user(self, target_user):
         """Vérifier si l'utilisateur peut créer une tâche pour un utilisateur spécifique"""
-        # Les superusers peuvent tout faire
         if self.is_superuser:
             return True
-        # Les utilisateurs avec la permission can_distribute_tasks peuvent assigner à tous
         if self.can_distribute_tasks_to_all():
             return True
-        # Sinon, on peut seulement s'assigner des tâches à soi-même
         return self == target_user
 
     def can_manage_employees(self):
@@ -101,6 +102,17 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.has_permission('can_manage_users')
+
+    def can_manage_orders(self):
+        """Vérifier si l'utilisateur peut gérer les commandes"""
+        if self.is_superuser:
+            return True
+        return self.has_permission('can_manage_orders')
+
+
+# ======================================================================
+# 🧑‍💼 DISPONIBILITÉS
+# ======================================================================
 
 class Availability(models.Model):
     employe=models.ForeignKey(User,on_delete=models.CASCADE)
@@ -118,6 +130,52 @@ class Availability(models.Model):
     remplie = models.BooleanField(default=False)
     def __str__(self):
         return f"{self.employe.username} - {self.day} ({self.heure_debut} à {self.heure_fin})"
+
+# ======================================================================
+# 🧑‍💼 INVENTAIRE
+# ======================================================================
+
+class Inventory(models.Model):
+    """Article d'inventaire"""
+    UNIT_CHOICES = [
+        ("pcs", "Pièce"),
+        ("lb", "Livres"),
+        ("g", "Grammes"),
+        ("l", "Litres"),
+        ("ml", "Millilitres"),
+        ("pack", "Paquet"),
+    ]
+
+    name = models.CharField(max_length=200, verbose_name="Nom")
+    sku = models.CharField(max_length=50, blank=True, unique=True, verbose_name="SKU")
+    category = models.CharField(max_length=100, blank=True, verbose_name="Catégorie")
+
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Quantité")
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="pcs", verbose_name="Unité")
+    supplier = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur")
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Prix coûtant")
+
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+
+    class Meta:
+        verbose_name = "Article d'inventaire"
+        verbose_name_plural = "Inventaire"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.sku})" if self.sku else self.name
+
+    def clean(self):
+        """Validations simples"""
+        errors = {}
+        if self.quantity is not None and self.quantity < 0:
+            errors["quantity"] = "La quantité ne peut pas être négative."
+        if errors:
+            raise ValidationError(errors)
+
+
 
 class Task(models.Model):
     # Titre de la tâche
@@ -649,3 +707,82 @@ class PasswordResetCode(models.Model):
             expires_at=expires_at
         )
 
+class StockOrder(models.Model):
+    """Commande de stock"""
+    supplier = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur")
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='stock_orders_created', verbose_name="Créé par")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+
+    order_date = models.DateField(null=True, blank=True, verbose_name="Date de commande")
+    expected_delivery = models.DateField(null=True, blank=True, verbose_name="Livraison prévue")
+
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Coût total")
+
+    class Meta:
+        verbose_name = "Commande de stock"
+        verbose_name_plural = "Commandes de stock"
+        ordering = ['-created_at']
+
+
+    def __str__(self):
+        return f"Commande {self.id}"
+
+    def calculate_total(self):
+        """Calcule le coût total de la commande"""
+        total = sum(item.subtotal() for item in self.items.all())
+        self.total_cost = total
+        self.save()
+        return total
+
+class StockOrderItem(models.Model):
+    """Article dans une commande de stock"""
+    order = models.ForeignKey(StockOrder, on_delete=models.CASCADE, related_name='items', verbose_name="Commande")
+    inventory_item = models.ForeignKey(Inventory, on_delete=models.CASCADE, verbose_name="Article")
+
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Quantité")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix unitaire")
+
+    class Meta:
+        verbose_name = "Article de commande"
+        verbose_name_plural = "Articles de commande"
+
+
+    def __str__(self):
+        return f"{self.inventory_item.name} x {self.quantity}"
+
+    def subtotal(self):
+        """Calcule le sous-total pour cet article"""
+        return self.quantity * self.unit_price
+class Ticket(models.Model):
+    """Modèle pour les tickets de support"""
+    # CATEGORY_CHOICES = [
+    #     ('Bris', 'Bris d\'équipement'),
+    #     ('inventaire', 'Problème d\'inventaire'),
+    #     ('technique', 'Problème technique'),
+    #     ('autre', 'Autre'),
+    # ]
+    title = models.CharField(max_length=255, verbose_name="Titre du ticket")
+    description = models.TextField(verbose_name="Description du problème")
+    category = models.CharField(
+        max_length=150,
+        verbose_name="Catégorie",
+        help_text="ex: bris d'équipement, Problème d'inventaire, Problème technique, autre ..."
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tickets_crees',
+        verbose_name="Créé par"
+    )
+
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+
+    class Meta:
+        verbose_name = "Ticket"
+        verbose_name_plural = "Tickets"
+        ordering = ['-date_created']
+
+    def __str__(self):
+        return f"#{self.id} - {self.title}"
