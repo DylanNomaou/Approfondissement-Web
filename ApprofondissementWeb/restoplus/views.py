@@ -1,43 +1,26 @@
 """Views pour l'application RestoPlus"""
 import json
-from datetime import date
-from django.shortcuts import render,redirect,get_object_or_404
-from django.contrib.auth import login
-from django.http import Http404
-from django.db.models import Q
-from django.core.exceptions import PermissionDenied,ValidationError
-from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, TicketForm
-from .models import User, Role, Task, Notification,Availability, Task, Ticket
-from django import forms
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm, StockOrderForm, StockOrderItemFormSet
-from .models import User, Role, Task, Notification,Availability, Task, Inventory, StockOrderItem, StockOrder
-from django.db.models import Q
-from django.core.paginator import Paginator
-from .notifications import notify_task_assigned, notify_role_assigned
-from datetime import datetime, timedelta
 import locale
 from datetime import date, datetime, timedelta
 from os import rename
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.http import Http404, JsonResponse
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from .forms import UserRegisterForm, UserLoginForm, TaskForm, AvailabilityForm
-from .models import User, Role, Task, Notification, Availability, PasswordResetCode
+from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet
+from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,StockOrderItem,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
+
 
 # Configuration de la locale française pour les dates
 try:
