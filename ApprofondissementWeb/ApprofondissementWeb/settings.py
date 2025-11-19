@@ -137,12 +137,26 @@ USE_TZ = True
 
 
 # Email configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+if DEBUG:
+    # En développement, on peut choisir entre console et SMTP pour les tests
+    # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Pour debug
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Pour tests réels
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = 'webproject290@gmail.com'
+    EMAIL_HOST_PASSWORD = 'euejziymnogbuies'
+else:
+    # En production, utiliser SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = 'webproject290@gmail.com'
+    EMAIL_HOST_PASSWORD = 'euejziymnogbuies'
+
+# Configuration pour les deux environnements
 EMAIL_HOST_USER = 'webproject290@gmail.com'
-EMAIL_HOST_PASSWORD = 'euejziymnogbuies'
 
 
 # Static files (CSS, JavaScript, Images)
