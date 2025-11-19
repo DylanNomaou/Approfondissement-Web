@@ -1,9 +1,10 @@
 from django import forms
-from .models import User, Task, WorkShift, Ticket, Inventory
+from .models import User, Task, WorkShift, Inventory, StockOrder, StockOrderItem,Ticket
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from datetime import date, datetime, timedelta
+from django.forms import  BaseInlineFormSet
 
 class UserRegisterForm(forms.ModelForm):
     password = forms.CharField(
@@ -701,4 +702,130 @@ class InventoryFilterForm(forms.Form):
             val = " ".join(val.split())
         return val
 
+class StockOrderForm(forms.ModelForm):
+    class Meta:
+        model = StockOrder
+        fields = ['supplier', 'order_date', 'expected_delivery']
+        widgets = {
+            'supplier': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du fournisseur'}),
+            'order_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'expected_delivery': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+        labels = {
+            'supplier': 'Fournisseur',
+            'order_date': 'Date de commande',
+            'expected_delivery': 'Livraison prévue',
+        }
+        error_messages = {
+            'supplier': {
+                'required': 'Le nom du fournisseur est obligatoire.',
+            },
+            'order_date': {
+                'required': 'La date de commande est obligatoire.',
+                'invalid': 'Veuillez entrer une date valide.',
+            },
+            'expected_delivery': {
+                'required': 'La date de livraison prévue est obligatoire.',
+                'invalid': 'Veuillez entrer une date valide.',
+            },
+        }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['supplier']
+        self.fields['order_date']
+        self.fields['expected_delivery']
+
+    def clean_order_date(self):
+        order_date = self.cleaned_data.get('order_date')
+        if order_date and order_date < timezone.now().date():
+            raise ValidationError('La date de commande ne peut pas être dans le passé.')
+        return order_date
+
+    def clean_expected_delivery(self):
+        expected_delivery = self.cleaned_data.get('expected_delivery')
+        if expected_delivery and expected_delivery < timezone.now().date():
+            raise ValidationError('La date de livraison ne peut pas être dans le passé.')
+        return expected_delivery
+
+    def clean(self):
+        cleaned_data = super().clean()
+        order_date = cleaned_data.get('order_date')
+        expected_delivery = cleaned_data.get('expected_delivery')
+
+        if order_date and expected_delivery and expected_delivery < order_date:
+            raise ValidationError('La date de livraison doit être après la date de commande.')
+
+        return cleaned_data
+
+class StockOrderItemForm(forms.ModelForm):
+    class Meta:
+        model = StockOrderItem
+        fields = ['inventory_item', 'quantity']
+        widgets = {
+            'inventory_item': forms.Select(attrs={'class': 'form-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '1'}),
+        }
+        labels = {
+            'inventory_item': 'Article',
+            'quantity': 'Quantité',
+        }
+        error_messages = {
+            'inventory_item': {
+                'required': 'Veuillez sélectionner un article.',
+                'invalid_choice': 'Cet article n\'existe pas.',
+                'unique' : 'Cet article a déjà été ajouté à la commande.',
+            },
+            'quantity': {
+                'required': 'La quantité est obligatoire.',
+                'invalid': 'Veuillez entrer une quantité valide.',
+                'min_value': 'La quantité doit être supérieure à 0.',
+                'max_digits': 'Il ne doit pas avoir plus de 10 chiffres au total.',
+                'max_decimal_places': 'Il ne doit pas avoir plus de 2 décimales.',
+            },
+        }
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity and quantity <= 0:
+            raise ValidationError('La quantité doit être supérieure à 0.')
+        return quantity
+
+
+class StockOrderItemFormSet(BaseInlineFormSet):
+    def clean(self):
+        if any(self.errors):
+            return
+
+        items = []
+        duplicates = False
+
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+
+            inventory_item = form.cleaned_data.get('inventory_item')
+            quantity = form.cleaned_data.get('quantity')
+
+            if inventory_item and quantity:
+                if inventory_item in items:
+                    duplicates = True
+                    form.add_error('inventory_item', 'Cet article est déjà dans la commande.')
+                items.append(inventory_item)
+
+        if duplicates:
+            raise ValidationError('Vous avez des articles en double dans la commande.')
+
+        if not items:
+            raise ValidationError('Vous devez ajouter au moins un article à la commande.')
+
+StockOrderItemFormSet = forms.inlineformset_factory(
+    StockOrder,
+    StockOrderItem,
+    form=StockOrderItemForm,
+    formset=StockOrderItemFormSet,
+    extra=3,
+    can_delete=True,
+    min_num=0,
+    validate_min=False,
+)
