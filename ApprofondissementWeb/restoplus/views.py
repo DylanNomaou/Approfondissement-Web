@@ -1144,18 +1144,6 @@ def publish_schedule(request):
             'message': f'Erreur serveur: {str(e)}'
         })
 
-
-
-def custom_403_view(request, exception=None):
-    """Vue personnalisée pour les erreurs 403 de permission refusée"""
-    return render(request, 'restoplus/403.html', status=403)
-
-def custom_404_view(request, exception=None):
-    """Vue personnalisée pour les erreurs 404 de page non trouvée"""
-    return render(request, 'restoplus/404.html', status=404)
-    return redirect('employees_management')
-
-
 @login_required
 def tickets_list(request):
     """" """
@@ -1186,7 +1174,7 @@ def ticket_detail(request, ticket_id):
 
     if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
         messages.error(request, "Vous n'avez pas la permission de voir ce ticket.")
-        return render(request, 'resto_plus/403.html', status=403)
+        return render(request, 'restoplus/403.html', status=403)
     return render(request, 'restoplus/ticket_detail.html', {'ticket': ticket})
 
 @login_required
@@ -1221,3 +1209,14 @@ def all_tickets(request):
         'total_tickets': tickets.count(),
     }
     return render(request, 'restoplus/all_tickets.html', context)
+
+def custom_403_view(request, exception=None):
+    """Vue personnalisée pour les erreurs 403 de permission refusée"""
+    return render(request, 'restoplus/403.html', status=403)
+
+def custom_404_view(request, exception=None):
+    """Vue personnalisée pour les erreurs 404 de page non trouvée"""
+    return render(request, 'restoplus/404.html', status=404)
+    return redirect('employees_management')
+
+
