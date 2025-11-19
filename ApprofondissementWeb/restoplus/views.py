@@ -1,14 +1,29 @@
 """Views pour l'application RestoPlus"""
 import json
+from datetime import date
+from django.shortcuts import render,redirect,get_object_or_404
+from django.contrib.auth import login
+from django.http import Http404
+from django.db.models import Q
+from django.core.exceptions import PermissionDenied,ValidationError
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, TicketForm
+from .models import User, Role, Notification,Availability, Ticket
+from django import forms
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm, StockOrderForm, StockOrderItemFormSet
+from .models import User, Role, Task,Availability, Inventory, StockOrderItem, StockOrder
+from django.core.paginator import Paginator
+from .notifications import notify_task_assigned, notify_role_assigned
+from datetime import datetime, timedelta
 import locale
 from datetime import date, datetime, timedelta
 from os import rename
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.http import Http404, JsonResponse
-from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django.core.mail import send_mail
@@ -25,9 +40,8 @@ except locale.Error:
     try:
         locale.setlocale(locale.LC_TIME, 'fr_FR')
     except locale.Error:
-        pass  # Garde la locale par défaut si français non disponible
+        pass
 
-# Create your views here.
 
 @login_required
 def accueil(request):
@@ -303,8 +317,182 @@ def availability_form(request):
                 initial[f"{day}_end"] = existing[day].heure_fin
         form = AvailabilityForm(initial=initial)
     return render(request, 'restoplus/availability_form.html', {"form": form, "employe": employe})
+# ======================================================================
+# 🧑‍💼 INVENTAIRE
+# ======================================================================
+
+class InventoryCreateForm(forms.ModelForm):
+    class Meta:
+        model = Inventory
+        fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
+            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU"}),
+            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
+            "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+            "unit": forms.Select(attrs={"class": "form-select"}),
+            "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
+            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
+        self.fields['sku'].required = True
+
+"""Vue pour la gestion de l'inventaire"""
+@login_required
+def inventory_management(request):
+    # Paramètre GET pour édition simple: ?sku=ABC123
+    sku_param = (request.GET.get('sku') or '').strip()
+    if request.method == 'POST':
+        # Si le sku existe
+        posted_sku = (request.POST.get('sku') or '').strip()
+        instance = None
+        if posted_sku:
+            try:
+                instance = Inventory.objects.get(sku=posted_sku)
+            except Inventory.DoesNotExist:
+                instance = None
+        form = InventoryCreateForm(request.POST, instance=instance)
+        if form.is_valid():
+            obj = form.save()
+            if instance:
+                messages.success(request, f"Article '{obj.name}' mis à jour.")
+            else:
+                messages.success(request, f"Article '{obj.name}' créé.")
+            # Redirection sans paramètre sku
+            params = request.GET.copy()
+            if 'sku' in params:
+                params.pop('sku')
+            qs = params.urlencode()
+            base_url = request.path
+            return redirect(f"{base_url}?{qs}" if qs else base_url)
+        else:
+            create_form = form  # garder erreurs
+    else:
+        # GET: si sku_param présent on pré-remplit le formulaire, sinon formulaire vide
+        if sku_param:
+            try:
+                instance = Inventory.objects.get(sku=sku_param)
+                create_form = InventoryCreateForm(instance=instance)
+            except Inventory.DoesNotExist:
+                # Pré-remplir juste le champ SKU si objet absent
+                create_form = InventoryCreateForm(initial={'sku': sku_param})
+        else:
+            create_form = InventoryCreateForm()
+
+    category_choices = [("", "Toutes")] + [
+        (cat, cat)
+        for cat in (
+            Inventory.objects
+            .exclude(category__isnull=True)
+            .exclude(category="")
+            .values_list("category", flat=True)
+            .order_by("category")
+            .distinct()
+        )
+    ]
+    supplier_choices = [("", "Fournisseur")] + [
+        (sup, sup)
+        for sup in (
+            Inventory.objects
+            .exclude(supplier__isnull=True)
+            .exclude(supplier="")
+            .values_list("supplier", flat=True)
+            .order_by("supplier")
+            .distinct()
+        )
+    ]
+    unit_choices = [("", "Unité")] + list(Inventory.UNIT_CHOICES)
+    # Instancier le formulaire de filtres en lui passant des tuples prêts
+    filter_form = InventoryFilterForm(
+        request.GET or None,
+        categories_choices=category_choices,
+        supplier_choices=supplier_choices,
+        unit_choices=unit_choices,
+    )
+
+    inventory_queryset = Inventory.objects.all()
+    if filter_form.is_valid():
+        inventory_queryset = apply_inventory_filters(inventory_queryset, filter_form.cleaned_data)
+    filter_keys = ["category", "unit", "supplier", "recherche"]
+    if filter_form.is_bound:
+        if filter_form.is_valid():
+            form_data = filter_form.cleaned_data
+            has_filters = any(form_data.get(key) for key in filter_keys)
+        else:
+            has_filters = any(request.GET.get(key) for key in filter_keys)
+    else:
+        has_filters = False
+
+    paginator = Paginator(inventory_queryset, 25)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    params = request.GET.copy()
+    params.pop("page", None)
+    querystring = params.urlencode()
+    context = {
+        "form": filter_form,
+        "creation_form": create_form,
+        "inventory": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "querystring": querystring,
+        "has_filters": has_filters,
+        "sku_param": sku_param,
+    }
+    return render(request, "restoplus/inventory_management.html", context)
+
+"""Vue permettant de retirer un objet de l'inventaire"""
+def delete_inventory_item(request, item_id):
+    """Supprimer un article d'inventaire"""
+    try:
+        item = Inventory.objects.get(id=item_id)
+        item_name = item.name
+        item.delete()
+        messages.success(request, f"Article '{item_name}' supprimé avec succès.")
+    except Inventory.DoesNotExist:
+        messages.error(request, "Article introuvable.")
+    return redirect('inventory_management')
+
+"""Permet d'afficher dynamiquement une suggestion de recherche"""
+def suggestions_ajax(request,query):
+    query = query.strip()
+    query=query.replace("-"," ")
+    suggestions = []
+    if not query or len(query)<3:
+        return JsonResponse({'suggestions':[]})
+    else :
+        matched_items = Inventory.objects.filter(
+            Q(name__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(supplier__icontains=query)
+        ).values('name', 'sku', 'supplier')[:20]#Limite de résultats
+        suggestions = list(matched_items)
+    return JsonResponse({"suggestions": suggestions})
 
 
+def apply_inventory_filters(inventory_queryset, cleaned_data):
+    search_text = cleaned_data.get("recherche") or ""
+    category_value = cleaned_data.get("category") or ""
+    unit_value = cleaned_data.get("unit") or ""
+    supplier_value = cleaned_data.get("supplier") or ""
+
+    if search_text:
+        inventory_queryset = inventory_queryset.filter(
+            Q(name__icontains=search_text) |
+            Q(sku__icontains=search_text) |
+            Q(category__icontains=search_text) |
+            Q(supplier__icontains=search_text)
+        )
+    if category_value:
+        inventory_queryset = inventory_queryset.filter(category=category_value)
+    if unit_value:
+        inventory_queryset = inventory_queryset.filter(unit=unit_value)
+    if supplier_value:
+        inventory_queryset = inventory_queryset.filter(supplier=supplier_value)
+
+    return inventory_queryset
 
 
 # ======================================================================
@@ -794,7 +982,7 @@ def create_schedule(request):
         'week_end_formatted': week_end_formatted,
         'week_schedule': {
             'status': 'published' if is_published else 'draft',
-            'can_be_edited': can_edit_week,  # Permettre l'édition tant que la semaine n'a pas commencé
+            'can_be_edited': can_edit_week and not is_published,
             'is_published': is_published,
             'week_start': week_start_formatted,
             'week_end': week_end_formatted,
@@ -807,11 +995,9 @@ def create_schedule(request):
 
 @login_required
 def view_schedule(request):
-    """Vue pour afficher les horairebliés en lecture seule"""
-
+    """Vue pour afficher les horaires publiés en lecture seule"""
     # Récupérer tous les employés
     employes = User.objects.all()
-
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
     # Créer les jours de la semaine (lundi à dimanche)
@@ -888,14 +1074,13 @@ def view_schedule(request):
             'can_modify': can_modify,
         },
     }
-
     return render(request, 'restoplus/view_schedule.html', context)
 
 
 @login_required
 @require_POST
 def publish_schedule(request):
-    """Publie les horaires depuis localStorage vers la bse de données - Réservé aux administrateurs"""
+    """Publie les horaires depuis localStorage vers la base de données - Réservé aux administrateurs"""
 
     # Vérifier que l'utilisateur est administrateur
     if not request.user.is_staff and not request.user.is_superuser:
@@ -971,7 +1156,203 @@ def publish_schedule(request):
             'message': f'Erreur serveur: {str(e)}'
         })
 
+@login_required
+def stock_order_list(request):
+    """Liste des commandes de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
 
+    orders = StockOrder.objects.all().select_related('created_by')
+
+    context = {
+        'orders': orders,
+    }
+    return render(request, 'restoplus/stock_order_list.html', context)
+
+@login_required
+def stock_order_create(request):
+    """Créer une nouvelle commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    if request.method == 'POST':
+        form = StockOrderForm(request.POST)
+        formset = StockOrderItemFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            items = formset.save(commit=False)
+
+            valid_items = [item for item in items if item.inventory_item and item.quantity]
+
+            if not valid_items:
+                messages.error(request, "Vous devez ajouter au moins un article à la commande.")
+            else:
+                order = form.save(commit=False)
+                order.created_by = request.user
+                order.save()
+
+                formset.instance = order
+
+                for item in valid_items:
+                    item.order = order
+                    if not item.unit_price:
+                        item.unit_price = item.inventory_item.cost_price
+                    item.save()
+
+                for obj in formset.deleted_objects:
+                    obj.delete()
+
+                order.calculate_total()
+
+                messages.success(request, f"Commande #{order.id} créée avec succès!")
+                return redirect('stock_order_detail', pk=order.pk)
+        else:
+            if form.errors:
+                messages.error(request, "Veuillez corriger les erreurs dans les informations générales.")
+            if formset.errors or formset.non_form_errors():
+                messages.error(request, "Veuillez corriger les erreurs dans les articles.")
+    else:
+        form = StockOrderForm()
+        formset = StockOrderItemFormSet()
+
+    return render(request, 'restoplus/stock_order_form.html', {
+        'form': form,
+        'formset': formset,
+    })
+
+@login_required
+def stock_order_detail(request, pk):
+    """Détail d'une commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    order = get_object_or_404(StockOrder, pk=pk)
+    items = order.items.select_related('inventory_item').all()
+
+    context = {
+        'order': order,
+        'items': items,
+    }
+    return render(request, 'restoplus/stock_order_detail.html', context)
+
+@login_required
+def stock_order_update(request, pk):
+    """Mettre à jour une commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    order = get_object_or_404(StockOrder, pk=pk)
+
+    if request.method == 'POST':
+        form = StockOrderForm(request.POST, instance=order)
+        formset = StockOrderItemFormSet(request.POST, instance=order)
+
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            items = formset.save(commit=False)
+            for item in items:
+                if not item.unit_price:
+                    item.unit_price = item.inventory_item.cost_price
+                item.save()
+            order.calculate_total()
+
+            messages.success(request, f"Commande {order.id} mise à jour avec succès!")
+            return redirect('stock_order_detail', pk=order.pk)
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = StockOrderForm(instance=order)
+        formset = StockOrderItemFormSet(instance=order)
+
+    return render(request, 'restoplus/stock_order_form.html', {
+        'form': form,
+        'formset': formset,
+        'order': order,
+        'is_edit' : True
+    })
+
+@login_required
+def stock_order_delete(request, pk):
+    """Supprimer une commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    order = get_object_or_404(StockOrder, pk=pk)
+
+    if request.method == 'POST':
+        order_number = order.id
+        order.delete()
+        messages.success(request, f"Commande {order_number} supprimée avec succès!")
+        return redirect('stock_order_list')
+    return render(request, 'restoplus/stock_order_confirm_delete.html',
+    {
+        'order': order,
+    })
+
+def tickets_list(request):
+    """" """
+    tickets = Ticket.objects.filter(created_by=request.user).select_related('created_by')
+
+    return render(request, 'restoplus/tickets_list.html', {'tickets': tickets})
+
+@login_required
+def create_ticket(request):
+    """ """
+    if request.method == 'POST':
+        form = TicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.save()
+
+            messages.success(request, "Ticket créé avec succès !")
+            return redirect('ticket_detail', ticket_id=ticket.id)
+    else:
+        form = TicketForm()
+    return render(request, 'restoplus/create_ticket.html', {'form': form})
+
+@login_required
+def ticket_detail(request, ticket_id):
+    """Details d'un ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
+        messages.error(request, "Vous n'avez pas la permission de voir ce ticket.")
+        return render(request, 'restoplus/403.html', status=403)
+    return render(request, 'restoplus/ticket_detail.html', {'ticket': ticket})
+
+@login_required
+def delete_ticket(request, ticket_id):
+    """Supprimer un ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    if request.method == 'POST':
+        ticket_title = ticket.title
+        ticket.delete()
+        messages.success(request, f"Ticket '{ticket_title}' supprimé avec succès.")
+        if request.user.has_permission('can_manage_users'):
+            return redirect('all_tickets')
+        else:
+            return redirect('tickets_list')
+    return render(request, 'restoplus/delete_ticket.html', {'ticket': ticket})
+
+@login_required
+def all_tickets(request):
+    """Vue pour les admins - voir TOUS les tickets"""
+
+    if not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    tickets = Ticket.objects.all().select_related('created_by').order_by('-date_created')
+
+    context = {
+        'tickets': tickets,
+        'total_tickets': tickets.count(),
+    }
+    return render(request, 'restoplus/all_tickets.html', context)
 
 def custom_403_view(request, exception=None):
     """Vue personnalisée pour les erreurs 403 de permission refusée"""
@@ -1175,3 +1556,5 @@ def password_reset_complete(request):
     # Cette vue peut être utilisée pour afficher une page de confirmation
     # ou rediriger directement vers la page de connexion
     return render(request, 'registration/password_reset_complete.html')
+
+

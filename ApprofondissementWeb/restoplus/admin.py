@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils import timezone
-from .models import User, Task, Role, Notification, WorkShift, PasswordResetCode
+from .models import User, Task, Role, Notification, WorkShift, Inventory
 
 # Register your models here.
 @admin.register(User,)
