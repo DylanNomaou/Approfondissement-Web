@@ -1144,8 +1144,6 @@ def publish_schedule(request):
             'message': f'Erreur serveur: {str(e)}'
         })
 
-<<<<<<< HEAD
-=======
 @login_required
 def tickets_list(request):
     """" """
@@ -1212,7 +1210,6 @@ def all_tickets(request):
     }
     return render(request, 'restoplus/all_tickets.html', context)
 
->>>>>>> bfdd75aaac017017f586eda03f4ccfe7f423d127
 def custom_403_view(request, exception=None):
     """Vue personnalisée pour les erreurs 403 de permission refusée"""
     return render(request, 'restoplus/403.html', status=403)
