@@ -24,9 +24,11 @@
                     <div class="input-group input-group-sm">
                         {{ form.category }}
                         {{ form.recherche }}
-                        <button type="submit" class="btn rounded-end px-3" aria-label="Rechercher" style="background-color: #febd69; border-color: #febd69; color: #111;">
+                        <button type="search" id="rechercher" class="btn rounded-end px-3" aria-label="Rechercher" style="background-color: #febd69; border-color: #febd69; color: #111;">
                             <i class="bi bi-search"></i>
                         </button>
+                    </div>
+                    <div id="suggestions" class="masquer">
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
@@ -68,7 +70,7 @@
                 <div class="col-md-3 d-flex align-items-center gap-3">
                     <div
                         class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white bg-primary avatar-40 flex-shrink-0">
-                        {{ item.name|default:'?'|first|upper }}
+                        {{ item.name|default:'SansNom'|first|upper }}
                     </div>
                     <div class="min-w-0">
                         <div class="fw-semibold text-truncate">{{ item.name }}</div>
@@ -90,11 +92,17 @@
                 <div class="col-md-2 text-truncate">{{ item.supplier|default:'—' }}</div>
                 <div class="col-md-1 text-end text-nowrap">{{ item.cost_price }}$</div>
                 <div class="col-md-1 text-center">
+                    <!--Bouton Modification Article-->
                     {% if item.sku %}
                     <a class="btn btn-sm btn-outline-secondary"
                        href="?{% if querystring %}{{ querystring }}&{% endif %}sku={{ item.sku }}"
                        title="Modifier">
                         <i class="bi bi-pencil"></i>
+                    </a>
+                    <!--Bouton Suppression Article-->
+                    <a class="btn btn-sm btn-outline-danger" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+
                     </a>
                     {% else %}
                     <span class="text-muted" title="SKU manquant">—</span>

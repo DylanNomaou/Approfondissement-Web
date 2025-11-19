@@ -120,14 +120,12 @@ class AvailabilityForm(forms.Form):
         for key, label in self.DAYS:
             start = cleaned_data.get(f"{key}_start")
             end = cleaned_data.get(f"{key}_end")
-            # Cas 1 : un seul champ rempli
             if (end and not start):
                 msg = f"veuillez remplir l'heure de début."
                 self.add_error(f"{key}_start", msg)
             if(start and not end):
                 msg = f"veuillez remplir l'heure de fin."
                 self.add_error(f"{key}_end", msg)
-            # Cas 2 : incohérence logique (début >= fin)
             elif start and end and start >= end:
                 msg = f"l'heure de fin doit être après l'heure de début."
                 self.add_error(f"{key}_end", msg)
@@ -556,7 +554,7 @@ class WorkShiftForm(forms.ModelForm):
 # ======================================================================
 
 class InventoryFilterForm(forms.Form):
-    """Formulaire de filtres pour l'inventaire (validation/clean centralisés)."""
+    """Formulaire de filtres pour l'inventaire"""
 
     category = forms.ChoiceField(
         required=False,
@@ -575,6 +573,9 @@ class InventoryFilterForm(forms.Form):
             "class": "form-control form-control-sm border-start-0 border-end-0",
             "placeholder": "Rechercher...",
             "style": "box-shadow: none; font-size: 1rem;",
+            "autocomplete":"off",
+            "spellcheck":"false"
+
         }),
     )
 
