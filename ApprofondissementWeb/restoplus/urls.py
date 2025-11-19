@@ -18,6 +18,7 @@ urlpatterns=[
     path('notifications/', views.get_user_notifications, name='get_user_notifications'),
     path('mark-notification-read/', views.mark_notification_as_read, name='mark_notification_as_read'),
     path('test-notification/', views.create_test_notification, name='create_test_notification'),
+    #URLS SECTION EMPLOYÉS
     path('dashboard/',views.employees_management,name="employees_management"),
     path('employees/<int:employe_id>/', views.employee_profile, name='employee_profile'),
     path('ask_availibilities/<int:employe_id>/', views.ask_availibilities, name='send_availabilities_form'),
@@ -33,7 +34,8 @@ urlpatterns=[
     path('tickets/<int:ticket_id>/', views.ticket_detail, name='ticket_detail'),
     path('tickets/<int:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
     path('tickets/all/', views.all_tickets, name='all_tickets'),
+    # URLS SECTION INVENTAIRE
+    path('inventory/',views.inventory_management,name='inventory_management'),
+    path('delete-inventoy-item/<str:sku>/', views.delete_inventory_item, name='delete_inventory_item'),
+    path('ajax/suggestions/<path:query>',views.suggestions_ajax, name="suggestions_ajax")
 ]
-
-
-
