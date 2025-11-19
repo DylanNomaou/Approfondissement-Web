@@ -1,0 +1,82 @@
+{% extends "restoplus/base.html" %}
+{% load static %}
+{% block title %}Tous les Tickets - RestoPlus{% endblock %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tous les Tickets</h2>
+        <span class="badge bg-primary fs-5">{{ total_tickets }} ticket{{ total_tickets|pluralize }}</span>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Liste de tous les tickets</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Titre</th>
+                            <th>Catégorie</th>
+                            <th>Créé par</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                            <tr>
+                                <td><strong>{{ ticket.id }}</strong></td>
+                                <td>{{ ticket.title }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ ticket.category }}</span>
+                                </td>
+                                <td>
+                                    <i class="bi bi-person"></i>
+                                    {{ ticket.created_by.get_full_name|default:ticket.created_by.username }}
+                                </td>
+                                <td>
+                                    <small>
+                                        {{ ticket.date_created|date:"d/m/Y" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-eye"></i> Voir
+                                    </a>
+                                    <a href="{% url 'delete_ticket' ticket.id %}" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    Aucun ticket pour le moment.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+
+
+
+
+
+{% endblock %}

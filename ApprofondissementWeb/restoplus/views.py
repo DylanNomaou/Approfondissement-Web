@@ -4,6 +4,7 @@ from datetime import date
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.http import Http404
+from django.db.models import Q
 from django.core.exceptions import PermissionDenied,ValidationError
 from django.contrib import messages
 from django.http import JsonResponse
@@ -11,6 +12,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, TicketForm
+from .models import User, Role, Task, Notification,Availability, Task, Ticket
 from django import forms
 from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm, StockOrderForm, StockOrderItemFormSet
 from .models import User, Role, Task, Notification,Availability, Task, Inventory, StockOrderItem, StockOrder
@@ -1274,7 +1277,70 @@ def stock_order_delete(request, pk):
         'order': order,
     })
 
+def tickets_list(request):
+    """" """
+    tickets = Ticket.objects.filter(created_by=request.user).select_related('created_by')
 
+    return render(request, 'restoplus/tickets_list.html', {'tickets': tickets})
+
+@login_required
+def create_ticket(request):
+    """ """
+    if request.method == 'POST':
+        form = TicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.created_by = request.user
+            ticket.save()
+
+            messages.success(request, "Ticket créé avec succès !")
+            return redirect('ticket_detail', ticket_id=ticket.id)
+    else:
+        form = TicketForm()
+    return render(request, 'restoplus/create_ticket.html', {'form': form})
+
+@login_required
+def ticket_detail(request, ticket_id):
+    """Details d'un ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
+        messages.error(request, "Vous n'avez pas la permission de voir ce ticket.")
+        return render(request, 'restoplus/403.html', status=403)
+    return render(request, 'restoplus/ticket_detail.html', {'ticket': ticket})
+
+@login_required
+def delete_ticket(request, ticket_id):
+    """Supprimer un ticket"""
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if ticket.created_by != request.user and not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    if request.method == 'POST':
+        ticket_title = ticket.title
+        ticket.delete()
+        messages.success(request, f"Ticket '{ticket_title}' supprimé avec succès.")
+        if request.user.has_permission('can_manage_users'):
+            return redirect('all_tickets')
+        else:
+            return redirect('tickets_list')
+    return render(request, 'restoplus/delete_ticket.html', {'ticket': ticket})
+
+@login_required
+def all_tickets(request):
+    """Vue pour les admins - voir TOUS les tickets"""
+
+    if not request.user.has_permission('can_manage_users'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    tickets = Ticket.objects.all().select_related('created_by').order_by('-date_created')
+
+    context = {
+        'tickets': tickets,
+        'total_tickets': tickets.count(),
+    }
+    return render(request, 'restoplus/all_tickets.html', context)
 
 def custom_403_view(request, exception=None):
     """Vue personnalisée pour les erreurs 403 de permission refusée"""
@@ -1283,4 +1349,5 @@ def custom_403_view(request, exception=None):
 def custom_404_view(request, exception=None):
     """Vue personnalisée pour les erreurs 404 de page non trouvée"""
     return render(request, 'restoplus/404.html', status=404)
+
 
