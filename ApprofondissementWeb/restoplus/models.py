@@ -176,6 +176,7 @@ class Inventory(models.Model):
             raise ValidationError(errors)
 
 
+
 class Task(models.Model):
     # Titre de la tâche
     title = models.CharField(max_length=255, verbose_name="Titre")

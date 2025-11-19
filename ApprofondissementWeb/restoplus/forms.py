@@ -702,6 +702,7 @@ class InventoryFilterForm(forms.Form):
             val = " ".join(val.split())
         return val
 
+
 class StockOrderForm(forms.ModelForm):
     class Meta:
         model = StockOrder

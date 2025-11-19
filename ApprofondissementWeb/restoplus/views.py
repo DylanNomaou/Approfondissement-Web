@@ -501,6 +501,7 @@ def apply_inventory_filters(inventory_queryset, cleaned_data):
     return inventory_queryset
 
 
+
 # ======================================================================
 # ⚙️ ADMINISTRATION
 # ======================================================================
