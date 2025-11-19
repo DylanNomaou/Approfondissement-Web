@@ -29,8 +29,8 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from .forms import UserRegisterForm, UserLoginForm, TaskForm, AvailabilityForm
-from .models import User, Role, Task, Notification, Availability, PasswordResetCode
+from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet,InventoryCreateForm
+from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,StockOrderItem,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
 
 # Configuration de la locale française pour les dates

@@ -51,6 +51,6 @@ urlpatterns=[
     path('stock-orders/<int:pk>/', views.stock_order_detail, name='stock_order_detail'),
     path('stock-orders/<int:pk>/edit/', views.stock_order_update, name='stock_order_update'),
     path('stock-orders/<int:pk>/delete/', views.stock_order_delete, name='stock_order_delete'),
-    path('delete-inventoy-item/<str:sku>/', views.delete_inventory_item, name='delete_inventory_item'),
+    path('delete-inventory-item/<int:item_id>/', views.delete_inventory_item, name='delete_inventory_item'),
     path('ajax/suggestions/<path:query>',views.suggestions_ajax, name="suggestions_ajax")
 ]
