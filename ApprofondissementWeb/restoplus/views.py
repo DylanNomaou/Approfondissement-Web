@@ -17,7 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet
+from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet,InventoryCreateForm
 from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,StockOrderItem,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
 
@@ -309,24 +309,6 @@ def availability_form(request):
 # ======================================================================
 # 🧑‍💼 INVENTAIRE
 # ======================================================================
-
-class InventoryCreateForm(forms.ModelForm):
-    class Meta:
-        model = Inventory
-        fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
-            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU"}),
-            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
-            "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
-            "unit": forms.Select(attrs={"class": "form-select"}),
-            "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
-            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
-        }
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
-        self.fields['sku'].required = True
 
 """Vue pour la gestion de l'inventaire"""
 @login_required

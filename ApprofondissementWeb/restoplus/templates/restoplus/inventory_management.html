@@ -100,9 +100,11 @@
                         <i class="bi bi-pencil"></i>
                     </a>
                     <!--Bouton Suppression Article-->
-                    <a class="btn btn-sm btn-outline-danger" title="Supprimer">
+                    <a href="{% url 'delete_inventory_item' item.id %}" 
+                       class="btn btn-sm btn-outline-danger" 
+                       title="Supprimer"
+                       onclick="return confirm('Voulez-vous vraiment supprimer {{ item.name }} ?');">
                         <i class="bi bi-trash"></i>
-
                     </a>
                     {% else %}
                     <span class="text-muted" title="SKU manquant">—</span>
