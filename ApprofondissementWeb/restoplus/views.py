@@ -12,8 +12,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django import forms
-from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm
-from .models import User, Role, Task, Notification,Availability, Task, Inventory
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm, StockOrderForm, StockOrderItemFormSet
+from .models import User, Role, Task, Notification,Availability, Task, Inventory, StockOrderItem, StockOrder
 from django.db.models import Q
 from django.core.paginator import Paginator
 from .notifications import notify_task_assigned, notify_role_assigned
@@ -1124,6 +1124,139 @@ def publish_schedule(request):
             'message': f'Erreur serveur: {str(e)}'
         })
 
+@login_required
+def stock_order_list(request):
+    """Liste des commandes de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    orders = StockOrder.objects.all().select_related('created_by')
+
+    context = {
+        'orders': orders,
+    }
+    return render(request, 'restoplus/stock_order_list.html', context)
+
+@login_required
+def stock_order_create(request):
+    """Créer une nouvelle commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    if request.method == 'POST':
+        form = StockOrderForm(request.POST)
+        formset = StockOrderItemFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            items = formset.save(commit=False)
+
+            valid_items = [item for item in items if item.inventory_item and item.quantity]
+
+            if not valid_items:
+                messages.error(request, "Vous devez ajouter au moins un article à la commande.")
+            else:
+                order = form.save(commit=False)
+                order.created_by = request.user
+                order.save()
+
+                formset.instance = order
+
+                for item in valid_items:
+                    item.order = order
+                    if not item.unit_price:
+                        item.unit_price = item.inventory_item.cost_price
+                    item.save()
+
+                for obj in formset.deleted_objects:
+                    obj.delete()
+
+                order.calculate_total()
+
+                messages.success(request, f"Commande #{order.id} créée avec succès!")
+                return redirect('stock_order_detail', pk=order.pk)
+        else:
+            if form.errors:
+                messages.error(request, "Veuillez corriger les erreurs dans les informations générales.")
+            if formset.errors or formset.non_form_errors():
+                messages.error(request, "Veuillez corriger les erreurs dans les articles.")
+    else:
+        form = StockOrderForm()
+        formset = StockOrderItemFormSet()
+
+    return render(request, 'restoplus/stock_order_form.html', {
+        'form': form,
+        'formset': formset,
+    })
+
+@login_required
+def stock_order_detail(request, pk):
+    """Détail d'une commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    order = get_object_or_404(StockOrder, pk=pk)
+    items = order.items.select_related('inventory_item').all()
+
+    context = {
+        'order': order,
+        'items': items,
+    }
+    return render(request, 'restoplus/stock_order_detail.html', context)
+
+@login_required
+def stock_order_update(request, pk):
+    """Mettre à jour une commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    order = get_object_or_404(StockOrder, pk=pk)
+
+    if request.method == 'POST':
+        form = StockOrderForm(request.POST, instance=order)
+        formset = StockOrderItemFormSet(request.POST, instance=order)
+
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            items = formset.save(commit=False)
+            for item in items:
+                if not item.unit_price:
+                    item.unit_price = item.inventory_item.cost_price
+                item.save()
+            order.calculate_total()
+
+            messages.success(request, f"Commande {order.id} mise à jour avec succès!")
+            return redirect('stock_order_detail', pk=order.pk)
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = StockOrderForm(instance=order)
+        formset = StockOrderItemFormSet(instance=order)
+
+    return render(request, 'restoplus/stock_order_form.html', {
+        'form': form,
+        'formset': formset,
+        'order': order,
+        'is_edit' : True
+    })
+
+@login_required
+def stock_order_delete(request, pk):
+    """Supprimer une commande de stock"""
+    if not request.user.has_permission('can_manage_orders'):
+        return render(request, 'restoplus/403.html', status=403)
+
+    order = get_object_or_404(StockOrder, pk=pk)
+
+    if request.method == 'POST':
+        order_number = order.id
+        order.delete()
+        messages.success(request, f"Commande {order_number} supprimée avec succès!")
+        return redirect('stock_order_list')
+    return render(request, 'restoplus/stock_order_confirm_delete.html',
+    {
+        'order': order,
+    })
+
 
 
 def custom_403_view(request, exception=None):
@@ -1133,4 +1266,4 @@ def custom_403_view(request, exception=None):
 def custom_404_view(request, exception=None):
     """Vue personnalisée pour les erreurs 404 de page non trouvée"""
     return render(request, 'restoplus/404.html', status=404)
-    return redirect('employees_management')
+

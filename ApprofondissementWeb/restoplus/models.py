@@ -100,6 +100,12 @@ class User(AbstractUser):
             return True
         return self.has_permission('can_manage_users')
 
+    def can_manage_orders(self):
+        """Vérifier si l'utilisateur peut gérer les commandes"""
+        if self.is_superuser:
+            return True
+        return self.has_permission('can_manage_orders')
+
 
 # ======================================================================
 # 🧑‍💼 DISPONIBILITÉS
@@ -602,3 +608,51 @@ class WorkShift(models.Model):
             date=date
         ).first()  # Un seul quart par employé par jour
 
+class StockOrder(models.Model):
+    """Commande de stock"""
+    supplier = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur")
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='stock_orders_created', verbose_name="Créé par")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+
+    order_date = models.DateField(null=True, blank=True, verbose_name="Date de commande")
+    expected_delivery = models.DateField(null=True, blank=True, verbose_name="Livraison prévue")
+
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Coût total")
+
+    class Meta:
+        verbose_name = "Commande de stock"
+        verbose_name_plural = "Commandes de stock"
+        ordering = ['-created_at']
+
+
+    def __str__(self):
+        return f"Commande {self.id}"
+
+    def calculate_total(self):
+        """Calcule le coût total de la commande"""
+        total = sum(item.subtotal() for item in self.items.all())
+        self.total_cost = total
+        self.save()
+        return total
+
+class StockOrderItem(models.Model):
+    """Article dans une commande de stock"""
+    order = models.ForeignKey(StockOrder, on_delete=models.CASCADE, related_name='items', verbose_name="Commande")
+    inventory_item = models.ForeignKey(Inventory, on_delete=models.CASCADE, verbose_name="Article")
+
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Quantité")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix unitaire")
+
+    class Meta:
+        verbose_name = "Article de commande"
+        verbose_name_plural = "Articles de commande"
+
+
+    def __str__(self):
+        return f"{self.inventory_item.name} x {self.quantity}"
+
+    def subtotal(self):
+        """Calcule le sous-total pour cet article"""
+        return self.quantity * self.unit_price

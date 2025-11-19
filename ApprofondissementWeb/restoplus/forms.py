@@ -1,9 +1,10 @@
 from django import forms
-from .models import User, Task, WorkShift, Inventory
+from .models import User, Task, WorkShift, Inventory, StockOrder, StockOrderItem
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from datetime import date, datetime, timedelta
+from django.forms import  BaseInlineFormSet
 
 class UserRegisterForm(forms.ModelForm):
     password = forms.CharField(
@@ -328,14 +329,14 @@ class WorkShiftForm(forms.ModelForm):
     """
     Formulaire pour créer/éditer un quart de travail basé sur le modèle WorkShift
     """
-    
+
     class Meta:
         model = WorkShift
         fields = [
-            'heure_debut', 'heure_fin', 'has_break', 'pause_duree', 
+            'heure_debut', 'heure_fin', 'has_break', 'pause_duree',
             'pause_debut', 'pause_fin', 'note'
         ]
-        
+
         widgets = {
             'heure_debut': forms.TimeInput(
                 attrs={
@@ -388,7 +389,7 @@ class WorkShiftForm(forms.ModelForm):
                 }
             ),
         }
-        
+
         labels = {
             'heure_debut': 'Heure de début',
             'heure_fin': 'Heure de fin',
@@ -398,7 +399,7 @@ class WorkShiftForm(forms.ModelForm):
             'pause_fin': 'Fin de pause',
             'note': 'Note (optionnelle)',
         }
-        
+
         error_messages = {
             'heure_debut': {
                 'required': 'L\'heure de début est obligatoire.',
@@ -418,7 +419,7 @@ class WorkShiftForm(forms.ModelForm):
         self.employee = kwargs.pop('employee', None)
         self.shift_date = kwargs.pop('date', None)
         super().__init__(*args, **kwargs)
-        
+
         # Configuration conditionnelle des champs de pause
         if not self.instance.pk or not self.instance.has_break:
             self.fields['pause_debut'].required = False
@@ -433,25 +434,25 @@ class WorkShiftForm(forms.ModelForm):
         pause_duree = cleaned_data.get('pause_duree', 0)
         pause_debut = cleaned_data.get('pause_debut')
         pause_fin = cleaned_data.get('pause_fin')
-        
+
         # Validation des heures de base
         if heure_debut and heure_fin:
             # Calculer la durée totale du quart
             debut = datetime.combine(date.today(), heure_debut)
             fin = datetime.combine(date.today(), heure_fin)
-            
+
             # Gérer le cas où le quart se termine le lendemain
             if fin <= debut:
                 fin += timedelta(days=1)
-            
+
             duree_totale = (fin - debut).total_seconds() / 3600  # en heures
-            
+
             # Vérifications de durée
             if duree_totale > 12:
                 raise ValidationError(
                     "Un quart ne peut pas dépasser 12 heures."
                 )
-            
+
             # Validation spécifique des pauses
             if has_break:
                 if pause_duree is None:
@@ -465,33 +466,33 @@ class WorkShiftForm(forms.ModelForm):
                     raise ValidationError({
                         'pause_duree': 'La durée de pause ne peut pas dépasser 120 minutes.'
                     })
-                
+
                 # Calculer la durée effective
                 duree_effective = duree_totale - (pause_duree / 60)
-                
+
                 if duree_effective < 1:
                     raise ValidationError(
                         "La durée effective de travail doit être d'au moins 1 heure."
                     )
-                
+
                 # Validation des heures de pause spécifiques
                 if pause_debut and pause_fin:
                     if pause_fin <= pause_debut:
                         raise ValidationError({
                             'pause_fin': 'L\'heure de fin de pause doit être après l\'heure de début.'
                         })
-                    
+
                     # Vérifier que la pause est dans les heures de travail
                     if (pause_debut < heure_debut or pause_fin > heure_fin):
                         raise ValidationError({
                             'pause_debut': 'La pause doit être comprise dans les heures de travail.'
                         })
-                    
+
                     # Calculer la durée réelle de la pause
                     pause_debut_dt = datetime.combine(date.today(), pause_debut)
                     pause_fin_dt = datetime.combine(date.today(), pause_fin)
                     duree_pause_reelle = (pause_fin_dt - pause_debut_dt).total_seconds() / 60
-                    
+
                     # Vérifier la cohérence avec pause_duree
                     if abs(duree_pause_reelle - pause_duree) > 5:  # Tolérance de 5 minutes
                         raise ValidationError({
@@ -502,24 +503,24 @@ class WorkShiftForm(forms.ModelForm):
                 cleaned_data['pause_duree'] = 0
                 cleaned_data['pause_debut'] = None
                 cleaned_data['pause_fin'] = None
-                
+
                 # Vérifier la durée minimale sans pause
                 if duree_totale < 1:
                     raise ValidationError(
                         "La durée totale de travail doit être d'au moins 1 heure."
                     )
-        
+
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        
+
         # Assigner l'employé et la date si fournis
         if self.employee:
             instance.employee = self.employee
         if self.shift_date:
             instance.date = self.shift_date
-            
+
         if commit:
             instance.save()
         return instance
@@ -533,16 +534,16 @@ class WorkShiftForm(forms.ModelForm):
             heure_fin = self.cleaned_data['heure_fin']
             has_break = self.cleaned_data.get('has_break', True)
             pause_duree = self.cleaned_data.get('pause_duree', 0) if has_break else 0
-            
+
             debut = datetime.combine(date.today(), heure_debut)
             fin = datetime.combine(date.today(), heure_fin)
-            
+
             if fin <= debut:
                 fin += timedelta(days=1)
-            
+
             duree_totale = (fin - debut).total_seconds() / 3600
             duree_effective = duree_totale - (pause_duree / 60) if has_break else duree_totale
-            
+
             return {
                 'duree_totale': round(duree_totale, 2),
                 'duree_effective': round(duree_effective, 2),
@@ -551,7 +552,7 @@ class WorkShiftForm(forms.ModelForm):
             }
         return None
 # ======================================================================
-# 🧑‍💼 INVENTAIRE 
+# 🧑‍💼 INVENTAIRE
 # ======================================================================
 
 class InventoryFilterForm(forms.Form):
@@ -613,4 +614,130 @@ class InventoryFilterForm(forms.Form):
             val = " ".join(val.split())
         return val
 
+class StockOrderForm(forms.ModelForm):
+    class Meta:
+        model = StockOrder
+        fields = ['supplier', 'order_date', 'expected_delivery']
+        widgets = {
+            'supplier': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du fournisseur'}),
+            'order_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'expected_delivery': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+        labels = {
+            'supplier': 'Fournisseur',
+            'order_date': 'Date de commande',
+            'expected_delivery': 'Livraison prévue',
+        }
+        error_messages = {
+            'supplier': {
+                'required': 'Le nom du fournisseur est obligatoire.',
+            },
+            'order_date': {
+                'required': 'La date de commande est obligatoire.',
+                'invalid': 'Veuillez entrer une date valide.',
+            },
+            'expected_delivery': {
+                'required': 'La date de livraison prévue est obligatoire.',
+                'invalid': 'Veuillez entrer une date valide.',
+            },
+        }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['supplier']
+        self.fields['order_date']
+        self.fields['expected_delivery']
+
+    def clean_order_date(self):
+        order_date = self.cleaned_data.get('order_date')
+        if order_date and order_date < timezone.now().date():
+            raise ValidationError('La date de commande ne peut pas être dans le passé.')
+        return order_date
+
+    def clean_expected_delivery(self):
+        expected_delivery = self.cleaned_data.get('expected_delivery')
+        if expected_delivery and expected_delivery < timezone.now().date():
+            raise ValidationError('La date de livraison ne peut pas être dans le passé.')
+        return expected_delivery
+
+    def clean(self):
+        cleaned_data = super().clean()
+        order_date = cleaned_data.get('order_date')
+        expected_delivery = cleaned_data.get('expected_delivery')
+
+        if order_date and expected_delivery and expected_delivery < order_date:
+            raise ValidationError('La date de livraison doit être après la date de commande.')
+
+        return cleaned_data
+
+class StockOrderItemForm(forms.ModelForm):
+    class Meta:
+        model = StockOrderItem
+        fields = ['inventory_item', 'quantity']
+        widgets = {
+            'inventory_item': forms.Select(attrs={'class': 'form-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '1'}),
+        }
+        labels = {
+            'inventory_item': 'Article',
+            'quantity': 'Quantité',
+        }
+        error_messages = {
+            'inventory_item': {
+                'required': 'Veuillez sélectionner un article.',
+                'invalid_choice': 'Cet article n\'existe pas.',
+                'unique' : 'Cet article a déjà été ajouté à la commande.',
+            },
+            'quantity': {
+                'required': 'La quantité est obligatoire.',
+                'invalid': 'Veuillez entrer une quantité valide.',
+                'min_value': 'La quantité doit être supérieure à 0.',
+                'max_digits': 'Il ne doit pas avoir plus de 10 chiffres au total.',
+                'max_decimal_places': 'Il ne doit pas avoir plus de 2 décimales.',
+            },
+        }
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity and quantity <= 0:
+            raise ValidationError('La quantité doit être supérieure à 0.')
+        return quantity
+
+
+class StockOrderItemFormSet(BaseInlineFormSet):
+    def clean(self):
+        if any(self.errors):
+            return
+
+        items = []
+        duplicates = False
+
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+
+            inventory_item = form.cleaned_data.get('inventory_item')
+            quantity = form.cleaned_data.get('quantity')
+
+            if inventory_item and quantity:
+                if inventory_item in items:
+                    duplicates = True
+                    form.add_error('inventory_item', 'Cet article est déjà dans la commande.')
+                items.append(inventory_item)
+
+        if duplicates:
+            raise ValidationError('Vous avez des articles en double dans la commande.')
+
+        if not items:
+            raise ValidationError('Vous devez ajouter au moins un article à la commande.')
+
+StockOrderItemFormSet = forms.inlineformset_factory(
+    StockOrder,
+    StockOrderItem,
+    form=StockOrderItemForm,
+    formset=StockOrderItemFormSet,
+    extra=3,
+    can_delete=True,
+    min_num=0,
+    validate_min=False,
+)

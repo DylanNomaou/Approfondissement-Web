@@ -30,7 +30,12 @@ urlpatterns=[
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
     # URLS SECTION INVENTAIRE
-    path('inventory/',views.inventory_management,name='inventory_management')
+    path('inventory/',views.inventory_management,name='inventory_management'),
+    path('stock-orders/', views.stock_order_list, name='stock_order_list'),
+    path('stock-orders/create/', views.stock_order_create, name='stock_order_create'),
+    path('stock-orders/<int:pk>/', views.stock_order_detail, name='stock_order_detail'),
+    path('stock-orders/<int:pk>/edit/', views.stock_order_update, name='stock_order_update'),
+    path('stock-orders/<int:pk>/delete/', views.stock_order_delete, name='stock_order_delete'),
 ]
 
 

@@ -69,7 +69,7 @@
                 </div>
             </li>
 
-            <!-- SECTION INVENTAIRE -->
+            <!-- SECTION INVENTAIRE ET COMMANDES -->
             <li clas="nav-item">
                 <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link"
                     data-bs-toggle="collapse" data-bs-target="#inventorySubmenu">
@@ -82,6 +82,30 @@
                         <li class="nav-item">
                             <a class="nav-link text-light-50 py-2" href=" {% url 'inventory_management' %}">
                                 <i class="bi bi-person-plus me-2"></i>Voir l'inventaire
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            {% endif %}
+            {% if user.is_staff or user.can_manage_orders %}
+            <li class="nav-item">
+                <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link"
+                    data-bs-toggle="collapse" data-bs-target="#ordersSubmenu">
+                    <i class="bi bi-cart me-3"></i>
+                    <span>Commandes</span>
+                    <i class="bi bi-chevron-right ms-auto"></i>
+                </a>
+                <div class="collapse" id="ordersSubmenu">
+                    <ul class="nav flex-column ms-4">
+                        <li class="nav-item">
+                            <a class="nav-link text-light-50 py-2" href="{% url 'stock_order_list' %}">
+                                <i class="bi bi-list-ul me-2"></i>Liste des commandes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-light-50 py-2" href="{% url 'stock_order_create' %}">
+                                <i class="bi bi-plus-circle me-2"></i>Nouvelle commande
                             </a>
                         </li>
                     </ul>
