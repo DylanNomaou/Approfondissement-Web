@@ -844,7 +844,78 @@ class InventoryCreateForm(forms.ModelForm):
             "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
             "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
         }
+        labels = {
+            'name': 'Nom de l\'article',
+            'sku': 'SKU',
+            'category': 'Catégorie',
+            'quantity': 'Quantité',
+            'unit': 'Unité',
+            'supplier': 'Fournisseur',
+            'cost_price': 'Prix coûtant',
+        }
+        error_messages = {
+            'name': {
+                'required': 'Le nom de l\'article est obligatoire.',
+            },
+            'sku': {
+                'required': 'Le SKU est obligatoire.',
+            },
+            'category': {
+                'required': 'La catégorie est obligatoire.',
+            },
+            'quantity': {
+                'required': 'La quantité est obligatoire.',
+                'invalid': 'Veuillez entrer une quantité valide.',
+            },
+            'unit': {
+                'required': 'L\'unité est obligatoire.',
+            },
+            'cost_price': {
+                'required': 'Le prix coûtant est obligatoire.',
+                'invalid': 'Veuillez entrer un prix valide.',
+            },
+        }
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
+        # Marquer les champs comme obligatoires
+        self.fields['name'].required = True
         self.fields['sku'].required = True
+        self.fields['category'].required = True
+        self.fields['quantity'].required = True
+        self.fields['unit'].required = True
+        self.fields['cost_price'].required = True
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if not name or not name.strip():
+            raise ValidationError('Le nom de l\'article est obligatoire.')
+        return name.strip()
+    
+    def clean_sku(self):
+        sku = self.cleaned_data.get('sku')
+        if not sku or not sku.strip():
+            raise ValidationError('Le SKU est obligatoire.')
+        return sku.strip()
+    
+    def clean_category(self):
+        category = self.cleaned_data.get('category')
+        if not category or not category.strip():
+            raise ValidationError('La catégorie est obligatoire.')
+        return category.strip()
+    
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity is None:
+            raise ValidationError('La quantité est obligatoire.')
+        if quantity < 0:
+            raise ValidationError('La quantité ne peut pas être négative.')
+        return quantity
+    
+    def clean_cost_price(self):
+        cost_price = self.cleaned_data.get('cost_price')
+        if cost_price is None:
+            raise ValidationError('Le prix coûtant est obligatoire.')
+        if cost_price < 0:
+            raise ValidationError('Le prix ne peut pas être négatif.')
+        return cost_price

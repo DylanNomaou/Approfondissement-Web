@@ -142,7 +142,7 @@
 <div class="modal fade" id="addInventoryModal" tabindex="-1" aria-labelledby="addInventoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post">
+            <form method="post" novalidate>
                 {% csrf_token %}
                 <!-- Pas besoin de champ caché spécial: distinction création/modif par existence d'un objet avec ce SKU -->
                 <div class="modal-header">
@@ -159,11 +159,7 @@
                     <div class="mb-3">
                         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                         {{ field }}
-                        {% if field.errors %}
-                        <div class="text-danger small">
-                            {{ field.errors }}
-                        </div>
-                        {% endif %}
+                        <div class="text-danger small">{{ field.errors }}</div>
                     </div>
                     {% endfor %}
                 </div>
