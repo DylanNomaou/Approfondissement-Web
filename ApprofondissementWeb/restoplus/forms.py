@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Task, WorkShift, Inventory, StockOrder, StockOrderItem
+from .models import User, Task, WorkShift, Inventory, StockOrder, StockOrderItem,Ticket
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 from django.utils import timezone
