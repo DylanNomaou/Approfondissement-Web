@@ -1,0 +1,140 @@
+{% extends "restoplus/base.html" %}
+{% load static %}
+
+{% block title %}Commande #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <a href="{% url 'stock_order_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Commande #{{ order.id }}</h3>
+            <div>
+                <a href="{% url 'stock_order_update' order.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Modifier
+                </a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash"></i> Supprimer
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Informations générales</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="fw-bold">Fournisseur:</td>
+                            <td>{{ order.supplier|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Date de commande:</td>
+                            <td>{{ order.order_date|date:"d/m/Y"|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Livraison prévue:</td>
+                            <td>{{ order.expected_delivery|date:"d/m/Y"|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Créé par:</td>
+                            <td>{{ order.created_by.username|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Créé le:</td>
+                            <td>{{ order.created_at|date:"d/m/Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Modifié le:</td>
+                            <td>{{ order.updated_at|date:"d/m/Y" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <hr>
+
+            <h5 class="mb-3">Articles commandés</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Article</th>
+                            <th>SKU</th>
+                            <th class="text-end">Quantité</th>
+                            <th>Unité</th>
+                            <th class="text-end">Prix unitaire</th>
+                            <th class="text-end">Sous-total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <strong>{{ item.inventory_item.name }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ item.inventory_item.sku|default:"—" }}</td>
+                            <td class="text-end">{{ item.quantity }}</td>
+                            <td>{{ item.inventory_item.get_unit_display }}</td>
+                            <td class="text-end">{{ item.unit_price }}$</td>
+                            <td class="text-end fw-bold">{{ item.subtotal }}$</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Aucun article dans cette commande.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="5" class="text-end fw-bold">Total:</td>
+                            <td class="text-end fw-bold fs-5 text-success">{{ order.total_cost }}$</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer la commande #{{ order.id }} ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form method="post" action="{% url 'stock_order_delete' order.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

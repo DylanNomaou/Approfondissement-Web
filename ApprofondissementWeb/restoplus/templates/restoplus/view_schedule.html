@@ -17,10 +17,9 @@
         <div class="week-info">
           <div class="week-period">
             <i class="fas fa-calendar-week"></i>
-            <span
-              >{{ week_schedule.week_start }} - {{ week_schedule.week_end
-              }}</span
-            >
+            <!--affichage de la période-->
+            <span>{{ week_schedule.week_start }} - {{ week_schedule.week_end }}</span>
+            <!--Horaire-->
           </div>
           <div class="schedule-status">
             {% if week_schedule.is_published %}
@@ -82,24 +81,12 @@
 
             <!-- Cellules d'horaire pour chaque jour -->
             {% for day in week_days %}
-            <div
-              class="schedule-cell"
-              data-employee-id="{{ employee.id }}"
-              data-day="{{ day.jour_key }}"
-              data-date="{{ day.date_str }}"
-            >
+            <div class="schedule-cell" data-employee-id="{{ employee.id }}" data-day="{{ day.jour_key }}"
+              data-date="{{ day.date_str }}">
               <div class="time-display-readonly">
-                <span
-                  class="time-text shift-time"
-                  data-employee="{{ employee.id }}"
-                  data-day="{{ day.jour_key }}"
-                  >-</span
-                >
-                <div
-                  class="shift-details"
-                  data-employee="{{ employee.id }}"
-                  data-day="{{ day.jour_key }}"
-                >
+                <span class="time-text shift-time" data-employee="{{ employee.id }}"
+                  data-day="{{ day.jour_key }}">-</span>
+                <div class="shift-details" data-employee="{{ employee.id }}" data-day="{{ day.jour_key }}">
                   <!-- Les détails seront remplis par JavaScript -->
                 </div>
               </div>
@@ -211,7 +198,7 @@
     console.log(`✅${shiftsLoaded} shifts affichés`);
   }
 
-  function calculateShiftDuration(startTime, endTime, pauseMinutes = 0) {}
+  function calculateShiftDuration(startTime, endTime, pauseMinutes = 0) { }
 
   function calculateScheduleStats() {
     console.log("📊 Calcul des statistiques...");
@@ -252,8 +239,7 @@
     }
 
     console.log(
-      `📊 Stats: ${formatHours(totalMinutes)} total, ${
-        employeesWithShifts.size
+      `📊 Stats: ${formatHours(totalMinutes)} total, ${employeesWithShifts.size
       } employés`
     );
   }

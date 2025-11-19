@@ -6,6 +6,9 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.forms import ValidationError
 from django.utils import timezone
+from datetime import date, timedelta
+import secrets
+import string
 
 class Role(models.Model):
     """Modèle pour définir les rôles"""
@@ -99,6 +102,12 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.has_permission('can_manage_users')
+
+    def can_manage_orders(self):
+        """Vérifier si l'utilisateur peut gérer les commandes"""
+        if self.is_superuser:
+            return True
+        return self.has_permission('can_manage_orders')
 
 
 # ======================================================================
@@ -602,6 +611,149 @@ class WorkShift(models.Model):
             date=date
         ).first()  # Un seul quart par employé par jour
 
+
+class PasswordResetCode(models.Model):
+    """Modèle pour stocker les codes de réinitialisation de mot de passe"""
+    
+    email = models.EmailField(verbose_name="Adresse email")
+    code = models.CharField(max_length=6, verbose_name="Code de réinitialisation")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+    expires_at = models.DateTimeField(verbose_name="Date d'expiration")
+    is_used = models.BooleanField(default=False, verbose_name="Code utilisé")
+    attempts = models.IntegerField(default=0, verbose_name="Nombre de tentatives")
+    
+    class Meta:
+        verbose_name = "Code de réinitialisation"
+        verbose_name_plural = "Codes de réinitialisation"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['email', 'code', 'is_used']),
+            models.Index(fields=['expires_at']),
+        ]
+    
+    def __str__(self):
+        return f"Code pour {self.email} - {self.code} ({'utilisé' if self.is_used else 'actif'})"
+    
+    def is_expired(self):
+        """Vérifier si le code a expiré"""
+        return timezone.now() > self.expires_at
+    
+    def is_valid(self):
+        """Vérifier si le code est valide (non utilisé et non expiré)"""
+        return not self.is_used and not self.is_expired()
+    
+    def can_attempt(self):
+        """Vérifier si on peut encore tenter de valider le code (max 5 tentatives)"""
+        return self.attempts < 5
+    
+    def increment_attempts(self):
+        """Incrémenter le compteur de tentatives"""
+        self.attempts += 1
+        self.save(update_fields=['attempts'])
+    
+    def mark_as_used(self):
+        """Marquer le code comme utilisé"""
+        self.is_used = True
+        self.save(update_fields=['is_used'])
+    
+    @classmethod
+    def cleanup_expired(cls):
+        """Supprimer les codes expirés"""
+        return cls.objects.filter(expires_at__lt=timezone.now()).delete()
+    
+    @classmethod
+    def get_valid_code(cls, email, code):
+        """Récupérer un code valide pour un email donné"""
+        return cls.objects.filter(
+            email=email,
+            code=code,
+            is_used=False,
+            expires_at__gt=timezone.now()
+        ).first()
+    
+    @classmethod
+    def has_recent_code(cls, email, minutes=1):
+        """Vérifier si un code a été généré récemment pour cet email (rate limiting)"""
+        cutoff_time = timezone.now() - timezone.timedelta(minutes=minutes)
+        return cls.objects.filter(
+            email=email,
+            created_at__gte=cutoff_time
+        ).exists()
+    
+    @classmethod
+    def generate_code(cls):
+        """Générer un code aléatoire de 6 caractères alphanumériques majuscules"""
+        # Utiliser A-Z et 0-9 pour un total de 36 caractères possibles
+        characters = string.ascii_uppercase + string.digits
+        return ''.join(secrets.choice(characters) for _ in range(6))
+    
+    @classmethod
+    def create_for_email(cls, email):
+        """Créer un nouveau code de réinitialisation pour un email"""
+        # Nettoyer les codes expirés pour cet email
+        cls.objects.filter(
+            email=email,
+            expires_at__lt=timezone.now()
+        ).delete()
+        
+        # Créer le nouveau code
+        code = cls.generate_code()
+        expires_at = timezone.now() + timezone.timedelta(minutes=15)
+        
+        return cls.objects.create(
+            email=email,
+            code=code,
+            expires_at=expires_at
+        )
+
+class StockOrder(models.Model):
+    """Commande de stock"""
+    supplier = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur")
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='stock_orders_created', verbose_name="Créé par")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+
+    order_date = models.DateField(null=True, blank=True, verbose_name="Date de commande")
+    expected_delivery = models.DateField(null=True, blank=True, verbose_name="Livraison prévue")
+
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Coût total")
+
+    class Meta:
+        verbose_name = "Commande de stock"
+        verbose_name_plural = "Commandes de stock"
+        ordering = ['-created_at']
+
+
+    def __str__(self):
+        return f"Commande {self.id}"
+
+    def calculate_total(self):
+        """Calcule le coût total de la commande"""
+        total = sum(item.subtotal() for item in self.items.all())
+        self.total_cost = total
+        self.save()
+        return total
+
+class StockOrderItem(models.Model):
+    """Article dans une commande de stock"""
+    order = models.ForeignKey(StockOrder, on_delete=models.CASCADE, related_name='items', verbose_name="Commande")
+    inventory_item = models.ForeignKey(Inventory, on_delete=models.CASCADE, verbose_name="Article")
+
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Quantité")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Prix unitaire")
+
+    class Meta:
+        verbose_name = "Article de commande"
+        verbose_name_plural = "Articles de commande"
+
+
+    def __str__(self):
+        return f"{self.inventory_item.name} x {self.quantity}"
+
+    def subtotal(self):
+        """Calcule le sous-total pour cet article"""
+        return self.quantity * self.unit_price
 class Ticket(models.Model):
     """Modèle pour les tickets de support"""
     # CATEGORY_CHOICES = [
