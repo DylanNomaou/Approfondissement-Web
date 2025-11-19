@@ -2,12 +2,13 @@
 
 <!--Block content-->
 {% block content %}
-<section class="page-view-schedule">
-  <div class="schedule-container">
-    <!-- En-tête -->
-    <div class="schedule-header">
-      <div class="header-content">
-        <!-- Titre -->
+<div class="admin-dashboard">
+  <section class="page-view-schedule">
+    <div class="schedule-container">
+      <!-- En-tête -->
+      <div class="schedule-header">
+        <div class="header-content">
+          <!-- Titre -->
         <h1>
           <i class="fas fa-calendar-check"></i>
           Horaires de la semaine
@@ -278,4 +279,6 @@
     window.location.href = currentUrl.toString();
   }
 </script>
+  </section>
+</div>
 {% endblock content %}

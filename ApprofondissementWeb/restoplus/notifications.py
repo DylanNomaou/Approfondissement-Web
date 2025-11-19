@@ -2,6 +2,7 @@
 Utilitaires pour la gestion des notifications
 """
 from django.utils import timezone
+from django.db import models
 from .models import Notification, User, Task, Role
 
 
@@ -202,3 +203,100 @@ def mark_notifications_as_read(user, notification_ids=None):
         notifications = notifications.filter(id__in=notification_ids)
     
     notifications.update(is_read=True, read_at=timezone.now())
+
+
+def notify_schedule_published(week_start_date, published_by, shifts_count):
+    """
+    Créer des notifications pour informer tous les employés qu'un horaire a été publié
+    
+    Args:
+        week_start_date (date): Date de début de la semaine (lundi)
+        published_by (User): L'utilisateur qui a publié l'horaire
+        shifts_count (int): Nombre d'horaires publiés
+    
+    Returns:
+        int: Nombre de notifications créées
+    """
+    from datetime import timedelta
+    
+    # Obtenir la date de fin de semaine (dimanche)
+    week_end_date = week_start_date + timedelta(days=6)
+    
+    # Formatage des dates pour l'affichage
+    week_start_formatted = week_start_date.strftime('%d/%m/%Y')
+    week_end_formatted = week_end_date.strftime('%d/%m/%Y')
+    
+    # Titre et description de la notification
+    titre = f"📅 Horaire publié - Semaine du {week_start_formatted}"
+    description = (
+        f"L'horaire de la semaine du {week_start_formatted} au {week_end_formatted} "
+        f"a été publié par {published_by.get_full_name() or published_by.username}. "
+        f"{shifts_count} horaire(s) de travail ont été assignés. "
+        f"Consultez votre horaire dans la section 'Voir les horaires'."
+    )
+    
+    # Récupérer tous les employés actifs (sauf celui qui a publié)
+    all_employees = User.objects.filter(is_active=True).exclude(id=published_by.id)
+    
+    # Créer une notification pour chaque employé
+    notifications_created = 0
+    for employee in all_employees:
+        create_notification(
+            titre=titre,
+            description=description,
+            assigned_to=employee,
+            created_by=published_by,
+            notification_type='schedule_published'
+        )
+        notifications_created += 1
+    
+    return notifications_created
+
+
+def notify_inventory_added(inventory_item, added_by):
+    """
+    Créer une notification pour informer les administrateurs qu'un article d'inventaire a été ajouté
+    
+    Args:
+        inventory_item (Inventory): L'article d'inventaire ajouté
+        added_by (User): L'utilisateur qui a ajouté l'article
+    
+    Returns:
+        int: Nombre de notifications créées
+    """
+    # Titre et description de la notification
+    titre = f"📦 Nouvel article ajouté à l'inventaire"
+    description = (
+        f"Un nouvel article '{inventory_item.name}' a été ajouté à l'inventaire "
+        f"par {added_by.get_full_name() or added_by.username}. "
+        f"Quantité: {inventory_item.quantity} {inventory_item.get_unit_display()}. "
+    )
+    
+    if inventory_item.category:
+        description += f"Catégorie: {inventory_item.category}. "
+    
+    if inventory_item.supplier:
+        description += f"Fournisseur: {inventory_item.supplier}. "
+    
+    description += "Consultez l'inventaire pour plus de détails."
+    
+    # Récupérer tous les administrateurs (staff et superusers)
+    administrators = User.objects.filter(
+        is_active=True
+    ).filter(
+        models.Q(is_staff=True) | models.Q(is_superuser=True)
+    ).exclude(id=added_by.id)  # Exclure celui qui a ajouté l'article
+    
+    # Créer une notification pour chaque administrateur
+    notifications_created = 0
+    for admin in administrators:
+        create_notification(
+            titre=titre,
+            description=description,
+            assigned_to=admin,
+            created_by=added_by,
+            notification_type='inventory_added'
+        )
+        notifications_created += 1
+    
+    return notifications_created
