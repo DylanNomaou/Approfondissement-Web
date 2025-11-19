@@ -12,19 +12,15 @@ class HoraireManager {
         this.currentWorkShift = null;
         this.weekDays = this.loadWeekDays();
         this.canEditWeek = this.getCanEditWeekFlag();
-        // Charger l'état de publication de la semaine
-        // Initialiser avec un tableau vide par défaut
         this.availabilities = [];
 
-        // Charger les disponibilités de manière sécurisée
         try {
             this.availabilities = this.loadAvailabilities();
         } catch (error) {
-            console.error("❌ Erreur lors du chargement des disponibilités:", error);
+            console.error("Erreur lors du chargement des disponibilités:", error);
             this.availabilities = [];
         }
 
-        console.log("🚀 Availabilities finales:", this.availabilities);
         this.init();
     }
 
@@ -40,75 +36,32 @@ class HoraireManager {
 
         if (weekDaysElement?.textContent) {
             try {
-                const data = JSON.parse(weekDaysElement.textContent);
-                console.log("✅ Données de la semaine chargées depuis Django");
-                return data;
+                return JSON.parse(weekDaysElement.textContent);
             } catch (error) {
-                console.error("❌ Erreur lors du parsing JSON:", error);
+                console.error("Erreur lors du parsing JSON:", error);
             }
         }
 
-        console.warn("⚠️ Génération de données par défaut");
         return this.generateDefaultWeekDays();
     }
 
     /**
      * Charge les données de disponibilité depuis Django
+    /**
+     * Charge les données de disponibilité depuis Django
      */
     loadAvailabilities() {
         const availabilityElement = document.getElementById("availability-data");
-        console.log("🔍 Élément availability-data:", availabilityElement);
 
         if (availabilityElement?.textContent) {
-            console.log("📄 Contenu brut:", availabilityElement.textContent);
-            console.log("📄 Longueur:", availabilityElement.textContent.length);
-
             try {
                 const data = JSON.parse(availabilityElement.textContent);
-                console.log(
-                    "✅ Données de disponibilité chargées depuis Django:",
-                    data
-                );
-                console.log("🔍 Type des données:", typeof data, Array.isArray(data));
-                console.log("🔍 Longueur:", data?.length);
-
-                // S'assurer que c'est un tableau
-                if (Array.isArray(data)) {
-                    console.log("✅ C'est bien un tableau avec", data.length, "éléments");
-                    return data;
-                } else {
-                    console.warn(
-                        "⚠️ Les données de disponibilité ne sont pas un tableau, conversion..."
-                    );
-                    console.log("🔍 Type reçu:", typeof data);
-                    console.log("🔍 Contenu:", data);
-
-                    // Essayer de convertir en tableau si c'est un objet
-                    if (typeof data === "object" && data !== null) {
-                        const converted = Object.values(data);
-                        console.log("🔄 Tentative de conversion:", converted);
-                        return Array.isArray(converted) ? converted : [];
-                    }
-
-                    return [];
-                }
+                return Array.isArray(data) ? data : (typeof data === "object" && data !== null ? Object.values(data) : []);
             } catch (error) {
-                console.error("❌ Erreur lors du parsing JSON disponibilités:", error);
-                console.error(
-                    "📄 Contenu qui a causé l'erreur:",
-                    availabilityElement.textContent
-                );
-            }
-        } else {
-            console.warn("⚠️ Élément availability-data non trouvé ou vide");
-            if (!availabilityElement) {
-                console.error("❌ Élément availability-data n'existe pas dans le DOM");
-            } else {
-                console.error("❌ Élément availability-data existe mais est vide");
+                console.error("Erreur lors du parsing JSON disponibilités:", error);
             }
         }
 
-        console.warn("⚠️ Retour d'un tableau vide par défaut");
         return [];
     }
 
@@ -170,7 +123,6 @@ class HoraireManager {
             // Ctrl+Shift+R : Recharger l'affichage des shifts
             if (e.ctrlKey && e.shiftKey && e.key === 'R') {
                 e.preventDefault();
-                console.log('🔄 Rechargement manuel de l\'affichage...');
                 this.refreshAllShiftsDisplay();
                 this.showMessage('Affichage des shifts rechargé', 'info');
             }
