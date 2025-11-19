@@ -1,3 +1,6 @@
+"""Modèles pour l'application RestoPlus"""
+
+from datetime import date
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
@@ -36,6 +39,7 @@ email_validator = RegexValidator(
     message="Format de l'adresse courriel invalide."
 )
 
+"""Modèle personnalisé pour les utilisateurs"""
 class User(AbstractUser):
     @property
     def mobile_display(self):
@@ -87,13 +91,10 @@ class User(AbstractUser):
 
     def can_create_task_for_user(self, target_user):
         """Vérifier si l'utilisateur peut créer une tâche pour un utilisateur spécifique"""
-        # Les superusers peuvent tout faire
         if self.is_superuser:
             return True
-        # Les utilisateurs avec la permission can_distribute_tasks peuvent assigner à tous
         if self.can_distribute_tasks_to_all():
             return True
-        # Sinon, on peut seulement s'assigner des tâches à soi-même
         return self == target_user
 
     def can_manage_employees(self):
@@ -101,6 +102,11 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.has_permission('can_manage_users')
+
+
+# ======================================================================
+# 🧑‍💼 DISPONIBILITÉS
+# ======================================================================
 
 class Availability(models.Model):
     employe=models.ForeignKey(User,on_delete=models.CASCADE)
@@ -118,6 +124,51 @@ class Availability(models.Model):
     remplie = models.BooleanField(default=False)
     def __str__(self):
         return f"{self.employe.username} - {self.day} ({self.heure_debut} à {self.heure_fin})"
+
+# ======================================================================
+# 🧑‍💼 INVENTAIRE
+# ======================================================================
+
+class Inventory(models.Model):
+    """Article d'inventaire"""
+    UNIT_CHOICES = [
+        ("pcs", "Pièce"),
+        ("lb", "Livres"),
+        ("g", "Grammes"),
+        ("l", "Litres"),
+        ("ml", "Millilitres"),
+        ("pack", "Paquet"),
+    ]
+
+    name = models.CharField(max_length=200, verbose_name="Nom")
+    sku = models.CharField(max_length=50, blank=True, unique=True, verbose_name="SKU")
+    category = models.CharField(max_length=100, blank=True, verbose_name="Catégorie")
+
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Quantité")
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="pcs", verbose_name="Unité")
+    supplier = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur")
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Prix coûtant")
+
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+
+    class Meta:
+        verbose_name = "Article d'inventaire"
+        verbose_name_plural = "Inventaire"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.sku})" if self.sku else self.name
+
+    def clean(self):
+        """Validations simples"""
+        errors = {}
+        if self.quantity is not None and self.quantity < 0:
+            errors["quantity"] = "La quantité ne peut pas être négative."
+        if errors:
+            raise ValidationError(errors)
+
 
 class Task(models.Model):
     # Titre de la tâche

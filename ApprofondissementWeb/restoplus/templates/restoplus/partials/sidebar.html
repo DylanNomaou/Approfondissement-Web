@@ -25,6 +25,8 @@
                     <span>Page d'accueil</span>
                 </a>
             </li>
+
+            <!-- SECTION EMPLOYÉS -->
             {%if user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link" href="#"
@@ -66,6 +68,25 @@
                     </ul>
                 </div>
             </li>
+
+            <!-- SECTION INVENTAIRE -->
+            <li clas="nav-item">
+                <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link"
+                    data-bs-toggle="collapse" data-bs-target="#inventorySubmenu">
+                    <i class="bi bi-people me-3"></i>
+                    <span>Inventaire</span>
+                    <i class="bi bi-chevron-right ms-auto"></i>
+                </a>
+                <div class="collapse" id="inventorySubmenu">
+                    <ul class="nav flex-column ms-4">
+                        <li class="nav-item">
+                            <a class="nav-link text-light-50 py-2" href=" {% url 'inventory_management' %}">
+                                <i class="bi bi-person-plus me-2"></i>Voir l'inventaire
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
             {% endif %}
             <li class="nav-item">
                 <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link" href="#"
@@ -84,6 +105,8 @@
                     </ul>
                 </div>
             </li>
+
+            <!-- SECTION ADMINISTRATION -->
             {% if user.is_staff or user.can_manage_employees %}
             <li class="nav-item">
                 <a class="nav-link text-light d-flex align-items-center py-3 px-4 sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'create_role' or request.resolver_match.url_name == 'manage_user_role' %}active{% endif %}"
@@ -95,12 +118,6 @@
                 <div class="collapse {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'create_role' or request.resolver_match.url_name == 'manage_user_role' %}show{% endif %}"
                     id="adminSubmenu">
                     <ul class="nav flex-column ms-4">
-                        <!--<li class="nav-item">
-                            <a class="nav-link text-light-50 py-2" href="#">
-                                <i class="bi bi-person-add me-2"></i>Création de compte
-                            </a>
-                        </li>
-                        <li class="nav-item"><!-- IGNORE --->
                         <a class="nav-link text-light-50 py-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
                             href="{% url 'admin_dashboard' %}">
                             <i class="bi bi-shield-check me-2"></i>Donner accès
