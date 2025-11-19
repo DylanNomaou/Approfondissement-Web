@@ -102,36 +102,21 @@ $transition   : all 0.3s ease;
 // BASE STYLES
 // ===========================
 body {
-<<<<<<< HEAD
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: $light-color;
   overflow-x: hidden;
-=======
-  font-family     : "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: $light-color;
-  overflow-x      : hidden;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 }
 
 // ===========================
 // SIDEBAR COMPONENT
 // ===========================
 .sidebar {
-<<<<<<< HEAD
   width: $sidebar-width;
   height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
   z-index: 1000;
-=======
-  width     : $sidebar-width;
-  height    : 100vh;
-  position  : fixed;
-  left      : 0;
-  top       : 0;
-  z-index   : 1000;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
   background: linear-gradient(180deg, $dark-color 0%, #1a1e21 100%);
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
   transition: $transition;
@@ -179,16 +164,10 @@ body {
         border-left-color: $primary-color;
       }
 
-<<<<<<< HEAD
       i {
         width: 20px;
         text-align: center;
       }
-=======
-      // ===========================
-      // ANIMATIONS ADMIN DASHBOARD
-      // ===========================
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
     }
 
     .card-body {
@@ -196,333 +175,11 @@ body {
     }
   }
 
-<<<<<<< HEAD
       &:hover {
         background-color: rgba(255, 255, 255, 0.1);
         border-left-color: $primary-color;
         transform: translateX(5px);
       }
-=======
-  // Task List Styles
-  .task-list-container {
-    position: relative;
-  }
-
-  .task-list {
-
-    // Styles pour la liste horizontale défilante
-    &.horizontal-scroll {
-      display                   : flex;
-      gap                       : 1rem;
-      overflow-x                : auto;
-      overflow-y                : hidden;
-      padding                   : 0.5rem 0;
-      scroll-behavior           : smooth;
-      -webkit-overflow-scrolling: touch; // Support mobile
-
-      // Masquer la scrollbar par défaut mais garder la fonctionnalité
-      scrollbar-width   : none; // Firefox
-      -ms-overflow-style: none; // IE/Edge
-
-      &::-webkit-scrollbar {
-        display: none; // Chrome, Safari, Opera
-      }
-
-      // Afficher une scrollbar subtile au hover sur desktop
-      &:hover::-webkit-scrollbar {
-        display: block;
-        height : 4px;
-      }
-
-      &:hover::-webkit-scrollbar-track {
-        background   : rgba(0, 0, 0, 0.1);
-        border-radius: 2px;
-      }
-
-      &:hover::-webkit-scrollbar-thumb {
-        background   : rgba(0, 0, 0, 0.3);
-        border-radius: 2px;
-
-        &:hover {
-          background: rgba(0, 0, 0, 0.5);
-        }
-      }
-    }
-
-    .task-item {
-      padding      : 1rem;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-      transition   : $transition;
-      cursor       : pointer;
-
-      &:hover {
-        transform : translateX(5px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .task-checkbox {
-        i {
-          font-size : 1.25rem;
-          transition: $transition;
-
-          &:hover {
-            transform: scale(1.1);
-          }
-        }
-      }
-
-      &.completed {
-        background-color: $light-color;
-
-        .task-content span {
-          text-decoration: line-through;
-          color          : $secondary-color;
-        }
-      }
-
-      &.pending {
-        background-color: rgba($warning-color, 0.1);
-        border          : 1px solid rgba($warning-color, 0.3);
-      }
-    }
-
-    // Styles pour les tâches horizontales
-    .task-item-horizontal {
-      min-width  : 220px;
-      max-width  : 250px;
-      height     : 160px;
-      flex-shrink: 0;
-      background : white;
-      border     : 2px solid #e9ecef;
-      box-shadow : 0 2px 8px rgba(0, 0, 0, 0.08);
-      transition : all 0.3s ease;
-      cursor     : pointer;
-      position   : relative;
-      overflow   : hidden;
-
-      &:hover {
-        transform   : translateY(-4px) scale(1.02);
-        box-shadow  : 0 8px 25px rgba(0, 0, 0, 0.15);
-        border-color: #007bff;
-      }
-
-      &.task-completed {
-        background  : linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-color: #28a745;
-
-        &::before {
-          content   : "";
-          position  : absolute;
-          top       : 0;
-          left      : 0;
-          right     : 0;
-          height    : 4px;
-          background: linear-gradient(90deg, #28a745, #20c997);
-        }
-      }
-
-      &.task-pending {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-
-        &::before {
-          content   : "";
-          position  : absolute;
-          top       : 0;
-          left      : 0;
-          right     : 0;
-          height    : 4px;
-          background: linear-gradient(90deg, #ffc107, #fd7e14);
-        }
-      }
-
-      .task-content-horizontal {
-        position: relative;
-        z-index : 2;
-      }
-
-      .task-title-horizontal {
-        font-size    : 0.95rem;
-        font-weight  : 600;
-        line-height  : 1.3;
-        margin-bottom: 0.5rem;
-      }
-
-      .task-actions-horizontal {
-        opacity   : 0;
-        transition: opacity 0.2s ease;
-      }
-
-      &:hover .task-actions-horizontal {
-        opacity: 1;
-      }
-
-      // Indicateurs de priorité
-      .priority-indicator {
-        width        : 12px;
-        height       : 12px;
-        border-radius: 50%;
-
-        &.priority-haute {
-          background: linear-gradient(45deg, #dc3545, #fd7e14);
-          box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
-        }
-
-        &.priority-moyenne {
-          background: linear-gradient(45deg, #ffc107, #fd7e14);
-          box-shadow: 0 0 8px rgba(255, 193, 7, 0.4);
-        }
-
-        &.priority-basse {
-          background: linear-gradient(45deg, #28a745, #20c997);
-          box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
-        }
-      }
-    }
-
-    // Styles pour la liste défilante verticale (backup)
-    &.scrollable-task-list {
-      max-height   : 400px;
-      overflow-y   : auto;
-      overflow-x   : hidden;
-      padding-right: 8px;
-
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background   : #f1f1f1;
-        border-radius: 10px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background   : #c1c1c1;
-        border-radius: 10px;
-        transition   : background 0.3s ease;
-
-        &:hover {
-          background: #a8a8a8;
-        }
-      }
-
-      &::-webkit-scrollbar-thumb:active {
-        background: #888;
-      }
-    }
-  }
-
-  // Indicateur de scroll horizontal
-  .scroll-indicator-horizontal {
-    opacity  : 0.7;
-    animation: swipeIndicator 3s ease-in-out infinite;
-
-    &:hover {
-      opacity: 1;
-    }
-  }
-
-  @keyframes swipeIndicator {
-
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-
-    50% {
-      transform: translateX(5px);
-    }
-  }
-
-  // Indicateur de scroll vertical (backup)
-  .scroll-indicator {
-    opacity  : 0.7;
-    animation: bounce 2s infinite;
-
-    &:hover {
-      opacity: 1;
-    }
-  }
-
-  @keyframes bounce {
-
-    0%,
-    20%,
-    50%,
-    80%,
-    100% {
-      transform: translateY(0);
-    }
-
-    40% {
-      transform: translateY(-5px);
-    }
-
-    60% {
-      transform: translateY(-3px);
-    }
-  }
-
-  // Notification Styles
-  .notification-item {
-    padding      : 1rem;
-    margin       : 0.5rem 0;
-    border-radius: 8px;
-    transition   : $transition;
-    border-radius: 8px;
-    margin       : -8px -12px;
-    padding      : 12px;
-    animation    : slideInRight 0.5s ease forwards;
-
-    &:nth-child(2) {
-      animation-delay: 0.1s;
-    }
-
-    &:nth-child(3) {
-      animation-delay: 0.2s;
-    }
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.02);
-      transform       : translateX(3px);
-    }
-
-    &.warning {
-      border-left: 4px solid $warning-color;
-    }
-
-    &.info {
-      border-left: 4px solid $info-color;
-    }
-
-    &.success {
-      border-left: 4px solid $success-color;
-    }
-  }
-
-  // Action Buttons
-  .action-btn {
-    @include button-animation;
-    border-radius  : $border-radius;
-    height         : 100px;
-    display        : flex;
-    flex-direction : column;
-    align-items    : center;
-    justify-content: center;
-    border         : 2px solid transparent;
-    transition     : all 0.3s ease;
-    border-radius  : 12px;
-
-    &:hover {
-      border-color: currentColor;
-      transform   : translateY(-5px);
-      box-shadow  : 0 8px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    i {
-      font-size    : 2rem;
-      margin-bottom: 0.5rem;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
     }
   }
 }
@@ -543,7 +200,6 @@ body {
 }
 
 .main-wrapper {
-<<<<<<< HEAD
   margin-left: $sidebar-width;
   min-height: 100vh;
   display: flex;
@@ -946,9 +602,6 @@ body {
       font-size: 0.9rem;
     }
   }
-=======
-  margin-left: 280px;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 }
 
 @media (max-width: 767.98px) {
@@ -1040,11 +693,7 @@ body {
 .btn:focus,
 .nav-link:focus,
 .task-item:focus {
-<<<<<<< HEAD
   outline: 2px solid $primary-color;
-=======
-  outline       : 2px solid $primary-color;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
   outline-offset: 2px;
 }
 
@@ -1091,10 +740,6 @@ body {
 
 // Print styles
 @media print {
-<<<<<<< HEAD
-=======
-
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
   .sidebar,
   .main-header,
   .main-footer {
@@ -1132,15 +777,9 @@ body {
 }
 
 .modal-content {
-<<<<<<< HEAD
   border: none;
   border-radius: $border-radius;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-=======
-  border       : none;
-  border-radius: $border-radius;
-  box-shadow   : 0 10px 40px rgba(0, 0, 0, 0.2);
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
   .modal-header {
     border-bottom: 2px solid rgba(255, 255, 255, 0.2);
@@ -1165,7 +804,6 @@ body {
       font-size    : 0.95rem;
       margin-bottom: 0.5rem;
 
-<<<<<<< HEAD
       i {
         font-size: 1rem;
       }
@@ -1185,42 +823,14 @@ body {
         transform: translateY(-1px);
       }
 
-=======
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
       &.is-valid {
         border-color    : $success-color;
         background-image: none;
       }
 
-<<<<<<< HEAD
       &.is-invalid {
         border-color: $danger-color;
         background-image: none;
-=======
-      .form-control,
-      .form-select {
-        border       : 2px solid #e9ecef;
-        border-radius: 8px;
-        padding      : 0.75rem 1rem;
-        font-size    : 0.95rem;
-        transition   : $transition;
-
-        &:focus {
-          border-color: $primary-color;
-          box-shadow  : 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-          transform   : translateY(-1px);
-        }
-
-        &.is-valid {
-          border-color    : $success-color;
-          background-image: none;
-        }
-
-        &.is-invalid {
-          border-color    : $danger-color;
-          background-image: none;
-        }
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
       }
 
       .form-check-container {
@@ -1234,57 +844,10 @@ body {
             border       : 2px solid #dee2e6;
             border-radius: 4px;
 
-<<<<<<< HEAD
           &:checked {
             background-color: $primary-color;
             border-color: $primary-color;
           }
-=======
-            &:checked {
-              background-color: $primary-color;
-              border-color    : $primary-color;
-            }
-
-            &:focus {
-              box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-            }
-          }
-
-          .form-check-label {
-            color : $dark-color;
-            cursor: pointer;
-
-            &:hover {
-              color: $primary-color;
-            }
-          }
-        }
-      }
-
-      .invalid-feedback {
-        font-size  : 0.875rem;
-        font-weight: 500;
-      }
-
-      .form-text small {
-        font-size: 0.8rem;
-      }
-    }
-
-    .modal-footer {
-      border-top   : 1px solid #dee2e6;
-      border-radius: 0 0 $border-radius $border-radius;
-
-      .btn {
-        @include button-animation;
-        font-weight  : 500;
-        padding      : 0.75rem 1.5rem;
-        border-radius: 8px;
-
-        &.btn-primary {
-          background: linear-gradient(135deg, $primary-color 0%, #0056b3 100%);
-          border    : none;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
           &:focus {
             box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
@@ -1337,11 +900,7 @@ body {
 // Animation pour les toasts
 .toast {
   border-radius: 8px;
-<<<<<<< HEAD
   border: none;
-=======
-  border       : none;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
   &.bg-success {
     background: linear-gradient(135deg,
@@ -1399,10 +958,6 @@ $admin-badge-size : 0.75rem;
 
 // Structure principale du dashboard admin
 .admin-dashboard {
-<<<<<<< HEAD
-=======
-
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
   // ===========================
   // MESSAGES SECTION
   // ===========================
@@ -1414,17 +969,12 @@ $admin-badge-size : 0.75rem;
     font-weight  : 500;
 
     &.alert-success {
-<<<<<<< HEAD
       background: linear-gradient(
         135deg,
         $admin-success 0%,
         lighten($admin-success, 10%) 100%
       );
       color: white;
-=======
-      background: linear-gradient(135deg, $admin-success 0%, lighten($admin-success, 10%) 100%);
-      color     : white;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
       .btn-close {
         filter: brightness(0) invert(1);
@@ -1510,91 +1060,8 @@ $admin-badge-size : 0.75rem;
           color: white;
         }
 
-<<<<<<< HEAD
         a {
           color: white;
-=======
-        &.alert-error,
-        &.alert-danger {
-          background: linear-gradient(135deg, $admin-danger 0%, lighten($admin-danger, 10%) 100%);
-          color     : white;
-
-          &:hover {
-            text-decoration: underline;
-          }
-        }
-      }
-    }
-  }
-
-  &.alert-warning {
-    background: linear-gradient(135deg, $admin-warning 0%, lighten($admin-warning, 10%) 100%);
-    color     : #333;
-  }
-
-  &.alert-info {
-    background: linear-gradient(135deg, $admin-primary 0%, lighten($admin-primary, 10%) 100%);
-    color     : white;
-
-    h5 {
-      color        : $admin-secondary;
-      font-weight  : 700;
-      margin-bottom: 0;
-      font-size    : 1.25rem;
-
-      i {
-        margin-right: 0.5rem;
-      }
-    }
-
-    .d-flex {
-      align-items: center;
-    }
-  }
-
-
-
-  // ===========================
-  // HEADER SECTION
-  // ===========================
-  &__header {
-    background   : linear-gradient(135deg, $admin-primary 0%, lighten($admin-primary, 10%) 100%);
-    color        : white;
-    padding      : 2rem 0;
-    margin-bottom: 2rem;
-    border-radius: $admin-card-radius;
-
-    h1 {
-      font-weight  : 700;
-      margin-bottom: 0.5rem;
-      font-size    : 2.5rem;
-
-      i {
-        margin-right: 1rem;
-      }
-    }
-
-    p {
-      opacity      : 0.9;
-      font-size    : 1.1rem;
-      margin-bottom: 0;
-    }
-
-    // Breadcrumb personnalisé
-    .breadcrumb {
-      background   : transparent;
-      margin-bottom: 0;
-
-      .breadcrumb-item {
-        color: rgba(white, 0.8);
-
-        &.active {
-          color: white;
-        }
-
-        a {
-          color          : white;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
           text-decoration: none;
 
           &:hover {
@@ -1619,11 +1086,7 @@ $admin-badge-size : 0.75rem;
       background   : white;
       border-bottom: 1px solid #e3e6f0;
       border-radius: $admin-card-radius $admin-card-radius 0 0;
-<<<<<<< HEAD
       padding: 1.5rem;
-=======
-      padding      : 1.5rem;
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
       h5 {
         color        : $admin-secondary;
@@ -2187,7 +1650,6 @@ $admin-badge-size : 0.75rem;
     }
   }
 
-<<<<<<< HEAD
 // ===========================
 // ANIMATIONS ADMIN DASHBOARD
 // ===========================
@@ -2208,21 +1670,6 @@ $admin-badge-size : 0.75rem;
 
   &:nth-child(2) {
     animation-delay: 0.1s;
-=======
-  // ===========================
-  // ANIMATIONS ADMIN DASHBOARD
-  // ===========================
-  @keyframes fadeInUp {
-    from {
-      opacity  : 0;
-      transform: translateY(20px);
-    }
-
-    to {
-      opacity  : 1;
-      transform: translateY(0);
-    }
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
   }
 
   // Animation d'entrée pour les cartes
@@ -2308,7 +1755,6 @@ $admin-badge-size : 0.75rem;
           display    : flex;
           align-items: center;
 
-<<<<<<< HEAD
         .stat-label {
           color: $secondary-color;
           font-size: 0.9rem;
@@ -2414,11 +1860,6 @@ $admin-badge-size : 0.75rem;
         .day-name {
           font-size: 0.8rem;
           font-weight: 700;
-=======
-          @media (min-width: 768px) {
-            font-size: 1.75rem;
-          }
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
           @media (min-width: 1200px) {
             font-size: 2rem;
@@ -2890,7 +2331,6 @@ $admin-badge-size : 0.75rem;
           grid-template-columns: 120px repeat(7, 1fr);
         }
 
-<<<<<<< HEAD
         &:nth-child(even) {
           background-color: rgba($light-color, 0.5);
         }
@@ -2990,27 +2430,6 @@ $admin-badge-size : 0.75rem;
           // &:last-child {
           //   border-right: none; // Plus nécessaire
           // }
-=======
-        .employee-header,
-        .day-header {
-          padding       : 1rem 0.75rem;
-          text-align    : center;
-          font-weight   : 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          font-size     : 0.8rem;
-          border-right  : 1px solid rgba(255, 255, 255, 0.1);
-
-          @media (min-width: 1200px) {
-            padding  : 1.25rem 1rem;
-            font-size: 0.85rem;
-          }
-
-          &:last-child {
-            border-right: none;
-          }
-        }
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
 
         .employee-header {
           text-align  : left;
@@ -3110,7 +2529,6 @@ $admin-badge-size : 0.75rem;
             grid-template-columns: 140px repeat(7, 1fr);
           }
 
-<<<<<<< HEAD
   .elegant-footer {
     background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     border-top: 1px solid #e2e8f0;
@@ -3350,10 +2768,6 @@ $admin-badge-size : 0.75rem;
 
           i {
             font-size: 1.1rem;
-=======
-          @media (max-width: 767.98px) {
-            grid-template-columns: 120px repeat(7, 1fr);
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
           }
 
           &:nth-child(even) {
@@ -4951,7 +4365,6 @@ $admin-badge-size : 0.75rem;
     width     : 40px;
     height    : 40px;
     background: #6f42c1;
-<<<<<<< HEAD
 }
 
 // ===========================
@@ -5219,13 +4632,3 @@ $admin-badge-size : 0.75rem;
     }
   }
 }
-=======
-  }
-
-  .avatar-initiales {
-    width     : 64px;
-    height    : 64px;
-    background: #6f42c1;
-  }
-}
->>>>>>> 27312f478c0298ad0d83960a1e367a14e621710c
