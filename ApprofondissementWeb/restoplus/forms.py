@@ -699,12 +699,14 @@ class InventoryFilterForm(forms.Form):
         categories = kwargs.pop("categories_choices", [("", "Toutes")])
         suppliers = kwargs.pop("supplier_choices", [("", "Fournisseur (tous)")])
         unit_choices = kwargs.pop("unit_choices", [("", "Unité (toutes)")])
+        sorting_choices = kwargs.pop("sorting_choices", [("", "Trier par")])
 
         super().__init__(*args, **kwargs)
 
         self.fields["category"].choices = categories
         self.fields["supplier"].choices = suppliers
         self.fields["unit"].choices = unit_choices
+        self.fields["sorting"].choices = sorting_choices
 
     def clean_recherche(self):
         val = self.cleaned_data.get("recherche", "")

@@ -15,7 +15,6 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
-from django.utils import timezone
 from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet,InventoryCreateForm
 from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
@@ -362,6 +361,20 @@ def inventory_management(request):
             .distinct()
         )
     ]
+
+    sorting_choices = [
+        ("", "Trier par"),
+        ("name_asc", "Nom (A → Z)"),
+        ("name_desc", "Nom (Z → A)"),
+        ("sku_asc", "SKU asc"),
+        ("sku_desc", "SKU desc"),
+        ("quantity_asc", "Quantité (croissante)"),
+        ("quantity_desc", "Quantité (décroissante)"),
+        ("supplier_asc", "Fournisseur (A → Z)"),
+
+
+    ]
+
     supplier_choices = [("", "Fournisseur")] + [
         (sup, sup)
         for sup in (
