@@ -672,7 +672,7 @@ class InventoryFilterForm(forms.Form):
         label="",
         choices=[],
         widget=forms.Select(attrs={
-            "class": "form-select form-select-sm w-auto",
+            "class": "form-select form-select-sm w-auto select-compact",
         })
     )
 
@@ -681,8 +681,8 @@ class InventoryFilterForm(forms.Form):
         label="",
         choices=[],
         widget=forms.Select(attrs={
-            "class": "form-select form-select-sm w-auto",
-        }),
+            "class": "form-select form-select-sm w-auto select-compact",
+        })
     )
 
     supplier = forms.ChoiceField(

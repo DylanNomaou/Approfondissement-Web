@@ -364,15 +364,13 @@ def inventory_management(request):
 
     sorting_choices = [
         ("", "Trier par"),
-        ("name_asc", "Nom (A → Z)"),
-        ("name_desc", "Nom (Z → A)"),
-        ("sku_asc", "SKU asc"),
-        ("sku_desc", "SKU desc"),
-        ("quantity_asc", "Quantité (croissante)"),
-        ("quantity_desc", "Quantité (décroissante)"),
-        ("supplier_asc", "Fournisseur (A → Z)"),
-
-
+        ("name_asc", "Nom"),
+        ("name_desc", "Nom"),
+        ("sku_asc", "SKU"),
+        ("sku_desc", "SKU"),
+        ("quantity_asc", "Quantité"),
+        ("quantity_desc", "Quantité"),
+        ("supplier_asc", "Fournisseur"),
     ]
 
     supplier_choices = [("", "Fournisseur")] + [
@@ -393,6 +391,7 @@ def inventory_management(request):
         categories_choices=category_choices,
         supplier_choices=supplier_choices,
         unit_choices=unit_choices,
+        sorting_choices=sorting_choices,
     )
 
     inventory_queryset = Inventory.objects.all()

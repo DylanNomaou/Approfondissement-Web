@@ -3274,4 +3274,11 @@ body {
 
 .masquer {
   display: none;
+}
+
+.select-compact {
+  max-width: 8.5rem;
+  min-width: 6.5rem;
+  font-size: 0.875rem;
+  margin-left: 0;
 }/*# sourceMappingURL=styles.css.map */
