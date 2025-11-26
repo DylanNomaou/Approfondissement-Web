@@ -3741,19 +3741,19 @@ $admin-badge-size : 0.75rem;
 .auth-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  
+
   .auth-card {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    
+
     .card-header {
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      
+
       h3 {
         font-weight: 600;
       }
     }
-    
+
     .card-body {
       background: rgba(255, 255, 255, 0.95);
     }
@@ -3768,7 +3768,7 @@ $admin-badge-size : 0.75rem;
   font-size: 1.5rem;
   text-align: center;
   text-transform: uppercase;
-  
+
   &:focus {
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     border-color: #86b7fe;
@@ -3781,20 +3781,20 @@ $admin-badge-size : 0.75rem;
     height: 8px;
     border-radius: 4px;
     overflow: hidden;
-    
+
     .progress-bar {
       transition: width 0.3s ease, background-color 0.3s ease;
     }
   }
-  
+
   .password-requirements {
     li {
       transition: all 0.3s ease;
-      
+
       i.text-success {
         color: $success-color !important;
       }
-      
+
       i.text-danger {
         color: $danger-color !important;
       }
@@ -3808,7 +3808,7 @@ $admin-badge-size : 0.75rem;
     font-family: 'Courier New', monospace;
     font-weight: bold;
     font-size: 1.5rem;
-    
+
     &.danger {
       animation: pulse-danger 1s infinite;
     }
@@ -3826,22 +3826,22 @@ $admin-badge-size : 0.75rem;
   border-radius: $border-radius;
   border: none;
   padding: 1rem;
-  
+
   &.alert-success {
     background: linear-gradient(45deg, lighten($success-color, 40%), lighten($success-color, 30%));
     color: darken($success-color, 20%);
   }
-  
+
   &.alert-warning {
     background: linear-gradient(45deg, lighten($warning-color, 30%), lighten($warning-color, 20%));
     color: darken($warning-color, 30%);
   }
-  
+
   &.alert-danger {
     background: linear-gradient(45deg, lighten($danger-color, 40%), lighten($danger-color, 30%));
     color: darken($danger-color, 20%);
   }
-  
+
   &.alert-info {
     background: linear-gradient(45deg, lighten($info-color, 30%), lighten($info-color, 20%));
     color: darken($info-color, 40%);
@@ -3854,33 +3854,33 @@ $admin-badge-size : 0.75rem;
   border-radius: $border-radius;
   font-weight: 600;
   letter-spacing: 0.5px;
-  
+
   &.btn-warning {
     background: linear-gradient(45deg, $warning-color, darken($warning-color, 10%));
     border: none;
     color: $dark-color;
-    
+
     &:hover {
       background: linear-gradient(45deg, darken($warning-color, 5%), darken($warning-color, 15%));
       color: $dark-color;
     }
   }
-  
+
   &.btn-info {
     background: linear-gradient(45deg, $info-color, darken($info-color, 10%));
     border: none;
     color: $dark-color;
-    
+
     &:hover {
       background: linear-gradient(45deg, darken($info-color, 5%), darken($info-color, 15%));
       color: $dark-color;
     }
   }
-  
+
   &.btn-success {
     background: linear-gradient(45deg, $success-color, darken($success-color, 10%));
     border: none;
-    
+
     &:hover {
       background: linear-gradient(45deg, darken($success-color, 5%), darken($success-color, 15%));
     }
@@ -3891,12 +3891,12 @@ $admin-badge-size : 0.75rem;
 .validation-icon {
   font-size: 1.1rem;
   margin-right: 0.5rem;
-  
+
   &.success {
     color: $success-color;
     animation: check-in 0.3s ease-in-out;
   }
-  
+
   &.error {
     color: $danger-color;
     animation: error-shake 0.5s ease-in-out;
@@ -3933,18 +3933,18 @@ $admin-badge-size : 0.75rem;
 @media (max-width: 576px) {
   .auth-container {
     padding: 1rem;
-    
+
     .auth-card {
       .card-header h3 {
         font-size: 1.5rem;
       }
-      
+
       .card-body {
         padding: 1.5rem !important;
       }
     }
   }
-  
+
   .verification-code-input {
     font-size: 1.25rem;
     letter-spacing: 0.3em;
@@ -3965,12 +3965,12 @@ $admin-badge-size : 0.75rem;
 // Styles pour les tooltips personnalisés
 .custom-tooltip {
   position: relative;
-  
+
   &:hover .tooltip-content {
     visibility: visible;
     opacity: 1;
   }
-  
+
   .tooltip-content {
     visibility: hidden;
     opacity: 0;
@@ -3986,7 +3986,7 @@ $admin-badge-size : 0.75rem;
     font-size: 0.875rem;
     white-space: nowrap;
     transition: opacity 0.3s, visibility 0.3s;
-    
+
     &::after {
       content: "";
       position: absolute;
@@ -4037,7 +4037,7 @@ $admin-badge-size : 0.75rem;
 
     &:hover {
       background-color: #f0f0f0;
-      
+
     }
   }
 }

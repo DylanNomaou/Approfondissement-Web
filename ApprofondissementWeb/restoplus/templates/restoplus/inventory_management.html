@@ -33,6 +33,7 @@
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="d-flex gap-2 justify-content-lg-end flex-wrap">
+                        {{form.sorting}}
                         {{ form.unit }}
                         {{ form.supplier }}
                         <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
@@ -92,16 +93,14 @@
                 <div class="col-md-2 text-truncate">{{ item.supplier|default:'—' }}</div>
                 <div class="col-md-1 text-end text-nowrap">{{ item.cost_price }}$</div>
                 <div class="col-md-1 text-center">
-                    <!--Bouton Modification Article-->
                     {% if item.sku %}
                     <a class="btn btn-sm btn-outline-secondary"
                        href="?{% if querystring %}{{ querystring }}&{% endif %}sku={{ item.sku }}"
                        title="Modifier">
                         <i class="bi bi-pencil"></i>
                     </a>
-                    <!--Bouton Suppression Article-->
-                    <a href="{% url 'delete_inventory_item' item.id %}" 
-                       class="btn btn-sm btn-outline-danger" 
+                    <a href="{% url 'delete_inventory_item' item.id %}"
+                       class="btn btn-sm btn-outline-danger"
                        title="Supprimer"
                        onclick="return confirm('Voulez-vous vraiment supprimer {{ item.name }} ?');">
                         <i class="bi bi-trash"></i>

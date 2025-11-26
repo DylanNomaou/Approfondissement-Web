@@ -11,8 +11,7 @@
 
 //********************
 // SUGGESTIONS RECHERCHE
-//******************** 
-
+//********************
 const divSuggestions = document.getElementById("suggestions");
 let debounceTimer;
 let controller=null;

@@ -666,6 +666,16 @@ class InventoryFilterForm(forms.Form):
         }),
     )
 
+    # AJOUT RÉCENT, À INTÉGRER DANS LE CODE !!!!!!!!!!!!!!!!!!!!
+    sorting = forms.ChoiceField(
+        required=False,
+        label="",
+        choices=[],
+        widget=forms.Select(attrs={
+            "class": "form-select form-select-sm w-auto",
+        })
+    )
+
     unit = forms.ChoiceField(
         required=False,
         label="",
@@ -875,7 +885,7 @@ class InventoryCreateForm(forms.ModelForm):
                 'invalid': 'Veuillez entrer un prix valide.',
             },
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Marquer les champs comme obligatoires
@@ -885,25 +895,25 @@ class InventoryCreateForm(forms.ModelForm):
         self.fields['quantity'].required = True
         self.fields['unit'].required = True
         self.fields['cost_price'].required = True
-    
+
     def clean_name(self):
         name = self.cleaned_data.get('name')
         if not name or not name.strip():
             raise ValidationError('Le nom de l\'article est obligatoire.')
         return name.strip()
-    
+
     def clean_sku(self):
         sku = self.cleaned_data.get('sku')
         if not sku or not sku.strip():
             raise ValidationError('Le SKU est obligatoire.')
         return sku.strip()
-    
+
     def clean_category(self):
         category = self.cleaned_data.get('category')
         if not category or not category.strip():
             raise ValidationError('La catégorie est obligatoire.')
         return category.strip()
-    
+
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
         if quantity is None:
@@ -911,7 +921,7 @@ class InventoryCreateForm(forms.ModelForm):
         if quantity < 0:
             raise ValidationError('La quantité ne peut pas être négative.')
         return quantity
-    
+
     def clean_cost_price(self):
         cost_price = self.cleaned_data.get('cost_price')
         if cost_price is None:
