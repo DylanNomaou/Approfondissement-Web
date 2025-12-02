@@ -28,27 +28,28 @@
   <div class="container-fluid">
     <!-- Messages Section -->
     {% if messages %}
-      <div class="row mb-4">
-        <div class="col-12">
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-dismiss-alert" role="alert">
-              <div class="d-flex align-items-center">
-                {% if message.tags == 'success' %}
-                  <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-                {% elif message.tags == 'error' %}
-                  <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                {% elif message.tags == 'warning' %}
-                  <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
-                {% else %}
-                  <i class="bi bi-info-circle-fill me-2 fs-5"></i>
-                {% endif %}
-                <span>{{ message }}</span>
-              </div>
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
+    <div class="row mb-4">
+      <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-dismiss-alert"
+          role="alert">
+          <div class="d-flex align-items-center">
+            {% if message.tags == 'success' %}
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            {% elif message.tags == 'error' %}
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            {% elif message.tags == 'warning' %}
+            <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+            {% else %}
+            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+            {% endif %}
+            <span>{{ message }}</span>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        {% endfor %}
       </div>
+    </div>
     {% endif %}
 
     <!-- Statistics Cards -->
@@ -135,7 +136,8 @@
               <div class="col-md-12">
                 <p class="text-muted mb-0">
                   <i class="bi bi-info-circle me-2"></i>
-                  Créez et gérez les rôles personnalisés pour votre équipe. Chaque rôle peut avoir des permissions spécifiques.
+                  Créez et gérez les rôles personnalisés pour votre équipe. Chaque rôle peut avoir des permissions
+                  spécifiques.
                 </p>
               </div>
             </div>
@@ -178,30 +180,30 @@
                 </td>
                 <td>
                   {% if user.role %}
-                    <span class="badge bg-primary">
-                      {{ user.role.name }}
-                    </span>
+                  <span class="badge bg-primary">
+                    {{ user.role.name }}
+                  </span>
                   {% else %}
-                    <span class="badge admin-dashboard__badge--no-role">Aucun rôle</span>
+                  <span class="badge admin-dashboard__badge--no-role">Aucun rôle</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if user.is_active %}
-                    <span class="badge admin-dashboard__badge--active">
-                      <i class="bi bi-check-circle me-1"></i>Actif
-                    </span>
+                  <span class="badge admin-dashboard__badge--active">
+                    <i class="bi bi-check-circle me-1"></i>Actif
+                  </span>
                   {% else %}
-                    <span class="badge admin-dashboard__badge--inactive">
-                      <i class="bi bi-x-circle me-1"></i>Inactif
-                    </span>
+                  <span class="badge admin-dashboard__badge--inactive">
+                    <i class="bi bi-x-circle me-1"></i>Inactif
+                  </span>
                   {% endif %}
                 </td>
                 <td>
                   <small class="text-muted">
                     {% if user.last_login %}
-                      {{ user.last_login|date:"d/m/Y H:i" }}
+                    {{ user.last_login|date:"d/m/Y H:i" }}
                     {% else %}
-                      Jamais connecté
+                    Jamais connecté
                     {% endif %}
                   </small>
                 </td>
@@ -212,9 +214,9 @@
                       <select name="role_id" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">Aucun rôle</option>
                         {% for role in roles %}
-                          <option value="{{ role.id }}" {% if user.role and user.role.id == role.id %}selected{% endif %}>
-                            {{ role.name }}
-                          </option>
+                        <option value="{{ role.id }}" {% if user.role and user.role.id == role.id %}selected{% endif %}>
+                          {{ role.name }}
+                        </option>
                         {% endfor %}
                       </select>
                     </form>
@@ -258,14 +260,16 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="name" class="form-label">Titre du rôle *</label>
-                  <input type="text" name="name" id="name" class="form-control" required placeholder="Ex: Manager, Chef de cuisine, Serveur...">
+                  <input type="text" name="name" id="name" class="form-control" required
+                    placeholder="Ex: Manager, Chef de cuisine, Serveur...">
                   <div class="form-text">Saisissez un nom personnalisé pour ce rôle</div>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="description" class="form-label">Description</label>
-                  <textarea name="description" id="description" class="form-control" rows="3" placeholder="Décrivez les responsabilités de ce rôle..."></textarea>
+                  <textarea name="description" id="description" class="form-control" rows="3"
+                    placeholder="Décrivez les responsabilités de ce rôle..."></textarea>
                 </div>
               </div>
             </div>
@@ -312,7 +316,15 @@
                   <label class="form-check-label" for="distribute_tasks">
                     <i class="bi bi-share me-2"></i>Peut distribuer des tâches à tous
                   </label>
-                  <div class="form-text">Permet d'assigner des tâches à n'importe quel utilisateur, sinon l'utilisateur ne peut s'assigner des tâches qu'à lui-même</div>
+
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="can_manage_schedules" id="manage_schedules">
+                  <label class="form-check-label" for="manage_schedules">
+                    <i class="bi bi-calendar-week me-2"></i>Peut créer les horaires
+                  </label>
                 </div>
               </div>
             </div>
@@ -335,15 +347,15 @@
 
 <!-- JavaScript pour auto-fermeture des messages -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     // Sélectionner tous les messages avec la classe auto-dismiss-alert
     const alerts = document.querySelectorAll('.auto-dismiss-alert');
 
-    alerts.forEach(function(alert) {
-        // Ajouter une barre de progression visuelle
-        const progressBar = document.createElement('div');
-        progressBar.className = 'alert-progress-bar';
-        progressBar.style.cssText = `
+    alerts.forEach(function (alert) {
+      // Ajouter une barre de progression visuelle
+      const progressBar = document.createElement('div');
+      progressBar.className = 'alert-progress-bar';
+      progressBar.style.cssText = `
             position: absolute;
             bottom: 0;
             left: 0;
@@ -354,57 +366,59 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: progressBarShrink 3s linear forwards;
         `;
 
-        // Positionner l'alerte en relatif pour la barre de progression
-        alert.style.position = 'relative';
-        alert.style.overflow = 'hidden';
-        alert.appendChild(progressBar);
+      // Positionner l'alerte en relatif pour la barre de progression
+      alert.style.position = 'relative';
+      alert.style.overflow = 'hidden';
+      alert.appendChild(progressBar);
 
-        // Auto-fermeture après 3 secondes
-        setTimeout(function() {
-            // Utiliser Bootstrap pour fermer l'alerte avec animation
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }, 3000);
+      // Auto-fermeture après 3 secondes
+      setTimeout(function () {
+        // Utiliser Bootstrap pour fermer l'alerte avec animation
+        const bsAlert = new bootstrap.Alert(alert);
+        bsAlert.close();
+      }, 3000);
     });
-});
+  });
 </script>
 
 <!-- CSS pour l'animation de la barre de progression -->
 <style>
-@keyframes progressBarShrink {
+  @keyframes progressBarShrink {
     from {
-        transform: scaleX(1);
+      transform: scaleX(1);
     }
-    to {
-        transform: scaleX(0);
-    }
-}
 
-.auto-dismiss-alert {
+    to {
+      transform: scaleX(0);
+    }
+  }
+
+  .auto-dismiss-alert {
     animation: slideInDown 0.5s ease-out;
-}
+  }
 
-@keyframes slideInDown {
+  @keyframes slideInDown {
     from {
-        opacity: 0;
-        transform: translateY(-20px);
+      opacity: 0;
+      transform: translateY(-20px);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-/* Amélioration de l'apparence des messages */
-.auto-dismiss-alert {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Amélioration de l'apparence des messages */
+  .auto-dismiss-alert {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border-radius: 0.75rem;
     border: none;
-}
+  }
 
-.auto-dismiss-alert:hover .alert-progress-bar {
+  .auto-dismiss-alert:hover .alert-progress-bar {
     animation-play-state: paused;
-}
+  }
 </style>
 
 {% endblock %}

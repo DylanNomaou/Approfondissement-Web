@@ -551,6 +551,7 @@ def create_role(request):
         can_manage_inventory = request.POST.get('can_manage_inventory') == 'on'
         can_view_reports = request.POST.get('can_view_reports') == 'on'
         can_distribute_tasks = request.POST.get('can_distribute_tasks') == 'on'
+        can_manage_schedules = request.POST.get('can_manage_schedules') == 'on'
 
         if Role.objects.filter(name=name).exists():
             messages.error(request, f"Erreur : Le rôle '{name}' existe déjà !")
@@ -562,7 +563,8 @@ def create_role(request):
                 can_manage_users = can_manage_users,
                 can_manage_orders = can_manage_orders,
                 can_view_reports=can_view_reports,
-                can_distribute_tasks=can_distribute_tasks
+                can_distribute_tasks=can_distribute_tasks,
+                can_manage_schedules=can_manage_schedules
             )
             permissions_list = []
             if can_manage_users: permissions_list.append("Gérer les utilisateurs")
@@ -570,6 +572,7 @@ def create_role(request):
             if can_manage_inventory: permissions_list.append("Gérer l'inventaire")
             if can_view_reports: permissions_list.append("Voir les rapports")
             if can_distribute_tasks: permissions_list.append("Distribuer des tâches à tous")
+            if can_manage_schedules: permissions_list.append("Créer les horaires")
 
 
             permissions_text = ", ".join(permissions_list) if permissions_list else "Aucune permission spéciale"
@@ -882,12 +885,11 @@ def delete_employee(request, employe_id):
 
 @login_required
 def create_schedule(request):
-    """Vue pour créer des horaires - Réservée aux administrateurs"""
+    """Vue pour créer des horaires - Réservée aux administrateurs ou utilisateurs avec permission"""
 
-    # Vérifier que l'utilisateur est administrateur
-    if not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Accès non autorisé. Seuls les administrateurs peuvent créer des horaires.")
-        return redirect('view_schedule')
+    # Vérifier que l'utilisateur a la permission de gérer les horaires
+    if not request.user.can_manage_schedules():
+        return render(request, 'restoplus/403.html', status=403)
 
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
@@ -1084,13 +1086,13 @@ def view_schedule(request):
 @login_required
 @require_POST
 def publish_schedule(request):
-    """Publie les horaires depuis localStorage vers la bse de données - Réservé aux administrateurs"""
+    """Publie les horaires depuis localStorage vers la base de données - Réservé aux utilisateurs avec permission"""
 
-    # Vérifier que l'utilisateur est administrateur
-    if not request.user.is_staff and not request.user.is_superuser:
+    # Vérifier que l'utilisateur a la permission de gérer les horaires
+    if not request.user.can_manage_schedules():
         return JsonResponse({
             'success': False,
-            'message': 'Accès non autorisé. Seuls les administrateurs peuvent publier des horaires.'
+            'message': "Accès non autorisé. Vous n'avez pas la permission de publier des horaires."
         }, status=403)
 
     try:
@@ -1100,6 +1102,7 @@ def publish_schedule(request):
 
         published_count = 0
         errors = []
+        affected_employee_ids = set()  # Pour stocker les IDs des employés concernés
 
         # Parcourir chaque shift et l'enregistrer en base
         for shift_key, shift_info in shifts_data.items():
@@ -1113,6 +1116,9 @@ def publish_schedule(request):
 
                     # Récupérer l'employé
                     employee = User.objects.get(id=employee_id)
+
+                    # Ajouter l'ID de l'employé à la liste des concernés
+                    affected_employee_ids.add(employee_id)
 
                     # Créer ou mettre à jour le WorkShift
                     from .models import WorkShift
@@ -1160,12 +1166,13 @@ def publish_schedule(request):
                         # Trouver le lundi de cette semaine
                         monday_of_week = first_date - timedelta(days=first_date.weekday())
 
-                        # Créer les notifications pour tous les employés
+                        # Créer les notifications pour les employés concernés seulement
                         from .notifications import notify_schedule_published
                         notifications_count = notify_schedule_published(
                             week_start_date=monday_of_week,
                             published_by=request.user,
-                            shifts_count=published_count
+                            shifts_count=published_count,
+                            affected_employees=list(affected_employee_ids)
                         )
 
                         return JsonResponse({
@@ -1349,6 +1356,14 @@ def create_ticket(request):
             ticket = form.save(commit=False)
             ticket.created_by = request.user
             ticket.save()
+
+            # Envoyer une notification aux administrateurs
+            try:
+                from .notifications import notify_ticket_created
+                notify_ticket_created(ticket, request.user)
+            except Exception as e:
+                # Ne pas bloquer la création du ticket si la notification échoue
+                print(f"Erreur lors de l'envoi de notification: {e}")
 
             messages.success(request, "Ticket créé avec succès !")
             return redirect('ticket_detail', ticket_id=ticket.id)

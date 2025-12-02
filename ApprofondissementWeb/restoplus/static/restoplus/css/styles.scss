@@ -298,6 +298,83 @@ body {
   }
 }
 
+// Notifications Container - Fixed Height with Scroll
+.notifications-fixed-body {
+  padding: 1rem !important;
+}
+
+.notifications-scroll-container-fixed {
+  max-height: 280px; // Hauteur pour environ 2 notifications
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px;
+
+  // Style de la scrollbar
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $primary-color;
+    border-radius: 10px;
+
+    &:hover {
+      background: darken($primary-color, 10%);
+    }
+  }
+
+  // Firefox scrollbar
+  scrollbar-width: thin;
+  scrollbar-color: $primary-color #f1f1f1;
+}
+
+// Style pour chaque notification dans le conteneur
+.notification-item-vertical {
+  transition: all 0.3s ease;
+
+  &:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  &.notification-clickable:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Modal de notification
+#notificationDetailModal {
+  .modal-header {
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+
+  .notification-modal-icon {
+    min-width: 45px;
+  }
+
+  .notification-modal-title {
+    color: $dark-color;
+    font-weight: 600;
+  }
+
+  .notification-modal-description {
+    line-height: 1.6;
+    color: #555;
+    white-space: pre-wrap;
+  }
+
+  .notification-modal-meta {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+  }
+}
+
 // Action Buttons
 .action-btn {
   @include button-animation;
@@ -731,13 +808,11 @@ body {
     margin-top: auto;
     padding: 1rem 0;
     color: $secondary-color;
-    margin-left: 280px;
     transition: margin-left 0.3s ease;
 
     .container-fluid {
       font-size: 0.9rem;
-      margin-left: $sidebar-width;
-      min-height: 100vh;
+
       display: flex;
       flex-direction: column;
       transition: margin-left 0.3s ease;
@@ -1140,7 +1215,6 @@ body {
         margin-top: auto;
         padding: 1rem 0;
         color: $secondary-color;
-        margin-left: 280px;
         transition: margin-left 0.3s ease;
 
         .container-fluid {
@@ -1149,7 +1223,6 @@ body {
       }
     }
 
-    margin-left: 280px;
 
   }
 
