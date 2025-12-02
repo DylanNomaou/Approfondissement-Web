@@ -230,7 +230,8 @@
 
 
 
-      <!-- Actions Rapides -->
+      <!-- Actions Rapides - Seulement pour les Admins -->
+      {% if user.is_superuser or user.role.can_manage_users %}
       <div class="row mb-4">
         <div class="col-12">
           <div class="dashboard-card bg-white rounded-3 shadow-sm">
@@ -240,35 +241,35 @@
             <div class="card-body p-4">
               <div class="row g-3">
                 <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-primary w-100 py-3 action-btn">
-                    <i class="bi bi-cart-plus d-block fs-4 mb-2"></i>
-                    <span class="small">Nouvelle Vente</span>
-                  </button>
+                  <a href="{% url 'create_schedule' %}" class="btn btn-outline-primary w-100 py-3 action-btn text-decoration-none">
+                    <i class="bi bi-calendar-plus d-block fs-4 mb-2"></i>
+                    <span class="small">Faire Horaire</span>
+                  </a>
                 </div>
                 <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-secondary w-100 py-3 action-btn">
+                  <a href="{% url 'employees_management' %}" class="btn btn-outline-secondary w-100 py-3 action-btn text-decoration-none">
                     <i class="bi bi-people d-block fs-4 mb-2"></i>
                     <span class="small">Gérer Équipe</span>
-                  </button>
+                  </a>
                 </div>
                 <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-info w-100 py-3 action-btn">
+                  <a href="{% url 'all_tickets' %}" class="btn btn-outline-warning w-100 py-3 action-btn text-decoration-none">
+                    <i class="bi bi-ticket-detailed d-block fs-4 mb-2"></i>
+                    <span class="small">Vérifier Tickets</span>
+                  </a>
+                </div>
+                <div class="col-md-3 col-6">
+                  <a href="{% url 'inventory_management' %}" class="btn btn-outline-success w-100 py-3 action-btn text-decoration-none">
                     <i class="bi bi-box-seam d-block fs-4 mb-2"></i>
-                    <span class="small">Vérifier Stock</span>
-                  </button>
+                    <span class="small">Inventaire</span>
+                  </a>
                 </div>
-                <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-success w-100 py-3 action-btn">
-                    <i class="bi bi-file-earmark-bar-graph d-block fs-4 mb-2"></i>
-                    <span class="small">Voir Rapport</span>
-                  </button>
-                </div>
-
               </div>
             </div>
           </div>
         </div>
       </div>
+      {% endif %}
     </div>
   </div>
 </section>
