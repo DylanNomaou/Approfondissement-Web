@@ -124,7 +124,7 @@ class HoraireManager {
             if (e.ctrlKey && e.shiftKey && e.key === 'R') {
                 e.preventDefault();
                 this.refreshAllShiftsDisplay();
-                this.showMessage('Affichage des shifts rechargé', 'info');
+                showMessage('Affichage des shifts rechargé', 'info');
             }
         });
     }
@@ -164,7 +164,7 @@ class HoraireManager {
         }
         publishBtn.addEventListener("click", (e) => {
             e.preventDefault();
-            this.publishSchedule();
+            publishSchedule();
         });
     }
 
@@ -1819,7 +1819,7 @@ function publishSchedule() {
         .then((data) => {
             if (data.success) {
                 showMessage(
-                    `Horaire publié avec succès! ${data.shifts_created} shifts créés.`,
+                    "Les nouveaux quarts sont publiés!",
                     "success"
                 );
 

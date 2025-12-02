@@ -19,7 +19,6 @@ from .models import User, Role, Task,Availability, Inventory, StockOrderItem, St
 from django.core.paginator import Paginator
 from .notifications import notify_task_assigned, notify_role_assigned
 from datetime import datetime, timedelta
-import locale
 from datetime import date, datetime, timedelta
 from os import rename
 from django.contrib import messages
@@ -33,14 +32,16 @@ from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,Tick
 from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,StockOrderItem,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
 
-# Configuration de la locale française pour les dates
-try:
-    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-except locale.Error:
-    try:
-        locale.setlocale(locale.LC_TIME, 'fr_FR')
-    except locale.Error:
-        pass
+# Dictionnaire des mois en français (évite les problèmes d'encodage avec strftime)
+MOIS_FR = {
+    1: 'janvier', 2: 'février', 3: 'mars', 4: 'avril',
+    5: 'mai', 6: 'juin', 7: 'juillet', 8: 'août',
+    9: 'septembre', 10: 'octobre', 11: 'novembre', 12: 'décembre'
+}
+
+def format_date_fr(date_obj):
+    """Formate une date en français (ex: 01 décembre 2025) sans problème d'encodage."""
+    return f"{date_obj.day:02d} {MOIS_FR[date_obj.month]} {date_obj.year}"
 
 
 @login_required
@@ -369,7 +370,7 @@ def inventory_management(request):
                 except Exception as e:
                     # En cas d'erreur avec les notifications, on continue sans interrompre
                     messages.warning(request, f"Article créé, mais erreur d'envoi de notifications: {str(e)}")
-                
+
             # Redirection sans paramètre sku
             params = request.GET.copy()
             if 'sku' in params:
@@ -915,7 +916,7 @@ def create_schedule(request):
             'jour_key': days_keys[i],
             'date_short': day.strftime('%d/%m'),
             'date_str': day.strftime('%Y-%m-%d'),
-            'date_formatted': day.strftime('%d %B %Y')
+            'date_formatted': format_date_fr(day)
         })
 
     # Récupérer les WorkShifts existants pour cette semaine
@@ -969,18 +970,9 @@ def create_schedule(request):
         for a in avail_qs
     ]
 
-    # Forcer la locale française pour le formatage des dates
-    try:
-        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-    except:
-        try:
-            locale.setlocale(locale.LC_TIME, 'fr_FR')
-        except:
-            pass
-
-    # Créer des variables de dates explicites
-    week_start_formatted = week_start.strftime('%d %B %Y')
-    week_end_formatted = week_end.strftime('%d %B %Y')
+    # Créer des variables de dates explicites avec les mois en français
+    week_start_formatted = format_date_fr(week_start)
+    week_end_formatted = format_date_fr(week_end)
 
     context = {
         'employes': employes,
@@ -1033,7 +1025,7 @@ def view_schedule(request):
             'jour_key': days_keys[i],
             'date_short': day.strftime('%d/%m'),
             'date_str': day.strftime('%Y-%m-%d'),
-            'date_formatted': day.strftime('%d %B %Y')
+            'date_formatted': format_date_fr(day)
         })
 
     # Récupérer les shifts publiés pour cette semaine
@@ -1163,11 +1155,11 @@ def publish_schedule(request):
                             shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                             if first_date is None or shift_date < first_date:
                                 first_date = shift_date
-                    
+
                     if first_date:
                         # Trouver le lundi de cette semaine
                         monday_of_week = first_date - timedelta(days=first_date.weekday())
-                        
+
                         # Créer les notifications pour tous les employés
                         from .notifications import notify_schedule_published
                         notifications_count = notify_schedule_published(
@@ -1175,14 +1167,14 @@ def publish_schedule(request):
                             published_by=request.user,
                             shifts_count=published_count
                         )
-                        
+
                         return JsonResponse({
                             'success': True,
                             'message': f'{published_count} horaires publiés avec succès. {notifications_count} notifications envoyées.',
                             'published_count': published_count,
                             'notifications_sent': notifications_count
                         })
-                    
+
                 except Exception as e:
                     # En cas d'erreur avec les notifications, on retourne quand même le succès
                     # car les horaires ont été publiés
@@ -1191,7 +1183,7 @@ def publish_schedule(request):
                         'message': f'{published_count} horaires publiés avec succès (notifications non envoyées: {str(e)})',
                         'published_count': published_count
                     })
-            
+
             return JsonResponse({
                 'success': True,
                 'message': f'{published_count} horaires publiés avec succès',
@@ -1684,7 +1676,7 @@ def password_reset_confirm(request):
                 del request.session['reset_code_id']
 
             raise PermissionDenied("Code expiré ou invalide. Veuillez recommencer la procédure.")
-            
+
         # IMPORTANT : Vérifier si le code a déjà été utilisé (même en GET)
         if reset_code.is_used:
             # Nettoyer la session immédiatement
@@ -1696,7 +1688,7 @@ def password_reset_confirm(request):
                 del request.session['reset_code_id']
 
             raise PermissionDenied("Code déjà utilisé. Veuillez recommencer la procédure.")
-            
+
     except PasswordResetCode.DoesNotExist:
         # Nettoyer la session
         if 'reset_email' in request.session:
@@ -1725,7 +1717,7 @@ def password_reset_confirm(request):
                 del request.session['fake_reset']
             if 'reset_form_token' in request.session:
                 del request.session['reset_form_token']
-                
+
             raise PermissionDenied("Formulaire expiré ou invalide. Veuillez recommencer la procédure.")
 
         # Invalider immédiatement le token pour empêcher la réutilisation
