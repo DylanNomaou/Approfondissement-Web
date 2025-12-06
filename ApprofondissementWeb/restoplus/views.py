@@ -27,9 +27,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 from django.core.mail import send_mail
 from django.conf import settings
-from django.utils import timezone
 from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet,InventoryCreateForm
-from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,StockOrderItem,Ticket,PasswordResetCode
+from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
 
 # Dictionnaire des mois en français (évite les problèmes d'encodage avec strftime)
@@ -403,6 +402,19 @@ def inventory_management(request):
             .distinct()
         )
     ]
+
+    sorting_choices = [
+        ("", "Trier par"),
+        ("name_asc", "Nom ↑"),
+        ("name_desc", "Nom ↓"),
+        ("sku_asc", "SKU ↑"),
+        ("sku_desc", "SKU ↓"),
+        ("quantity_asc", "Quantité ↑"),
+        ("quantity_desc", "Quantité ↓"),
+        ("supplier_asc", "Fournisseur ↑"),
+        ("supplier_desc", "Fournisseur ↓"),
+    ]
+
     supplier_choices = [("", "Fournisseur")] + [
         (sup, sup)
         for sup in (
@@ -421,11 +433,31 @@ def inventory_management(request):
         categories_choices=category_choices,
         supplier_choices=supplier_choices,
         unit_choices=unit_choices,
+        sorting_choices=sorting_choices,
     )
 
     inventory_queryset = Inventory.objects.all()
     if filter_form.is_valid():
         inventory_queryset = apply_inventory_filters(inventory_queryset, filter_form.cleaned_data)
+    # Appliquer le tri si demandé (via le champ 'sorting')
+    sort_value = None
+    # Priorité : valeur proprement nettoyée du formulaire si valide, sinon paramètre GET brut
+    if filter_form.is_valid():
+        sort_value = filter_form.cleaned_data.get('sorting')
+    if not sort_value:
+        sort_value = request.GET.get('sorting')
+    sort_map = {
+        'name_asc': 'name',
+        'name_desc': '-name',
+        'sku_asc': 'sku',
+        'sku_desc': '-sku',
+        'quantity_asc': 'quantity',
+        'quantity_desc': '-quantity',
+        'supplier_asc': 'supplier',
+        'supplier_desc': '-supplier',
+    }
+    if sort_value in sort_map:
+        inventory_queryset = inventory_queryset.order_by(sort_map[sort_value])
     filter_keys = ["category", "unit", "supplier", "recherche"]
     if filter_form.is_bound:
         if filter_form.is_valid():
@@ -1487,35 +1519,26 @@ def password_reset_request(request):
             user = User.objects.get(email=email)
             user_exists = True
         except User.DoesNotExist:
-            # L'utilisateur n'existe pas, mais on ne le révèle pas
-            pass
-
-        # Vérifier le rate limiting (max 1 code par minute) seulement si l'utilisateur existe
-        if user_exists and PasswordResetCode.has_recent_code(email, minutes=1):
-            messages.warning(request,
-                "Un code de réinitialisation a déjà été envoyé récemment. "
+            # Pour des raisons de sécurité, on ne révèle pas si l'email existe ou non
+            messages.info(request, 
+                "📧 Si cette adresse email est enregistrée dans notre système, "
+                "vous recevrez un code de réinitialisation dans quelques minutes.")
+            return render(request, 'registration/password_reset_request.html')
+        
+        # Vérifier le rate limiting (max 1 code par minute)
+        if PasswordResetCode.has_recent_code(email, minutes=1):
+            messages.warning(request, 
+                "⏱️ Un code de réinitialisation a déjà été envoyé récemment. "
                 "Veuillez attendre 1 minute avant de demander un nouveau code.")
             return render(request, 'registration/password_reset_request.html')
-
-        # Traitement seulement si l'utilisateur existe
-        if user_exists:
-            try:
-                # Nettoyer les anciens codes et créer un nouveau
-                reset_code = PasswordResetCode.create_for_email(email)
-
-                # Envoyer l'email avec le code - Utilisation SMTP directe
-                import smtplib
-                from email.mime.text import MIMEText
-                from email.mime.multipart import MIMEMultipart
-
-                try:
-                    # Configuration SMTP
-                    msg = MIMEMultipart()
-                    msg['From'] = settings.EMAIL_HOST_USER
-                    msg['To'] = email
-                    msg['Subject'] = "Code de réinitialisation - RestoPLus"
-
-                    body = f"""
+        
+        # Nettoyer les anciens codes et créer un nouveau
+        try:
+            reset_code = PasswordResetCode.create_for_email(email)
+            
+            # Envoyer l'email avec le code
+            subject = "🔑 Code de réinitialisation - RestoPLus"
+            message = f"""
 Bonjour,
 
 Vous avez demandé la réinitialisation de votre mot de passe pour RestoPLus.
@@ -1527,73 +1550,32 @@ Ce code est valide pendant 15 minutes et ne peut être utilisé qu'une seule foi
 Si vous n'avez pas demandé cette réinitialisation, ignorez simplement ce message.
 
 L'équipe RestoPLus
-                    """
-
-                    msg.attach(MIMEText(body, 'plain'))
-
-                    # Envoyer via SMTP
-                    server = smtplib.SMTP('smtp.gmail.com', 587)
-                    server.starttls()
-                    server.login(settings.EMAIL_HOST_USER, 'euejziymnogbuies')
-                    server.send_message(msg)
-                    server.quit()
-
-                    print(f"Email envoyé avec succès à {email}")
-
-                except Exception as smtp_error:
-                    # Si SMTP échoue, essayer avec Django send_mail
-                    print(f"SMTP direct échoué: {smtp_error}, tentative avec Django...")
-                    try:
-                        send_mail(
-                            subject="Code de réinitialisation - RestoPLus",
-                            message=f"""
-Bonjour,
-
-Vous avez demandé la réinitialisation de votre mot de passe pour RestoPLus.
-
-Votre code de réinitialisation est : {reset_code.code}
-
-Ce code est valide pendant 15 minutes et ne peut être utilisé qu'une seule fois.
-
-Si vous n'avez pas demandé cette réinitialisation, ignorez simplement ce message.
-
-L'équipe RestoPLus
-                            """,
-                            from_email=settings.EMAIL_HOST_USER,
-                            recipient_list=[email],
-                            fail_silently=True,
-                        )
-                        print(f"Email envoyé via Django à {email}")
-                    except Exception as django_error:
-                        print(f"Échec Django aussi: {django_error}")
-                        # Continue silencieusement
-
-                # Rediriger vers la page de saisie du code avec l'email en session
-                request.session['reset_email'] = email
-                request.session.save()  # S'assurer que la session est sauvegardée
-
-            except Exception as e:
-                # Log l'erreur pour le debug mais ne l'affiche pas à l'utilisateur
-                print(f"Erreur lors de l'envoi d'email: {e}")
-                # Continue comme si tout s'était bien passé
-                pass
-
-        # Message générique dans tous les cas (sécurité)
-        messages.info(request,
-            "Si cette adresse email est enregistrée dans notre système, "
-            "vous recevrez un code de réinitialisation dans quelques minutes. "
-            "Vérifiez votre boîte de réception et vos spam.")
-
-        # Redirection vers la page de vérification dans tous les cas
-        if user_exists:
-            return redirect('password_reset_verify')
-        else:
-            # Même pour les emails inexistants, on simule le processus
+            """
+            
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, 
+                "📧 Un code de réinitialisation a été envoyé à votre adresse email. "
+                "Vérifiez votre boîte de réception et vos spam.")
+            
+            # Rediriger vers la page de saisie du code avec l'email en session
             request.session['reset_email'] = email
             request.session['fake_reset'] = True  # Flag pour indiquer que c'est un faux reset
             request.session.save()
             return redirect('password_reset_verify')
-
+            
+        except Exception as e:
+            messages.error(request, 
+                "❌ Une erreur s'est produite lors de l'envoi de l'email. "
+                "Veuillez réessayer plus tard.")
+            return render(request, 'registration/password_reset_request.html')
+    
     return render(request, 'registration/password_reset_request.html')
 
 
@@ -1604,17 +1586,9 @@ def password_reset_verify(request):
 
     # Vérification de sécurité : l'utilisateur doit avoir un email en session
     if not email:
-        # Nettoyer toute session corrompue
-        if 'reset_email' in request.session:
-            del request.session['reset_email']
-        if 'fake_reset' in request.session:
-            del request.session['fake_reset']
-        if 'reset_code_id' in request.session:
-            del request.session['reset_code_id']
-
-        # Accès non autorisé - rediriger vers 403
-        raise PermissionDenied("Accès non autorisé. Veuillez d'abord demander un code de réinitialisation.")
-
+        messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
     if request.method == 'POST':
         code = request.POST.get('code', '').strip().upper()
 
@@ -1640,8 +1614,8 @@ def password_reset_verify(request):
 
         # Vérifier les tentatives
         if not reset_code.can_attempt():
-            messages.error(request,
-                "Trop de tentatives invalides. Veuillez demander un nouveau code.")
+            messages.error(request, 
+                "❌ Trop de tentatives invalides. Veuillez demander un nouveau code.")
             return redirect('password_reset_request')
 
         # Incrémenter les tentatives avant validation
@@ -1649,7 +1623,7 @@ def password_reset_verify(request):
 
         # Valider le code (vérification redondante pour sécurité)
         if reset_code.code != code:
-            messages.error(request, "Code incorrect. Tentatives restantes : " +
+            messages.error(request, "❌ Code incorrect. Tentatives restantes : " + 
                           str(5 - reset_code.attempts))
             return render(request, 'registration/password_reset_verify.html', {'email': email})
 
@@ -1668,17 +1642,9 @@ def password_reset_confirm(request):
 
     # Vérification de sécurité : l'utilisateur doit avoir validé un code
     if not reset_code_id:
-        # Nettoyer toute session corrompue
-        if 'reset_email' in request.session:
-            del request.session['reset_email']
-        if 'fake_reset' in request.session:
-            del request.session['fake_reset']
-        if 'reset_code_id' in request.session:
-            del request.session['reset_code_id']
-
-        # Accès non autorisé - rediriger vers 403
-        raise PermissionDenied("Accès non autorisé. Veuillez d'abord valider votre code de vérification.")
-
+        messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
     try:
         reset_code = PasswordResetCode.objects.get(id=reset_code_id)
         if not reset_code.is_valid():
@@ -1705,40 +1671,13 @@ def password_reset_confirm(request):
             raise PermissionDenied("Code déjà utilisé. Veuillez recommencer la procédure.")
 
     except PasswordResetCode.DoesNotExist:
-        # Nettoyer la session
-        if 'reset_email' in request.session:
-            del request.session['reset_email']
-        if 'fake_reset' in request.session:
-            del request.session['fake_reset']
-        if 'reset_code_id' in request.session:
-            del request.session['reset_code_id']
-
-        raise PermissionDenied("Code invalide. Veuillez recommencer la procédure.")
-
+        messages.error(request, "❌ Code invalide. Veuillez recommencer la procédure.")
+        return redirect('password_reset_request')
+    
     if request.method == 'POST':
         password1 = request.POST.get('password1', '')
         password2 = request.POST.get('password2', '')
-        form_token = request.POST.get('reset_token', '')
-
-        # Vérification du token anti-rafraîchissement
-        session_token = request.session.get('reset_form_token')
-        if not form_token or not session_token or form_token != session_token:
-            # Token invalide ou manquant = tentative de rafraîchissement
-            if 'reset_email' in request.session:
-                del request.session['reset_email']
-            if 'reset_code_id' in request.session:
-                del request.session['reset_code_id']
-            if 'fake_reset' in request.session:
-                del request.session['fake_reset']
-            if 'reset_form_token' in request.session:
-                del request.session['reset_form_token']
-
-            raise PermissionDenied("Formulaire expiré ou invalide. Veuillez recommencer la procédure.")
-
-        # Invalider immédiatement le token pour empêcher la réutilisation
-        if 'reset_form_token' in request.session:
-            del request.session['reset_form_token']
-
+        
         # Validation du mot de passe
         if not password1 or not password2:
             messages.error(request, "Tous les champs sont obligatoires.")
@@ -1766,33 +1705,21 @@ def password_reset_confirm(request):
                 del request.session['reset_email']
             if 'reset_code_id' in request.session:
                 del request.session['reset_code_id']
-            if 'fake_reset' in request.session:
-                del request.session['fake_reset']
-
-            messages.success(request,
-                "Votre mot de passe a été mis à jour avec succès ! "
+            
+            messages.success(request, 
+                "✅ Votre mot de passe a été mis à jour avec succès ! "
                 "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.")
-
-            # Marquer que le processus de réinitialisation est terminé avec succès
-            request.session['reset_completed'] = True
-
-            return redirect('password_reset_complete')
-
+            
+            return redirect('login')
+            
         except User.DoesNotExist:
             messages.error(request, "Utilisateur introuvable. Veuillez recommencer la procédure.")
             return redirect('password_reset_request')
         except Exception as e:
             messages.error(request, "Une erreur s'est produite. Veuillez réessayer.")
             return render(request, 'registration/password_reset_confirm.html')
-
-    # Génération d'un token anti-rafraîchissement pour l'affichage GET
-    import uuid
-    reset_token = str(uuid.uuid4())
-    request.session['reset_form_token'] = reset_token
-
-    return render(request, 'registration/password_reset_confirm.html', {
-        'reset_token': reset_token
-    })
+    
+    return render(request, 'registration/password_reset_confirm.html')
 
 
 def password_reset_complete(request):

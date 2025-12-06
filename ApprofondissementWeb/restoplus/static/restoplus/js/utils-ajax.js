@@ -7,7 +7,6 @@
 
 "use strict";
 
-
 /**
  * Envoie une requête Ajax et parse la réponse en JSON
  * @param {string} url Adresse utilisée pour votre requête

@@ -32,7 +32,8 @@
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
-                    <div class="d-flex gap-2 justify-content-lg-end flex-wrap">
+                    <div class="d-flex gap-2 justify-content-lg-end flex-nowrap align-items-center">
+                        {{ form.sorting }}
                         {{ form.unit }}
                         {{ form.supplier }}
                         <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
@@ -41,7 +42,7 @@
                             class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
                         {% endif %}
                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addInventoryModal">
-                            <i class="bi bi-plus-lg"></i> Ajouter
+                            Ajouter
                         </button>
                     </div>
                 </div>
@@ -100,8 +101,8 @@
                         <i class="bi bi-pencil"></i>
                     </a>
                     <!--Bouton Suppression Article-->
-                    <a href="{% url 'delete_inventory_item' item.id %}" 
-                       class="btn btn-sm btn-outline-danger" 
+                    <a href="{% url 'delete_inventory_item' item.id %}"
+                       class="btn btn-sm btn-outline-danger"
                        title="Supprimer"
                        onclick="return confirm('Voulez-vous vraiment supprimer {{ item.name }} ?');">
                         <i class="bi bi-trash"></i>
