@@ -8,30 +8,29 @@
 
     <!-- Messages Section -->
     {% if messages %}
-      <div class="container-fluid mb-4">
-        <div class="row">
-          <div class="col-12">
-            {% for message in messages %}
-              <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-dismiss-alert" role="alert">
-                <div class="d-flex align-items-center">
-                  <span class="alert-icon me-2"></span>
-                  <span>{{ message }}</span>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
+    <div class="container-fluid mb-4">
+      <div class="row">
+        <div class="col-12">
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-dismiss-alert"
+            role="alert">
+            <div class="d-flex align-items-center">
+              <span class="alert-icon me-2"></span>
+              <span>{{ message }}</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
+          {% endfor %}
         </div>
       </div>
+    </div>
     {% endif %}
 
     <!-- Date et Service Info -->
     <div class="container-fluid mb-4">
       <div class="row">
         <div class="col-12">
-          <div
-            class="date-service-card bg-white rounded-3 shadow-sm p-4 border-start border-primary border-4"
-          >
+          <div class="date-service-card bg-white rounded-3 shadow-sm p-4 border-start border-primary border-4">
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <h2 class="h4 mb-2 text-primary">
@@ -40,9 +39,7 @@
                 </h2>
                 <p class="text-muted mb-0">
                   Il est actuellement
-                  <span id="current-detailed-time" class="fw-semibold text-dark"
-                    >10:24</span
-                  >
+                  <span id="current-detailed-time" class="fw-semibold text-dark">10:24</span>
                 </p>
               </div>
               <div class="text-end">
@@ -74,64 +71,66 @@
             </div>
             <div class="card-body p-4">
               <div class="task-list-container">
-                <div class="task-list horizontal-scroll {% if user_tasks_today|length > 2 %}scrollable-horizontal{% endif %}">
+                <div
+                  class="task-list horizontal-scroll {% if user_tasks_today|length > 2 %}scrollable-horizontal{% endif %}">
                   <!-- Tâches assignées à l'utilisateur connecté -->
                   {% if user_tasks_today %}
-                    {% for task in user_tasks_today %}
-                      <div class="task-item-horizontal d-flex flex-column justify-content-between p-3 {% if task.is_completed %}task-completed{% else %}task-pending{% endif %} rounded-3 task-clickable"
-                           data-task-id="{{ task.id }}"
-                           data-task-title="{{ task.title }}"
-                           data-task-description="{{ task.description|default:'' }}"
-                           data-task-category="{{ task.category }}"
-                           data-task-priority="{{ task.priority }}"
-                           data-task-due-date="{% if task.due_date %}{{ task.due_date|date:'d/m/Y' }}{% endif %}"
-                           data-task-duration="{{ task.duration|default:'' }}"
-                           data-task-completed="{{ task.is_completed|yesno:'true,false' }}"
-                           data-task-assigned-users="{% for user in task.assigned_to.all %}{{ user.get_full_name|default:user.username }}{% if not forloop.last %},{% endif %}{% endfor %}"
-                           style="cursor: pointer; transition: all 0.2s ease;">
+                  {% for task in user_tasks_today %}
+                  <div
+                    class="task-item-horizontal d-flex flex-column justify-content-between p-3 {% if task.is_completed %}task-completed{% else %}task-pending{% endif %} rounded-3 task-clickable"
+                    data-task-id="{{ task.id }}" data-task-title="{{ task.title }}"
+                    data-task-description="{{ task.description|default:'' }}" data-task-category="{{ task.category }}"
+                    data-task-priority="{{ task.priority }}"
+                    data-task-due-date="{% if task.due_date %}{{ task.due_date|date:'d/m/Y' }}{% endif %}"
+                    data-task-duration="{{ task.duration|default:'' }}"
+                    data-task-completed="{{ task.is_completed|yesno:'true,false' }}"
+                    data-task-assigned-users="{% for user in task.assigned_to.all %}{{ user.get_full_name|default:user.username }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                    style="cursor: pointer; transition: all 0.2s ease;">
 
-                        <div class="task-content-horizontal flex-grow-1 mb-2">
-                          <div class="d-flex align-items-center justify-content-between mb-2">
-                            {% if task.is_completed %}
-                              <span class="task-completed-icon text-success fs-5"></span>
-                            {% else %}
-                              <div class="priority-indicator priority-{{ task.priority|lower }}"></div>
-                            {% endif %}
-                            <div class="task-actions-horizontal">
-                              <span class="view-icon text-muted"></span>
-                            </div>
-                          </div>
-                          <h6 class="task-title-horizontal mb-2 {% if task.is_completed %}text-decoration-line-through text-muted{% else %}text-dark{% endif %}">
-                            {{ task.title|truncatechars:30 }}
-                          </h6>
-                          {% if task.is_completed %}
-                            <span class="badge bg-success small">
-                              <span class="check-small me-1"></span>Terminé
-                            </span>
-                          {% else %}
-                            <small class="text-muted">{{ task.category }}</small>
-                          {% endif %}
+                    <div class="task-content-horizontal flex-grow-1 mb-2">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        {% if task.is_completed %}
+                        <span class="task-completed-icon text-success fs-5"></span>
+                        {% else %}
+                        <div class="priority-indicator priority-{{ task.priority|lower }}"></div>
+                        {% endif %}
+                        <div class="task-actions-horizontal">
+                          <span class="view-icon text-muted"></span>
                         </div>
                       </div>
-                    {% endfor %}
-                  {% else %}
-                    <!-- Aucune tâche - affichage par défaut -->
-                    <div class="task-item-horizontal d-flex flex-column justify-content-center align-items-center p-4 bg-light rounded-3">
-                      <span class="no-task-icon text-success fs-1 mb-2"></span>
-                      <span class="text-muted text-center">Aucune tâche assignée</span>
+                      <h6
+                        class="task-title-horizontal mb-2 {% if task.is_completed %}text-decoration-line-through text-muted{% else %}text-dark{% endif %}">
+                        {{ task.title|truncatechars:30 }}
+                      </h6>
+                      {% if task.is_completed %}
+                      <span class="badge bg-success small">
+                        <span class="check-small me-1"></span>Terminé
+                      </span>
+                      {% else %}
+                      <small class="text-muted">{{ task.category }}</small>
+                      {% endif %}
                     </div>
+                  </div>
+                  {% endfor %}
+                  {% else %}
+                  <!-- Aucune tâche - affichage par défaut -->
+                  <div
+                    class="task-item-horizontal d-flex flex-column justify-content-center align-items-center p-4 bg-light rounded-3">
+                    <span class="no-task-icon text-success fs-1 mb-2"></span>
+                    <span class="text-muted text-center">Aucune tâche assignée</span>
+                  </div>
                   {% endif %}
                 </div>
 
                 <!-- Indicateur de scroll si plus de 2 tâches -->
                 {% if user_tasks_today|length > 2 %}
-                  <div class="scroll-indicator-horizontal mt-3 text-center">
-                    <small class="text-muted">
-                      <span class="arrow-icon"></span>
-                      {{ user_tasks_today|length }} tâches - Glissez pour naviguer
-                      <span class="arrow-icon"></span>
-                    </small>
-                  </div>
+                <div class="scroll-indicator-horizontal mt-3 text-center">
+                  <small class="text-muted">
+                    <span class="arrow-icon"></span>
+                    {{ user_tasks_today|length }} tâches - Glissez pour naviguer
+                    <span class="arrow-icon"></span>
+                  </small>
+                </div>
                 {% endif %}
               </div>
 
@@ -162,52 +161,67 @@
             </div>
             <div class="card-body p-4 notifications-fixed-body">
               {% if user_notifications %}
-                <!-- Conteneur avec scroll vertical à hauteur fixe -->
-                <div class="notifications-scroll-container-fixed">
-                  {% for notification in user_notifications %}
-                    {% if not notification.is_read %}
-                    <div class="notification-item-vertical border border-{{ notification.get_type_display_color }} border-2 rounded-3 p-3 bg-light mb-3"
-                         data-notification-id="{{ notification.id }}">
-                      <div class="d-flex align-items-start">
-                        <div class="flex-shrink-0 me-3">
-                          <div class="notification-icon bg-{{ notification.get_type_display_color }} text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                            <i class="bi {{ notification.get_type_display_icon }} small"></i>
-                          </div>
-                        </div>
-                        <div class="flex-grow-1">
-                          <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="notification-title mb-0 fw-bold text-{{ notification.get_type_display_color }}" style="font-size: 0.9rem;">
-                              {{ notification.titre|truncatechars:30 }}
-                            </h6>
-                            <button class="btn btn-sm btn-outline-primary mark-as-read-btn p-1" data-notification-id="{{ notification.id }}" style="font-size: 0.7rem;">
-                              <i class="bi bi-check"></i>
-                            </button>
-                          </div>
-                          <p class="notification-description text-muted mb-2 small" style="font-size: 0.8rem; line-height: 1.3;">
-                            {{ notification.description|truncatewords:12 }}
-                          </p>
-                          <div class="notification-meta small text-muted" style="font-size: 0.75rem;">
-                            <i class="bi bi-clock me-1"></i>
-                            {{ notification.created_at|timesince }} ago
-                          </div>
-                          {% if notification.created_by %}
-                          <div class="notification-author small text-muted" style="font-size: 0.75rem;">
-                            <i class="bi bi-person me-1"></i>
-                            {{ notification.created_by.get_full_name|default:notification.created_by.username|truncatechars:20 }}
-                          </div>
-                          {% endif %}
-                        </div>
+              <!-- Conteneur avec scroll vertical à hauteur fixe -->
+              <div class="notifications-scroll-container-fixed">
+                {% for notification in user_notifications %}
+                {% if not notification.is_read %}
+                <div
+                  class="notification-item-vertical border border-{{ notification.get_type_display_color }} border-2 rounded-3 p-3 bg-light mb-3 notification-clickable"
+                  data-notification-id="{{ notification.id }}" data-notification-title="{{ notification.titre }}"
+                  data-notification-description="{{ notification.description }}"
+                  data-notification-type="{{ notification.get_type_display }}"
+                  data-notification-color="{{ notification.get_type_display_color }}"
+                  data-notification-icon="{{ notification.get_type_display_icon }}"
+                  data-notification-date="{{ notification.created_at|date:'d M Y à H:i' }}"
+                  data-notification-author="{{ notification.created_by.get_full_name|default:notification.created_by.username|default:'Système' }}"
+                  style="cursor: pointer;">
+                  <div class="d-flex align-items-start">
+                    <div class="flex-shrink-0 me-3">
+                      <div
+                        class="notification-icon bg-{{ notification.get_type_display_color }} text-white rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 35px; height: 35px;">
+                        <i class="bi {{ notification.get_type_display_icon }} small"></i>
                       </div>
                     </div>
-                    {% endif %}
-                  {% endfor %}
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="notification-title mb-0 fw-bold text-{{ notification.get_type_display_color }}"
+                          style="font-size: 0.9rem;">
+                          {{ notification.titre|truncatechars:30 }}
+                        </h6>
+                        <button class="btn btn-sm btn-outline-primary mark-as-read-btn p-1"
+                          data-notification-id="{{ notification.id }}" style="font-size: 0.7rem;">
+                          <i class="bi bi-check"></i>
+                        </button>
+                      </div>
+                      <p class="notification-description text-muted mb-2 small"
+                        style="font-size: 0.8rem; line-height: 1.3;">
+                        {{ notification.description|truncatewords:12 }}
+                      </p>
+                      <div class="notification-meta small text-muted" style="font-size: 0.75rem;">
+                        <i class="bi bi-clock me-1"></i>
+                        {{ notification.created_at|timesince }} ago
+                      </div>
+                      {% if notification.created_by %}
+                      <div class="notification-author small text-muted" style="font-size: 0.75rem;">
+                        <i class="bi bi-person me-1"></i>
+                        <!--Notification author-->
+                        {{ notification.created_by.get_full_name|default:notification.created_by.username|truncatechars:20 }}
+                        <!--End-->
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
                 </div>
+                {% endif %}
+                {% endfor %}
+              </div>
               {% else %}
-                <div class="text-center py-3">
-                  <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
-                  <h6 class="text-muted mt-2 mb-1">Aucune notification</h6>
-                  <p class="text-muted small mb-0">Tout est à jour pour le moment.</p>
-                </div>
+              <div class="text-center py-3">
+                <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
+                <h6 class="text-muted mt-2 mb-1">Aucune notification</h6>
+                <p class="text-muted small mb-0">Tout est à jour pour le moment.</p>
+              </div>
               {% endif %}
             </div>
           </div>
@@ -216,7 +230,8 @@
 
 
 
-      <!-- Actions Rapides -->
+      <!-- Actions Rapides - Seulement pour les Admins -->
+      {% if user.is_superuser or user.role.can_manage_users %}
       <div class="row mb-4">
         <div class="col-12">
           <div class="dashboard-card bg-white rounded-3 shadow-sm">
@@ -226,39 +241,35 @@
             <div class="card-body p-4">
               <div class="row g-3">
                 <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-primary w-100 py-3 action-btn">
-                    <i class="bi bi-cart-plus d-block fs-4 mb-2"></i>
-                    <span class="small">Nouvelle Vente</span>
-                  </button>
+                  <a href="{% url 'create_schedule' %}" class="btn btn-outline-primary w-100 py-3 action-btn text-decoration-none">
+                    <i class="bi bi-calendar-plus d-block fs-4 mb-2"></i>
+                    <span class="small">Faire Horaire</span>
+                  </a>
                 </div>
                 <div class="col-md-3 col-6">
-                  <button
-                    class="btn btn-outline-secondary w-100 py-3 action-btn"
-                  >
+                  <a href="{% url 'employees_management' %}" class="btn btn-outline-secondary w-100 py-3 action-btn text-decoration-none">
                     <i class="bi bi-people d-block fs-4 mb-2"></i>
                     <span class="small">Gérer Équipe</span>
-                  </button>
+                  </a>
                 </div>
                 <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-info w-100 py-3 action-btn">
+                  <a href="{% url 'all_tickets' %}" class="btn btn-outline-warning w-100 py-3 action-btn text-decoration-none">
+                    <i class="bi bi-ticket-detailed d-block fs-4 mb-2"></i>
+                    <span class="small">Vérifier Tickets</span>
+                  </a>
+                </div>
+                <div class="col-md-3 col-6">
+                  <a href="{% url 'inventory_management' %}" class="btn btn-outline-success w-100 py-3 action-btn text-decoration-none">
                     <i class="bi bi-box-seam d-block fs-4 mb-2"></i>
-                    <span class="small">Vérifier Stock</span>
-                  </button>
+                    <span class="small">Inventaire</span>
+                  </a>
                 </div>
-                <div class="col-md-3 col-6">
-                  <button class="btn btn-outline-success w-100 py-3 action-btn">
-                    <i
-                      class="bi bi-file-earmark-bar-graph d-block fs-4 mb-2"
-                    ></i>
-                    <span class="small">Voir Rapport</span>
-                  </button>
-                </div>
-
               </div>
             </div>
           </div>
         </div>
       </div>
+      {% endif %}
     </div>
   </div>
 </section>
@@ -268,6 +279,51 @@
 
 <!-- Modal pour Détails de Tâche -->
 {% include "restoplus/partials/task_details_modal.html" %}
+
+<!-- Modal pour Détails de Notification -->
+<div class="modal fade" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" id="notificationModalHeader">
+        <div class="d-flex align-items-center">
+          <div class="notification-modal-icon me-3" id="notificationModalIcon">
+            <i class="bi bi-bell"></i>
+          </div>
+          <h5 class="modal-title" id="notificationDetailModalLabel">Détails de la notification</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <div class="notification-type-badge mb-3">
+          <span class="badge" id="notificationTypeBadge">Type</span>
+        </div>
+        <h4 class="notification-modal-title mb-3" id="notificationModalTitle">Titre</h4>
+        <div class="notification-modal-description p-3 bg-light rounded mb-3" id="notificationModalDescription">
+          Description
+        </div>
+        <div class="notification-modal-meta">
+          <div class="row">
+            <div class="col-6">
+              <p class="mb-1 text-muted small"><i class="bi bi-calendar me-2"></i>Date</p>
+              <p class="fw-semibold" id="notificationModalDate">-</p>
+            </div>
+            <div class="col-6">
+              <p class="mb-1 text-muted small"><i class="bi bi-person me-2"></i>Envoyé par</p>
+              <p class="fw-semibold" id="notificationModalAuthor">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-primary" id="markAsReadFromModal">
+          <i class="bi bi-check-circle me-1"></i>Marquer comme lu
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Inclusion du fichier JavaScript principal -->
 <script src="{% static 'restoplus/js/script.js' %}"></script>

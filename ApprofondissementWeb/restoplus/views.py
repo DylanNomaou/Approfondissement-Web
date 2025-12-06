@@ -1,33 +1,46 @@
 """Views pour l'application RestoPlus"""
 import json
-import locale
-from datetime import date, datetime, timedelta
-
-from django.shortcuts import render, redirect, get_object_or_404
+from datetime import date
+from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
+from django.http import Http404
+from django.db.models import Q
+from django.core.exceptions import PermissionDenied,ValidationError
+from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, TicketForm
+from .models import User, Role, Notification,Availability, Ticket
+from django import forms
+from .forms import UserRegisterForm, UserLoginForm, TaskForm,AvailabilityForm, InventoryFilterForm, StockOrderForm, StockOrderItemFormSet
+from .models import User, Role, Task,Availability, Inventory, StockOrderItem, StockOrder
+from django.core.paginator import Paginator
+from .notifications import notify_task_assigned, notify_role_assigned
+from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from os import rename
 from django.contrib import messages
 from django.http import Http404, JsonResponse
-from django.db.models import Q
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
-from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from .forms import UserRegisterForm,UserLoginForm,TaskForm,AvailabilityForm,TicketForm,InventoryFilterForm,StockOrderForm,StockOrderItemFormSet,InventoryCreateForm
 from .models import User,Role,Task,Notification,Availability,Inventory,StockOrder,Ticket,PasswordResetCode
 from .notifications import notify_task_assigned, notify_role_assigned
 
+# Dictionnaire des mois en français (évite les problèmes d'encodage avec strftime)
+MOIS_FR = {
+    1: 'janvier', 2: 'février', 3: 'mars', 4: 'avril',
+    5: 'mai', 6: 'juin', 7: 'juillet', 8: 'août',
+    9: 'septembre', 10: 'octobre', 11: 'novembre', 12: 'décembre'
+}
 
-# Configuration de la locale française pour les dates
-try:
-    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-except locale.Error:
-    try:
-        locale.setlocale(locale.LC_TIME, 'fr_FR')
-    except locale.Error:
-        pass
+def format_date_fr(date_obj):
+    """Formate une date en français (ex: 01 décembre 2025) sans problème d'encodage."""
+    return f"{date_obj.day:02d} {MOIS_FR[date_obj.month]} {date_obj.year}"
 
 
 @login_required
@@ -308,6 +321,24 @@ def availability_form(request):
 # 🧑‍💼 INVENTAIRE
 # ======================================================================
 
+class InventoryCreateForm(forms.ModelForm):
+    class Meta:
+        model = Inventory
+        fields = ["name", "sku", "category", "quantity", "unit", "supplier", "cost_price"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nom de l'article"}),
+            "sku": forms.TextInput(attrs={"class": "form-control", "placeholder": "SKU"}),
+            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "Catégorie"}),
+            "quantity": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+            "unit": forms.Select(attrs={"class": "form-select"}),
+            "supplier": forms.TextInput(attrs={"class": "form-control", "placeholder": "Fournisseur"}),
+            "cost_price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
+        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # SKU obligatoire au niveau formulaire pour se fier à lui comme identifiant
+        self.fields['sku'].required = True
+
 """Vue pour la gestion de l'inventaire"""
 @login_required
 def inventory_management(request):
@@ -328,7 +359,17 @@ def inventory_management(request):
             if instance:
                 messages.success(request, f"Article '{obj.name}' mis à jour.")
             else:
+                # Nouvel article créé - envoyer des notifications aux administrateurs
                 messages.success(request, f"Article '{obj.name}' créé.")
+                try:
+                    from .notifications import notify_inventory_added
+                    notifications_count = notify_inventory_added(obj, request.user)
+                    if notifications_count > 0:
+                        messages.info(request, f"{notifications_count} notification(s) envoyée(s) aux administrateurs.")
+                except Exception as e:
+                    # En cas d'erreur avec les notifications, on continue sans interrompre
+                    messages.warning(request, f"Article créé, mais erreur d'envoi de notifications: {str(e)}")
+
             # Redirection sans paramètre sku
             params = request.GET.copy()
             if 'sku' in params:
@@ -497,7 +538,6 @@ def apply_inventory_filters(inventory_queryset, cleaned_data):
     return inventory_queryset
 
 
-
 # ======================================================================
 # ⚙️ ADMINISTRATION
 # ======================================================================
@@ -543,6 +583,7 @@ def create_role(request):
         can_manage_inventory = request.POST.get('can_manage_inventory') == 'on'
         can_view_reports = request.POST.get('can_view_reports') == 'on'
         can_distribute_tasks = request.POST.get('can_distribute_tasks') == 'on'
+        can_manage_schedules = request.POST.get('can_manage_schedules') == 'on'
 
         if Role.objects.filter(name=name).exists():
             messages.error(request, f"Erreur : Le rôle '{name}' existe déjà !")
@@ -554,7 +595,8 @@ def create_role(request):
                 can_manage_users = can_manage_users,
                 can_manage_orders = can_manage_orders,
                 can_view_reports=can_view_reports,
-                can_distribute_tasks=can_distribute_tasks
+                can_distribute_tasks=can_distribute_tasks,
+                can_manage_schedules=can_manage_schedules
             )
             permissions_list = []
             if can_manage_users: permissions_list.append("Gérer les utilisateurs")
@@ -562,6 +604,7 @@ def create_role(request):
             if can_manage_inventory: permissions_list.append("Gérer l'inventaire")
             if can_view_reports: permissions_list.append("Voir les rapports")
             if can_distribute_tasks: permissions_list.append("Distribuer des tâches à tous")
+            if can_manage_schedules: permissions_list.append("Créer les horaires")
 
 
             permissions_text = ", ".join(permissions_list) if permissions_list else "Aucune permission spéciale"
@@ -874,12 +917,11 @@ def delete_employee(request, employe_id):
 
 @login_required
 def create_schedule(request):
-    """Vue pour créer des horaires - Réservée aux administrateurs"""
+    """Vue pour créer des horaires - Réservée aux administrateurs ou utilisateurs avec permission"""
 
-    # Vérifier que l'utilisateur est administrateur
-    if not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "Accès non autorisé. Seuls les administrateurs peuvent créer des horaires.")
-        return redirect('view_schedule')
+    # Vérifier que l'utilisateur a la permission de gérer les horaires
+    if not request.user.can_manage_schedules():
+        return render(request, 'restoplus/403.html', status=403)
 
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
@@ -894,9 +936,8 @@ def create_schedule(request):
 
     # Vérifier si la semaine peut être modifiée
     # Règle : On peut modifier tant que la semaine n'a pas encore commencé (même si publiée)
-    current_monday = today - timedelta(days=today.weekday())
-    # Vérifier si la semaine peut être modifiée (pas dans le passé)
-    can_edit_week = monday >= (today - timedelta(days=today.weekday()))
+    week_has_started = today >= monday
+    can_edit_week = not week_has_started
 
     week_days = []
     days_names = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
@@ -909,7 +950,7 @@ def create_schedule(request):
             'jour_key': days_keys[i],
             'date_short': day.strftime('%d/%m'),
             'date_str': day.strftime('%Y-%m-%d'),
-            'date_formatted': day.strftime('%d %B %Y')
+            'date_formatted': format_date_fr(day)
         })
 
     # Récupérer les WorkShifts existants pour cette semaine
@@ -963,18 +1004,9 @@ def create_schedule(request):
         for a in avail_qs
     ]
 
-    # Forcer la locale française pour le formatage des dates
-    try:
-        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-    except:
-        try:
-            locale.setlocale(locale.LC_TIME, 'fr_FR')
-        except:
-            pass
-
-    # Créer des variables de dates explicites
-    week_start_formatted = week_start.strftime('%d %B %Y')
-    week_end_formatted = week_end.strftime('%d %B %Y')
+    # Créer des variables de dates explicites avec les mois en français
+    week_start_formatted = format_date_fr(week_start)
+    week_end_formatted = format_date_fr(week_end)
 
     context = {
         'employes': employes,
@@ -986,7 +1018,7 @@ def create_schedule(request):
         'week_end_formatted': week_end_formatted,
         'week_schedule': {
             'status': 'published' if is_published else 'draft',
-            'can_be_edited': can_edit_week and not is_published,
+            'can_be_edited': can_edit_week,  # Permettre l'édition tant que la semaine n'a pas commencé
             'is_published': is_published,
             'week_start': week_start_formatted,
             'week_end': week_end_formatted,
@@ -999,9 +1031,11 @@ def create_schedule(request):
 
 @login_required
 def view_schedule(request):
-    """Vue pour afficher les horaires publiés en lecture seule"""
+    """Vue pour afficher les horairebliés en lecture seule"""
+
     # Récupérer tous les employés
     employes = User.objects.all()
+
     # Récupérer le décalage de semaine depuis les paramètres GET
     week_offset = int(request.GET.get('week_offset', 0))
     # Créer les jours de la semaine (lundi à dimanche)
@@ -1010,6 +1044,8 @@ def view_schedule(request):
     monday = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
 
     week_has_started = today >= monday
+
+
 
 
     week_days = []
@@ -1023,7 +1059,7 @@ def view_schedule(request):
             'jour_key': days_keys[i],
             'date_short': day.strftime('%d/%m'),
             'date_str': day.strftime('%Y-%m-%d'),
-            'date_formatted': day.strftime('%d %B %Y')
+            'date_formatted': format_date_fr(day)
         })
 
     # Récupérer les shifts publiés pour cette semaine
@@ -1082,13 +1118,13 @@ def view_schedule(request):
 @login_required
 @require_POST
 def publish_schedule(request):
-    """Publie les horaires depuis localStorage vers la base de données - Réservé aux administrateurs"""
+    """Publie les horaires depuis localStorage vers la base de données - Réservé aux utilisateurs avec permission"""
 
-    # Vérifier que l'utilisateur est administrateur
-    if not request.user.is_staff and not request.user.is_superuser:
+    # Vérifier que l'utilisateur a la permission de gérer les horaires
+    if not request.user.can_manage_schedules():
         return JsonResponse({
             'success': False,
-            'message': 'Accès non autorisé. Seuls les administrateurs peuvent publier des horaires.'
+            'message': "Accès non autorisé. Vous n'avez pas la permission de publier des horaires."
         }, status=403)
 
     try:
@@ -1098,6 +1134,7 @@ def publish_schedule(request):
 
         published_count = 0
         errors = []
+        affected_employee_ids = set()  # Pour stocker les IDs des employés concernés
 
         # Parcourir chaque shift et l'enregistrer en base
         for shift_key, shift_info in shifts_data.items():
@@ -1111,6 +1148,9 @@ def publish_schedule(request):
 
                     # Récupérer l'employé
                     employee = User.objects.get(id=employee_id)
+
+                    # Ajouter l'ID de l'employé à la liste des concernés
+                    affected_employee_ids.add(employee_id)
 
                     # Créer ou mettre à jour le WorkShift
                     from .models import WorkShift
@@ -1141,6 +1181,48 @@ def publish_schedule(request):
                 'errors': errors
             })
         else:
+            # Si des horaires ont été publiés avec succès, créer des notifications
+            if published_count > 0:
+                try:
+                    # Déterminer la semaine publiée en trouvant le lundi de la première date
+                    first_date = None
+                    for shift_key in shifts_data.keys():
+                        parts = shift_key.split('_')
+                        if len(parts) >= 3:
+                            date_str = parts[2]
+                            shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                            if first_date is None or shift_date < first_date:
+                                first_date = shift_date
+
+                    if first_date:
+                        # Trouver le lundi de cette semaine
+                        monday_of_week = first_date - timedelta(days=first_date.weekday())
+
+                        # Créer les notifications pour les employés concernés seulement
+                        from .notifications import notify_schedule_published
+                        notifications_count = notify_schedule_published(
+                            week_start_date=monday_of_week,
+                            published_by=request.user,
+                            shifts_count=published_count,
+                            affected_employees=list(affected_employee_ids)
+                        )
+
+                        return JsonResponse({
+                            'success': True,
+                            'message': f'{published_count} horaires publiés avec succès. {notifications_count} notifications envoyées.',
+                            'published_count': published_count,
+                            'notifications_sent': notifications_count
+                        })
+
+                except Exception as e:
+                    # En cas d'erreur avec les notifications, on retourne quand même le succès
+                    # car les horaires ont été publiés
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'{published_count} horaires publiés avec succès (notifications non envoyées: {str(e)})',
+                        'published_count': published_count
+                    })
+
             return JsonResponse({
                 'success': True,
                 'message': f'{published_count} horaires publiés avec succès',
@@ -1307,6 +1389,14 @@ def create_ticket(request):
             ticket.created_by = request.user
             ticket.save()
 
+            # Envoyer une notification aux administrateurs
+            try:
+                from .notifications import notify_ticket_created
+                notify_ticket_created(ticket, request.user)
+            except Exception as e:
+                # Ne pas bloquer la création du ticket si la notification échoue
+                print(f"Erreur lors de l'envoi de notification: {e}")
+
             messages.success(request, "Ticket créé avec succès !")
             return redirect('ticket_detail', ticket_id=ticket.id)
     else:
@@ -1355,6 +1445,50 @@ def all_tickets(request):
         'total_tickets': tickets.count(),
     }
     return render(request, 'restoplus/all_tickets.html', context)
+@login_required
+@require_http_methods(["DELETE"])
+def delete_shift(request, shift_id):
+    """Supprime un shift publié - Réservé aux administrateurs"""
+
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_staff and not request.user.is_superuser:
+        return JsonResponse({
+            'success': False,
+            'message': 'Accès non autorisé. Seuls les administrateurs peuvent supprimer des horaires.'
+        }, status=403)
+
+    try:
+        from .models import WorkShift
+
+        # Récupérer le shift
+        shift = get_object_or_404(WorkShift, id=shift_id)
+
+        # Vérifier que le shift est bien publié
+        if shift.status != WorkShift.ShiftStatus.PUBLISHED:
+            return JsonResponse({
+                'success': False,
+                'message': 'Seuls les shifts publiés peuvent être supprimés via cette méthode.'
+            }, status=400)
+
+        # Enregistrer les informations pour le log
+        employee_name = shift.employee.get_full_name() or shift.employee.username
+        shift_date = shift.date
+        shift_time = f"{shift.heure_debut} - {shift.heure_fin}"
+
+        # Supprimer le shift
+        shift.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Shift de {employee_name} du {shift_date} ({shift_time}) supprimé avec succès.'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erreur lors de la suppression: {str(e)}'
+        }, status=500)
+
 
 def custom_403_view(request, exception=None):
     """Vue personnalisée pour les erreurs 403 de permission refusée"""
@@ -1376,30 +1510,32 @@ def password_reset_request(request):
         email = request.POST.get('email', '').strip().lower()
 
         if not email:
-            messages.error(request, "❌ Veuillez saisir une adresse email.")
+            messages.error(request, "Veuillez saisir une adresse email.")
             return render(request, 'registration/password_reset_request.html')
 
         # Vérifier si l'email existe dans notre base de données
+        user_exists = False
         try:
             user = User.objects.get(email=email)
+            user_exists = True
         except User.DoesNotExist:
             # Pour des raisons de sécurité, on ne révèle pas si l'email existe ou non
-            messages.info(request,
+            messages.info(request, 
                 "📧 Si cette adresse email est enregistrée dans notre système, "
                 "vous recevrez un code de réinitialisation dans quelques minutes.")
             return render(request, 'registration/password_reset_request.html')
-
+        
         # Vérifier le rate limiting (max 1 code par minute)
         if PasswordResetCode.has_recent_code(email, minutes=1):
-            messages.warning(request,
+            messages.warning(request, 
                 "⏱️ Un code de réinitialisation a déjà été envoyé récemment. "
                 "Veuillez attendre 1 minute avant de demander un nouveau code.")
             return render(request, 'registration/password_reset_request.html')
-
+        
         # Nettoyer les anciens codes et créer un nouveau
         try:
             reset_code = PasswordResetCode.create_for_email(email)
-
+            
             # Envoyer l'email avec le code
             subject = "🔑 Code de réinitialisation - RestoPLus"
             message = f"""
@@ -1415,7 +1551,7 @@ Si vous n'avez pas demandé cette réinitialisation, ignorez simplement ce messa
 
 L'équipe RestoPLus
             """
-
+            
             send_mail(
                 subject=subject,
                 message=message,
@@ -1423,52 +1559,62 @@ L'équipe RestoPLus
                 recipient_list=[email],
                 fail_silently=False,
             )
-
-            messages.success(request,
+            
+            messages.success(request, 
                 "📧 Un code de réinitialisation a été envoyé à votre adresse email. "
                 "Vérifiez votre boîte de réception et vos spam.")
-
+            
             # Rediriger vers la page de saisie du code avec l'email en session
             request.session['reset_email'] = email
+            request.session['fake_reset'] = True  # Flag pour indiquer que c'est un faux reset
+            request.session.save()
             return redirect('password_reset_verify')
-
+            
         except Exception as e:
-            messages.error(request,
+            messages.error(request, 
                 "❌ Une erreur s'est produite lors de l'envoi de l'email. "
                 "Veuillez réessayer plus tard.")
             return render(request, 'registration/password_reset_request.html')
-
+    
     return render(request, 'registration/password_reset_request.html')
 
 
 def password_reset_verify(request):
     """Étape 2: Saisie et vérification du code de réinitialisation"""
     email = request.session.get('reset_email')
+    is_fake_reset = request.session.get('fake_reset', False)
+
+    # Vérification de sécurité : l'utilisateur doit avoir un email en session
     if not email:
         messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
         return redirect('password_reset_request')
-
+    
     if request.method == 'POST':
         code = request.POST.get('code', '').strip().upper()
 
         if not code:
-            messages.error(request, "❌ Veuillez saisir le code de réinitialisation.")
+            messages.error(request, "Veuillez saisir le code de réinitialisation.")
             return render(request, 'registration/password_reset_verify.html', {'email': email})
 
         if len(code) != 6:
-            messages.error(request, "❌ Le code doit contenir exactement 6 caractères.")
+            messages.error(request, "Le code doit contenir exactement 6 caractères.")
+            return render(request, 'registration/password_reset_verify.html', {'email': email})
+
+        # Si c'est un faux reset (email inexistant), simuler l'échec
+        if is_fake_reset:
+            messages.error(request, "Code invalide ou expiré. Veuillez vérifier et réessayer.")
             return render(request, 'registration/password_reset_verify.html', {'email': email})
 
         # Chercher le code valide
         reset_code = PasswordResetCode.get_valid_code(email, code)
 
         if not reset_code:
-            messages.error(request, "❌ Code invalide ou expiré. Veuillez vérifier et réessayer.")
+            messages.error(request, "Code invalide ou expiré. Veuillez vérifier et réessayer.")
             return render(request, 'registration/password_reset_verify.html', {'email': email})
 
         # Vérifier les tentatives
         if not reset_code.can_attempt():
-            messages.error(request,
+            messages.error(request, 
                 "❌ Trop de tentatives invalides. Veuillez demander un nouveau code.")
             return redirect('password_reset_request')
 
@@ -1477,13 +1623,14 @@ def password_reset_verify(request):
 
         # Valider le code (vérification redondante pour sécurité)
         if reset_code.code != code:
-            messages.error(request, "❌ Code incorrect. Tentatives restantes : " +
+            messages.error(request, "❌ Code incorrect. Tentatives restantes : " + 
                           str(5 - reset_code.attempts))
             return render(request, 'registration/password_reset_verify.html', {'email': email})
 
         # Code valide ! Passer à l'étape suivante
         request.session['reset_code_id'] = reset_code.id
-        messages.success(request, "✅ Code validé avec succès !")
+        request.session.save()  # S'assurer que la session est sauvegardée
+        messages.success(request, "Code validé avec succès !")
         return redirect('password_reset_confirm')
 
     return render(request, 'registration/password_reset_verify.html', {'email': email})
@@ -1492,34 +1639,56 @@ def password_reset_verify(request):
 def password_reset_confirm(request):
     """Étape 3: Saisie du nouveau mot de passe"""
     reset_code_id = request.session.get('reset_code_id')
+
+    # Vérification de sécurité : l'utilisateur doit avoir validé un code
     if not reset_code_id:
         messages.error(request, "❌ Session expirée. Veuillez recommencer la procédure.")
         return redirect('password_reset_request')
-
+    
     try:
         reset_code = PasswordResetCode.objects.get(id=reset_code_id)
         if not reset_code.is_valid():
-            messages.error(request, "❌ Code expiré. Veuillez recommencer la procédure.")
-            return redirect('password_reset_request')
+            # Nettoyer la session immédiatement
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'fake_reset' in request.session:
+                del request.session['fake_reset']
+            if 'reset_code_id' in request.session:
+                del request.session['reset_code_id']
+
+            raise PermissionDenied("Code expiré ou invalide. Veuillez recommencer la procédure.")
+
+        # IMPORTANT : Vérifier si le code a déjà été utilisé (même en GET)
+        if reset_code.is_used:
+            # Nettoyer la session immédiatement
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'fake_reset' in request.session:
+                del request.session['fake_reset']
+            if 'reset_code_id' in request.session:
+                del request.session['reset_code_id']
+
+            raise PermissionDenied("Code déjà utilisé. Veuillez recommencer la procédure.")
+
     except PasswordResetCode.DoesNotExist:
         messages.error(request, "❌ Code invalide. Veuillez recommencer la procédure.")
         return redirect('password_reset_request')
-
+    
     if request.method == 'POST':
         password1 = request.POST.get('password1', '')
         password2 = request.POST.get('password2', '')
-
+        
         # Validation du mot de passe
         if not password1 or not password2:
-            messages.error(request, "❌ Tous les champs sont obligatoires.")
+            messages.error(request, "Tous les champs sont obligatoires.")
             return render(request, 'registration/password_reset_confirm.html')
 
         if password1 != password2:
-            messages.error(request, "❌ Les mots de passe ne correspondent pas.")
+            messages.error(request, "Les mots de passe ne correspondent pas.")
             return render(request, 'registration/password_reset_confirm.html')
 
         if len(password1) < 8:
-            messages.error(request, "❌ Le mot de passe doit contenir au moins 8 caractères.")
+            messages.error(request, "Le mot de passe doit contenir au moins 8 caractères.")
             return render(request, 'registration/password_reset_confirm.html')
 
         # Mettre à jour le mot de passe de l'utilisateur
@@ -1536,27 +1705,44 @@ def password_reset_confirm(request):
                 del request.session['reset_email']
             if 'reset_code_id' in request.session:
                 del request.session['reset_code_id']
-
-            messages.success(request,
+            
+            messages.success(request, 
                 "✅ Votre mot de passe a été mis à jour avec succès ! "
                 "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.")
-
+            
             return redirect('login')
-
+            
         except User.DoesNotExist:
-            messages.error(request, "❌ Utilisateur introuvable. Veuillez recommencer la procédure.")
+            messages.error(request, "Utilisateur introuvable. Veuillez recommencer la procédure.")
             return redirect('password_reset_request')
         except Exception as e:
-            messages.error(request, "❌ Une erreur s'est produite. Veuillez réessayer.")
+            messages.error(request, "Une erreur s'est produite. Veuillez réessayer.")
             return render(request, 'registration/password_reset_confirm.html')
-
+    
     return render(request, 'registration/password_reset_confirm.html')
 
 
 def password_reset_complete(request):
     """Étape 4: Confirmation de la réinitialisation"""
-    # Cette vue peut être utilisée pour afficher une page de confirmation
-    # ou rediriger directement vers la page de connexion
+    # Vérification de sécurité : l'utilisateur doit avoir terminé le processus complet
+    if not request.session.get('reset_completed'):
+        # Nettoyer toute session corrompue
+        if 'reset_email' in request.session:
+            del request.session['reset_email']
+        if 'fake_reset' in request.session:
+            del request.session['fake_reset']
+        if 'reset_code_id' in request.session:
+            del request.session['reset_code_id']
+        if 'reset_completed' in request.session:
+            del request.session['reset_completed']
+
+        # Accès non autorisé - rediriger vers 403
+        raise PermissionDenied("Accès non autorisé. Veuillez compléter le processus de réinitialisation.")
+
+    # Nettoyer la variable de session après affichage (usage unique)
+    if 'reset_completed' in request.session:
+        del request.session['reset_completed']
+
     return render(request, 'registration/password_reset_complete.html')
 
 

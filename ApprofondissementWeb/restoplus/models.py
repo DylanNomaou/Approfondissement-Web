@@ -20,6 +20,7 @@ class Role(models.Model):
     can_manage_inventory = models.BooleanField(default=False, verbose_name="Peut gérer l'inventaire")
     can_manage_orders = models.BooleanField(default=False, verbose_name="Peut gérer les commandes")
     can_distribute_tasks = models.BooleanField(default=False, verbose_name="Peut distribuer des tâches à tous")
+    can_manage_schedules = models.BooleanField(default=False, verbose_name="Peut créer les horaires")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -108,6 +109,12 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.has_permission('can_manage_orders')
+
+    def can_manage_schedules(self):
+        """Vérifier si l'utilisateur peut créer et gérer les horaires"""
+        if self.is_superuser or self.is_staff:
+            return True
+        return self.has_permission('can_manage_schedules')
 
 
 # ======================================================================
@@ -275,6 +282,8 @@ class Notification(models.Model):
         ('task_completed', 'Tâche terminée'),
         ('reminder', 'Rappel'),
         ('system', 'Notification système'),
+        ('schedule_published', 'Horaire publié'),
+        ('inventory_added', 'Inventaire ajouté'),
     ]
 
     titre = models.CharField(max_length=255, verbose_name="Titre")
@@ -351,6 +360,8 @@ class Notification(models.Model):
             'task_completed': 'bi-check-circle',
             'reminder': 'bi-bell',
             'system': 'bi-info-circle',
+            'schedule_published': 'bi-calendar-check',
+            'inventory_added': 'bi-box-seam',
         }
         return icons.get(self.type_notification, 'bi-bell')
 
@@ -362,6 +373,8 @@ class Notification(models.Model):
             'task_completed': 'info',
             'reminder': 'warning',
             'system': 'secondary',
+            'schedule_published': 'success',
+            'inventory_added': 'info',
         }
         return colors.get(self.type_notification, 'secondary')
 
