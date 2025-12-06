@@ -398,6 +398,25 @@ def inventory_management(request):
     inventory_queryset = Inventory.objects.all()
     if filter_form.is_valid():
         inventory_queryset = apply_inventory_filters(inventory_queryset, filter_form.cleaned_data)
+    # Appliquer le tri si demandé (via le champ 'sorting')
+    sort_value = None
+    # Priorité : valeur proprement nettoyée du formulaire si valide, sinon paramètre GET brut
+    if filter_form.is_valid():
+        sort_value = filter_form.cleaned_data.get('sorting')
+    if not sort_value:
+        sort_value = request.GET.get('sorting')
+    sort_map = {
+        'name_asc': 'name',
+        'name_desc': '-name',
+        'sku_asc': 'sku',
+        'sku_desc': '-sku',
+        'quantity_asc': 'quantity',
+        'quantity_desc': '-quantity',
+        'supplier_asc': 'supplier',
+        'supplier_desc': '-supplier',
+    }
+    if sort_value in sort_map:
+        inventory_queryset = inventory_queryset.order_by(sort_map[sort_value])
     filter_keys = ["category", "unit", "supplier", "recherche"]
     if filter_form.is_bound:
         if filter_form.is_valid():
