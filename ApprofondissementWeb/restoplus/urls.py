@@ -30,6 +30,8 @@ urlpatterns=[
     path('view-schedule/', views.view_schedule, name='view_schedule'),
     path('publish-schedule/', views.publish_schedule, name='publish_schedule'),
     
+    path('horaire/delete-shift/<int:shift_id>/', views.delete_shift, name='delete_shift'),
+
     # URLs pour la réinitialisation de mot de passe
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset/verify/', views.password_reset_verify, name='password_reset_verify'),
@@ -41,6 +43,8 @@ urlpatterns=[
     path('tickets/<int:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
     path('tickets/all/', views.all_tickets, name='all_tickets'),
     # URLS SECTION INVENTAIRE
+
+        # URLS SECTION INVENTAIRE
     path('inventory/',views.inventory_management,name='inventory_management'),
     path('stock-orders/', views.stock_order_list, name='stock_order_list'),
     path('stock-orders/create/', views.stock_order_create, name='stock_order_create'),
@@ -49,8 +53,4 @@ urlpatterns=[
     path('stock-orders/<int:pk>/delete/', views.stock_order_delete, name='stock_order_delete'),
     path('delete-inventory-item/<int:item_id>/', views.delete_inventory_item, name='delete_inventory_item'),
     path('ajax/suggestions/<path:query>',views.suggestions_ajax, name="suggestions_ajax")
-
 ]
-
-
-

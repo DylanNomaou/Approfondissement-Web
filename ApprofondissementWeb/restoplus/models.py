@@ -20,6 +20,7 @@ class Role(models.Model):
     can_manage_inventory = models.BooleanField(default=False, verbose_name="Peut gérer l'inventaire")
     can_manage_orders = models.BooleanField(default=False, verbose_name="Peut gérer les commandes")
     can_distribute_tasks = models.BooleanField(default=False, verbose_name="Peut distribuer des tâches à tous")
+    can_manage_schedules = models.BooleanField(default=False, verbose_name="Peut créer les horaires")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -108,6 +109,12 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.has_permission('can_manage_orders')
+
+    def can_manage_schedules(self):
+        """Vérifier si l'utilisateur peut créer et gérer les horaires"""
+        if self.is_superuser or self.is_staff:
+            return True
+        return self.has_permission('can_manage_schedules')
 
 
 # ======================================================================
@@ -275,6 +282,8 @@ class Notification(models.Model):
         ('task_completed', 'Tâche terminée'),
         ('reminder', 'Rappel'),
         ('system', 'Notification système'),
+        ('schedule_published', 'Horaire publié'),
+        ('inventory_added', 'Inventaire ajouté'),
     ]
 
     titre = models.CharField(max_length=255, verbose_name="Titre")
@@ -351,6 +360,8 @@ class Notification(models.Model):
             'task_completed': 'bi-check-circle',
             'reminder': 'bi-bell',
             'system': 'bi-info-circle',
+            'schedule_published': 'bi-calendar-check',
+            'inventory_added': 'bi-box-seam',
         }
         return icons.get(self.type_notification, 'bi-bell')
 
@@ -362,6 +373,8 @@ class Notification(models.Model):
             'task_completed': 'info',
             'reminder': 'warning',
             'system': 'secondary',
+            'schedule_published': 'success',
+            'inventory_added': 'info',
         }
         return colors.get(self.type_notification, 'secondary')
 
@@ -615,14 +628,14 @@ class WorkShift(models.Model):
 
 class PasswordResetCode(models.Model):
     """Modèle pour stocker les codes de réinitialisation de mot de passe"""
-    
+
     email = models.EmailField(verbose_name="Adresse email")
     code = models.CharField(max_length=6, verbose_name="Code de réinitialisation")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     expires_at = models.DateTimeField(verbose_name="Date d'expiration")
     is_used = models.BooleanField(default=False, verbose_name="Code utilisé")
     attempts = models.IntegerField(default=0, verbose_name="Nombre de tentatives")
-    
+
     class Meta:
         verbose_name = "Code de réinitialisation"
         verbose_name_plural = "Codes de réinitialisation"
@@ -631,37 +644,37 @@ class PasswordResetCode(models.Model):
             models.Index(fields=['email', 'code', 'is_used']),
             models.Index(fields=['expires_at']),
         ]
-    
+
     def __str__(self):
         return f"Code pour {self.email} - {self.code} ({'utilisé' if self.is_used else 'actif'})"
-    
+
     def is_expired(self):
         """Vérifier si le code a expiré"""
         return timezone.now() > self.expires_at
-    
+
     def is_valid(self):
         """Vérifier si le code est valide (non utilisé et non expiré)"""
         return not self.is_used and not self.is_expired()
-    
+
     def can_attempt(self):
         """Vérifier si on peut encore tenter de valider le code (max 5 tentatives)"""
         return self.attempts < 5
-    
+
     def increment_attempts(self):
         """Incrémenter le compteur de tentatives"""
         self.attempts += 1
         self.save(update_fields=['attempts'])
-    
+
     def mark_as_used(self):
         """Marquer le code comme utilisé"""
         self.is_used = True
         self.save(update_fields=['is_used'])
-    
+
     @classmethod
     def cleanup_expired(cls):
         """Supprimer les codes expirés"""
         return cls.objects.filter(expires_at__lt=timezone.now()).delete()
-    
+
     @classmethod
     def get_valid_code(cls, email, code):
         """Récupérer un code valide pour un email donné"""
@@ -671,7 +684,7 @@ class PasswordResetCode(models.Model):
             is_used=False,
             expires_at__gt=timezone.now()
         ).first()
-    
+
     @classmethod
     def has_recent_code(cls, email, minutes=1):
         """Vérifier si un code a été généré récemment pour cet email (rate limiting)"""
@@ -680,14 +693,14 @@ class PasswordResetCode(models.Model):
             email=email,
             created_at__gte=cutoff_time
         ).exists()
-    
+
     @classmethod
     def generate_code(cls):
         """Générer un code aléatoire de 6 caractères alphanumériques majuscules"""
         # Utiliser A-Z et 0-9 pour un total de 36 caractères possibles
         characters = string.ascii_uppercase + string.digits
         return ''.join(secrets.choice(characters) for _ in range(6))
-    
+
     @classmethod
     def create_for_email(cls, email):
         """Créer un nouveau code de réinitialisation pour un email"""
@@ -696,11 +709,11 @@ class PasswordResetCode(models.Model):
             email=email,
             expires_at__lt=timezone.now()
         ).delete()
-        
+
         # Créer le nouveau code
         code = cls.generate_code()
         expires_at = timezone.now() + timezone.timedelta(minutes=15)
-        
+
         return cls.objects.create(
             email=email,
             code=code,

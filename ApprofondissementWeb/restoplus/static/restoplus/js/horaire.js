@@ -12,19 +12,15 @@ class HoraireManager {
         this.currentWorkShift = null;
         this.weekDays = this.loadWeekDays();
         this.canEditWeek = this.getCanEditWeekFlag();
-        // Charger l'état de publication de la semaine
-        // Initialiser avec un tableau vide par défaut
         this.availabilities = [];
 
-        // Charger les disponibilités de manière sécurisée
         try {
             this.availabilities = this.loadAvailabilities();
         } catch (error) {
-            console.error("❌ Erreur lors du chargement des disponibilités:", error);
+            console.error("Erreur lors du chargement des disponibilités:", error);
             this.availabilities = [];
         }
 
-        console.log("🚀 Availabilities finales:", this.availabilities);
         this.init();
     }
 
@@ -40,75 +36,32 @@ class HoraireManager {
 
         if (weekDaysElement?.textContent) {
             try {
-                const data = JSON.parse(weekDaysElement.textContent);
-                console.log("✅ Données de la semaine chargées depuis Django");
-                return data;
+                return JSON.parse(weekDaysElement.textContent);
             } catch (error) {
-                console.error("❌ Erreur lors du parsing JSON:", error);
+                console.error("Erreur lors du parsing JSON:", error);
             }
         }
 
-        console.warn("⚠️ Génération de données par défaut");
         return this.generateDefaultWeekDays();
     }
 
     /**
      * Charge les données de disponibilité depuis Django
+    /**
+     * Charge les données de disponibilité depuis Django
      */
     loadAvailabilities() {
         const availabilityElement = document.getElementById("availability-data");
-        console.log("🔍 Élément availability-data:", availabilityElement);
 
         if (availabilityElement?.textContent) {
-            console.log("📄 Contenu brut:", availabilityElement.textContent);
-            console.log("📄 Longueur:", availabilityElement.textContent.length);
-
             try {
                 const data = JSON.parse(availabilityElement.textContent);
-                console.log(
-                    "✅ Données de disponibilité chargées depuis Django:",
-                    data
-                );
-                console.log("🔍 Type des données:", typeof data, Array.isArray(data));
-                console.log("🔍 Longueur:", data?.length);
-
-                // S'assurer que c'est un tableau
-                if (Array.isArray(data)) {
-                    console.log("✅ C'est bien un tableau avec", data.length, "éléments");
-                    return data;
-                } else {
-                    console.warn(
-                        "⚠️ Les données de disponibilité ne sont pas un tableau, conversion..."
-                    );
-                    console.log("🔍 Type reçu:", typeof data);
-                    console.log("🔍 Contenu:", data);
-
-                    // Essayer de convertir en tableau si c'est un objet
-                    if (typeof data === "object" && data !== null) {
-                        const converted = Object.values(data);
-                        console.log("🔄 Tentative de conversion:", converted);
-                        return Array.isArray(converted) ? converted : [];
-                    }
-
-                    return [];
-                }
+                return Array.isArray(data) ? data : (typeof data === "object" && data !== null ? Object.values(data) : []);
             } catch (error) {
-                console.error("❌ Erreur lors du parsing JSON disponibilités:", error);
-                console.error(
-                    "📄 Contenu qui a causé l'erreur:",
-                    availabilityElement.textContent
-                );
-            }
-        } else {
-            console.warn("⚠️ Élément availability-data non trouvé ou vide");
-            if (!availabilityElement) {
-                console.error("❌ Élément availability-data n'existe pas dans le DOM");
-            } else {
-                console.error("❌ Élément availability-data existe mais est vide");
+                console.error("Erreur lors du parsing JSON disponibilités:", error);
             }
         }
 
-        console.warn("⚠️ Retour d'un tableau vide par défaut");
         return [];
     }
 
@@ -143,6 +96,7 @@ class HoraireManager {
         this.bindNavigationEvents();
         this.bindScheduleCellEvents();
         this.bindPublishButton(); // Nouveau : bouton publier
+        this.bindDebugKeys(); // Raccourcis de débogage
         this.updateWeekDisplay();
         this.updateAvailabilityIndicators();
         this.loadExistingShiftsFromStorage(); // Charger les shifts existants au démarrage
@@ -160,6 +114,20 @@ class HoraireManager {
     // ==========================================
     // GESTION DES ÉVÉNEMENTS
     // ==========================================
+
+    /**
+     * Attache les raccourcis clavier de débogage
+     */
+    bindDebugKeys() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Shift+R : Recharger l'affichage des shifts
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                this.refreshAllShiftsDisplay();
+                showMessage('Affichage des shifts rechargé', 'info');
+            }
+        });
+    }
 
     /**
      * Attache les événements de navigation (boutons semaine précédente/suivante)
@@ -196,7 +164,7 @@ class HoraireManager {
         }
         publishBtn.addEventListener("click", (e) => {
             e.preventDefault();
-            this.publishSchedule();
+            publishSchedule();
         });
     }
 
@@ -1069,7 +1037,7 @@ class HoraireManager {
         const heureDebut = document.getElementById("heure_debut").value;
         const heureFin = document.getElementById("heure_fin").value;
 
-        console.log("✅ Sauvegarde directe sans vérification de disponibilité");
+        console.log("Sauvegarde directe sans vérification de disponibilité");
 
         const shiftData = {
             employee_id: this.currentWorkShift.employeeId,
@@ -1114,10 +1082,15 @@ class HoraireManager {
         if (timeSlot) {
             const timeDisplay = timeSlot.querySelector(".time-display");
             if (timeDisplay) {
-                timeDisplay.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+                // Afficher l'heure + indication "non publié"
+                timeDisplay.innerHTML = `
+                    <div class="shift-time">${shiftData.heure_debut} - ${shiftData.heure_fin}</div>
+                    <small class="shift-status text-warning">Non publié</small>
+                `;
+                console.log("📝 Shift ajouté avec statut 'Non publié'");
             }
 
-            cell.classList.add("has-shift");
+            cell.classList.add("has-shift", "shift-draft");
 
             // Ajouter un petit bouton de suppression directement dans la cellule
             this.addDeleteButtonToCell(cell);
@@ -1171,31 +1144,208 @@ class HoraireManager {
         const employeeName =
             employeeRow?.querySelector(".employee-name")?.textContent || "Employé";
 
-        const confirmMsg = `Supprimer le quart de ${employeeName} le ${date} ?`;
-        if (!confirm(confirmMsg)) return;
+        const key = `shift_${employeeId}_${date}`;
+        const shiftData = localStorage.getItem(key);
 
+        if (!shiftData) {
+            console.warn('Aucun shift trouvé en localStorage pour cette cellule');
+            return;
+        }
+
+        const shift = JSON.parse(shiftData);
+        this.showDeleteConfirmationModal({
+            employeeId,
+            date,
+            employeeName,
+            shift,
+            cell,
+            source: 'quick'
+        });
+    }    /**
+     * Affiche le modal de confirmation pour supprimer un shift
+     */
+    showDeleteConfirmationModal(deleteData) {
+        const { employeeId, date, employeeName, shift, cell, source } = deleteData;
+        const isPublished = shift.from_database === true && shift.shift_id;
+
+        // Stocker les données pour la suppression
+        this.pendingDeletion = deleteData;
+
+        // Remplir les informations dans le modal
+        document.getElementById('deleteShiftEmployeeName').textContent = employeeName;
+        document.getElementById('deleteShiftDate').textContent = new Date(date).toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        document.getElementById('deleteShiftTime').textContent = `${shift.heure_debut} - ${shift.heure_fin}`;
+
+        // Afficher le statut et le message approprié
+        const statusElement = document.getElementById('deleteShiftStatus');
+        const draftMessage = document.getElementById('draftDeleteMessage');
+        const publishedMessage = document.getElementById('publishedDeleteMessage');
+
+        if (isPublished) {
+            statusElement.textContent = 'PUBLIÉ';
+            statusElement.className = 'badge bg-success';
+            draftMessage.style.display = 'none';
+            publishedMessage.style.display = 'block';
+        } else {
+            statusElement.textContent = 'BROUILLON';
+            statusElement.className = 'badge bg-warning text-dark';
+            draftMessage.style.display = 'block';
+            publishedMessage.style.display = 'none';
+        }
+
+        // Afficher le modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteShiftConfirmModal'));
+        modal.show();
+
+        // Gérer le clic sur le bouton de confirmation
+        const confirmBtn = document.getElementById('confirmDeleteShiftBtn');
+        // Supprimer l'écouteur précédent s'il existe
+        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+        const newConfirmBtn = document.getElementById('confirmDeleteShiftBtn');
+
+        newConfirmBtn.addEventListener('click', () => {
+            modal.hide();
+            this.executeShiftDeletion();
+        });
+    }
+
+    /**
+     * Exécute la suppression du shift après confirmation
+     */
+    executeShiftDeletion() {
+        if (!this.pendingDeletion) return;
+
+        const { employeeId, date, employeeName, shift, cell, source } = this.pendingDeletion;
+        const isPublished = shift.from_database === true && shift.shift_id;
+
+        if (isPublished) {
+            this.performPublishedShiftDeletion(shift.shift_id, employeeId, date, cell, source);
+        } else {
+            this.performDraftShiftDeletion(employeeId, date, cell, source);
+        }
+
+        // Nettoyer les données en attente
+        this.pendingDeletion = null;
+    }
+
+    /**
+     * Supprime un shift brouillon (localStorage uniquement)
+     */
+    performDraftShiftDeletion(employeeId, date, cell, source) {
         const key = `shift_${employeeId}_${date}`;
         localStorage.removeItem(key);
 
         // Nettoyer l'affichage
         this.clearCellShiftDisplayDirect(cell);
-        this.showSuccessMessage("Quart supprimé avec succès.");
+
+        // Si la suppression vient du modal d'édition, le fermer
+        if (source === 'modal') {
+            const modalEl = document.getElementById("timeEditModal");
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            // Masquer le bouton supprimer
+            const deleteBtn = document.getElementById("deleteWorkShiftBtn");
+            if (deleteBtn) deleteBtn.classList.add("d-none");
+        }
+
+        this.showSuccessMessage("Quart brouillon supprimé avec succès.");
     }
 
     /**
-     * Efface l'affichage du shift dans une cellule spécifique
+     * Effectue la suppression du shift publié via une requête AJAX
      */
+    async performPublishedShiftDeletion(shiftId, employeeId, date, cell, source) {
+        try {
+            const response = await fetch(`/horaire/delete-shift/${shiftId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken(),
+                },
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Supprimer aussi de localStorage
+                const key = `shift_${employeeId}_${date}`;
+                localStorage.removeItem(key);
+
+                // Nettoyer l'affichage
+                this.clearCellShiftDisplayDirect(cell);
+
+                // Si la suppression vient du modal d'édition, le fermer
+                if (source === 'modal') {
+                    const modalEl = document.getElementById("timeEditModal");
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                    // Masquer le bouton supprimer
+                    const deleteBtn = document.getElementById("deleteWorkShiftBtn");
+                    if (deleteBtn) deleteBtn.classList.add("d-none");
+                }
+
+                this.showSuccessMessage("Quart publié supprimé avec succès.");
+            } else {
+                this.showErrorMessage(result.message || "Erreur lors de la suppression du shift.");
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            this.showErrorMessage("Erreur de communication avec le serveur.");
+        }
+    }
+
+    /**
+     * Récupère le token CSRF
+     */
+    getCSRFToken() {
+        const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        return tokenElement ? tokenElement.value : '';
+    }
+
+    /**
+     * Affiche un message d'erreur
+     */
+    showErrorMessage(message) {
+        const toast = document.createElement("div");
+        toast.className = "toast align-items-center text-bg-danger border-0 position-fixed";
+        toast.style.cssText = "top: 20px; right: 20px; z-index: 9999;";
+        toast.setAttribute("role", "alert");
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
+        });
+    }
     clearCellShiftDisplayDirect(cell) {
         const timeSlot = cell.querySelector(".time-slot");
         if (timeSlot) {
             const timeDisplay = timeSlot.querySelector(".time-display");
-            if (timeDisplay) timeDisplay.textContent = "-";
+            if (timeDisplay) timeDisplay.innerHTML = "-";
 
             // Supprimer le bouton de suppression
             const deleteBtn = timeSlot.querySelector(".delete-shift-btn");
             if (deleteBtn) deleteBtn.remove();
         }
-        cell.classList.remove("has-shift");
+        cell.classList.remove("has-shift", "shift-draft", "shift-published");
         cell.removeAttribute("title");
     }
 
@@ -1240,10 +1390,25 @@ class HoraireManager {
 
         const timeDisplay = timeSlot.querySelector(".time-display");
         if (timeDisplay) {
-            timeDisplay.textContent = `${shiftData.heure_debut} - ${shiftData.heure_fin}`;
+            // Vérifier si le shift est publié (vient de la base de données)
+            const isPublished = shiftData.from_database === true;
+            const statusText = isPublished ? "✓ Publié" : "Non publié";
+            const statusClass = isPublished ? "text-success" : "text-warning";
+
+            // Afficher l'heure + indication du statut
+            timeDisplay.innerHTML = `
+                <div class="shift-time">${shiftData.heure_debut} - ${shiftData.heure_fin}</div>
+                <small class="shift-status ${statusClass}">${statusText}</small>
+            `;
         }
 
-        cell.classList.add("has-shift");
+        // Appliquer les classes CSS appropriées
+        if (shiftData.from_database === true) {
+            cell.classList.add("has-shift", "shift-published");
+        } else {
+            cell.classList.add("has-shift", "shift-draft");
+        }
+
         this.addDeleteButtonToCell(cell);
 
         // Tooltip avec détails
@@ -1293,10 +1458,25 @@ class HoraireManager {
     confirmAndDeleteShift() {
         if (!this.currentWorkShift) return;
 
-        const confirmMsg = `Voulez-vous vraiment supprimer le quart de ${this.currentWorkShift.employeeName} le ${this.currentWorkShift.date} ?`;
-        if (!confirm(confirmMsg)) return;
+        const key = `shift_${this.currentWorkShift.employeeId}_${this.currentWorkShift.date}`;
+        const shiftData = localStorage.getItem(key);
 
-        this.deleteWorkShift();
+        if (!shiftData) {
+            console.warn('Aucun shift trouvé en localStorage pour ce modal');
+            return;
+        }
+
+        const shift = JSON.parse(shiftData);
+
+        // Utiliser le modal de confirmation
+        this.showDeleteConfirmationModal({
+            employeeId: this.currentWorkShift.employeeId,
+            date: this.currentWorkShift.date,
+            employeeName: this.currentWorkShift.employeeName,
+            shift: shift,
+            cell: this.currentWorkShift.cell,
+            source: 'modal'
+        });
     }
 
     /**
@@ -1357,6 +1537,55 @@ class HoraireManager {
         toast.addEventListener("hidden.bs.toast", () => {
             document.body.removeChild(toast);
         });
+    }
+
+    // ==========================================
+    // GESTION DE L'AFFICHAGE DES SHIFTS
+    // ==========================================
+
+    /**
+     * Recharge l'affichage de tous les shifts depuis localStorage
+     */
+    refreshAllShiftsDisplay() {
+        console.log("🔄 Rechargement de l'affichage des shifts...");
+
+        // D'abord, nettoyer l'affichage existant
+        const cells = document.querySelectorAll('.schedule-cell.has-shift');
+        cells.forEach(cell => {
+            cell.classList.remove('has-shift', 'shift-draft', 'shift-published');
+            const timeSlot = cell.querySelector('.time-slot');
+            if (timeSlot) {
+                const timeDisplay = timeSlot.querySelector('.time-display');
+                if (timeDisplay) {
+                    timeDisplay.innerHTML = '';
+                }
+            }
+            const deleteBtn = cell.querySelector('.delete-shift-btn');
+            if (deleteBtn) {
+                deleteBtn.remove();
+            }
+        });
+
+        // Recharger depuis localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("shift_")) {
+                try {
+                    const shiftData = JSON.parse(localStorage.getItem(key));
+                    const [, employeeId, date] = key.split('_');
+
+                    // Trouver la cellule correspondante
+                    const cell = document.querySelector(`[data-employee-id="${employeeId}"][data-date="${date}"]`);
+                    if (cell) {
+                        this.displayShiftInCell(cell, shiftData);
+                    }
+                } catch (error) {
+                    console.error("❌ Erreur lors du rechargement du shift:", key, error);
+                }
+            }
+        }
+
+        console.log("✅ Affichage rechargé");
     }
 
     // ==========================================
@@ -1550,11 +1779,19 @@ function publishSchedule() {
         return;
     }
 
-    // Demander confirmation
+    // Compter seulement les shifts non publiés (brouillons)
+    const unpublishedShifts = getUnpublishedShiftsFromLocalStorage();
+    const unpublishedCount = Object.keys(unpublishedShifts).length;
+
+    if (unpublishedCount === 0) {
+        showMessage("Aucun nouveau shift à publier. Tous les shifts sont déjà publiés.", "info");
+        return;
+    }
+
+    // Demander confirmation avec le nombre de shifts non publiés
     if (
         !confirm(
-            `Êtes-vous sûr de vouloir publier cet horaire avec ${Object.keys(allShifts).length
-            } shifts?`
+            `Êtes-vous sûr de vouloir publier ${unpublishedCount} shift${unpublishedCount > 1 ? 's' : ''} non publié${unpublishedCount > 1 ? 's' : ''}?`
         )
     ) {
         return;
@@ -1575,16 +1812,20 @@ function publishSchedule() {
             "X-CSRFToken": getCSRFToken(),
         },
         body: JSON.stringify({
-            shifts: allShifts,
+            shifts: unpublishedShifts, // Envoyer seulement les shifts non publiés
         }),
     })
         .then((response) => response.json())
         .then((data) => {
             if (data.success) {
                 showMessage(
-                    `Horaire publié avec succès! ${data.shifts_created} shifts créés.`,
+                    "Les nouveaux quarts sont publiés!",
                     "success"
                 );
+
+                // Mettre à jour l'affichage des shifts pour montrer qu'ils sont publiés
+                updateShiftsToPublishedStatus();
+
                 // Nettoyer le localStorage après publication réussie
                 clearAllShiftsFromLocalStorage();
                 // Rediriger vers la page de visualisation après un délai
@@ -1630,6 +1871,30 @@ function getAllShiftsFromLocalStorage() {
     return allShifts;
 }
 
+function getUnpublishedShiftsFromLocalStorage() {
+    const unpublishedShifts = {};
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("shift_")) {
+            try {
+                const shiftData = JSON.parse(localStorage.getItem(key));
+                // Inclure seulement les shifts qui ne viennent pas de la base de données
+                if (shiftData.from_database !== true) {
+                    unpublishedShifts[key] = shiftData;
+                }
+            } catch (error) {
+                console.error("Erreur lors de la lecture du shift:", key, error);
+            }
+        }
+    }
+
+    console.log(
+        `${Object.keys(unpublishedShifts).length} shifts non publiés trouvés dans localStorage`
+    );
+    return unpublishedShifts;
+}
+
 
 
 function clearAllShiftsFromLocalStorage() {
@@ -1647,6 +1912,35 @@ function clearAllShiftsFromLocalStorage() {
     });
 
     console.log(`${keysToRemove.length} shifts supprimés du localStorage`);
+}
+
+function updateShiftsToPublishedStatus() {
+    // Trouver toutes les cellules qui ont des shifts
+    const shiftCells = document.querySelectorAll('.schedule-cell.has-shift');
+
+    shiftCells.forEach(cell => {
+        const timeSlot = cell.querySelector('.time-slot');
+        if (timeSlot) {
+            const timeDisplay = timeSlot.querySelector('.time-display');
+            if (timeDisplay) {
+                // Extraire le texte de l'heure (première ligne)
+                const shiftTime = timeDisplay.querySelector('.shift-time');
+                if (shiftTime) {
+                    // Mettre à jour l'affichage pour montrer "Publié"
+                    timeDisplay.innerHTML = `
+                        <div class="shift-time">${shiftTime.textContent}</div>
+                        <small class="shift-status text-success">✓ Publié</small>
+                    `;
+                }
+            }
+        }
+
+        // Changer la classe pour le style
+        cell.classList.remove('shift-draft');
+        cell.classList.add('shift-published');
+    });
+
+    console.log(`${shiftCells.length} shifts mis à jour vers le statut "Publié"`);
 }
 
 function getCSRFToken() {
@@ -1688,5 +1982,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const manager = new HoraireManager();
-    console.log("Gestionnaire d'horaires initialisé");
+    // Exposer le gestionnaire globalement pour le template
+    window.horaireManager = manager;
+    console.log("Gestionnaire d'horaires initialisé et exposé globalement");
 });
