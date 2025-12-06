@@ -364,13 +364,14 @@ def inventory_management(request):
 
     sorting_choices = [
         ("", "Trier par"),
-        ("name_asc", "Nom"),
-        ("name_desc", "Nom"),
-        ("sku_asc", "SKU"),
-        ("sku_desc", "SKU"),
-        ("quantity_asc", "Quantité"),
-        ("quantity_desc", "Quantité"),
-        ("supplier_asc", "Fournisseur"),
+        ("name_asc", "Nom ↑"),
+        ("name_desc", "Nom ↓"),
+        ("sku_asc", "SKU ↑"),
+        ("sku_desc", "SKU ↓"),
+        ("quantity_asc", "Quantité ↑"),
+        ("quantity_desc", "Quantité ↓"),
+        ("supplier_asc", "Fournisseur ↑"),
+        ("supplier_desc", "Fournisseur ↓"),
     ]
 
     supplier_choices = [("", "Fournisseur")] + [
